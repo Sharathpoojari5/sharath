@@ -11,3 +11,8 @@ Files: `index.html` (the whole app), `lib/` (three.js r160, MIT licence, vendore
 
 
 Hand reactions (Real-hands mode): fingers over it = petting (squish, happy eyes, hearts); fast finger jab = jump; waving an open hand = greeting; holding an open palm still = it walks to your hand; it always turns to look at your hand. Your hand is drawn in front of the mammoth, so it looks like you reach in.
+
+## Real AR with real hands (Start AR)
+Uses WebXR with three optional features on Chrome for Android (ARCore): `hit-test` (find the table), `camera-access` (the camera image, fed to MediaPipe hand tracking) and `depth-sensing` (how far your hand is, so it only counts as touching when it is really at the mammoth, and is drawn in front only when it is closer than the mammoth).
+If the camera image looks upside-down to the tracker (hand points land in the wrong place), open the page with `?flip=1` at the end of the address.
+If `camera-access`/`depth-sensing` are not supported on a phone, hand tracking falls back to Camera mode.
