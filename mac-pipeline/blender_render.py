@@ -81,8 +81,8 @@ def mat_hair(name, color, rough=0.4):
     # slight per-strand colour variation so the fur isn't flat
     rnd = nt.nodes.new('ShaderNodeHairInfo')
     ramp = nt.nodes.new('ShaderNodeValToRGB')
-    ramp.color_ramp.elements[0].color = (*[c * 0.55 for c in color], 1)
-    ramp.color_ramp.elements[1].color = (*[min(1.0, c * 1.25) for c in color], 1)
+    ramp.color_ramp.elements[0].color = (*[c * 0.6 for c in color], 1)
+    ramp.color_ramp.elements[1].color = (*[min(1.0, c * 1.5) for c in color], 1)
     nt.links.new(rnd.outputs['Random'], ramp.inputs['Fac'])
     nt.links.new(ramp.outputs['Color'], hair.inputs['Color'])
     nt.links.new(hair.outputs['BSDF'], out.inputs['Surface'])
@@ -105,8 +105,16 @@ def sphere_obj(name, loc, scale, mat, segs=32, rings=16):
     return ob
 
 
-def chain_obj(name, points, radii, mat, segs=14):
+def chain_obj(name, points, radii, mat, segs=14, dense=4):
     """A tube made from overlapping spheres along `points` (used for the trunk and the tusks)."""
+    pts2, rad2 = [], []
+    for k in range(len(points) - 1):
+        for j in range(dense):
+            f = j / dense
+            pts2.append(tuple(points[k][m] + (points[k + 1][m] - points[k][m]) * f for m in range(3)))
+            rad2.append(radii[k] + (radii[k + 1] - radii[k]) * f)
+    pts2.append(points[-1]); rad2.append(radii[-1])
+    points, radii = pts2, rad2
     bm = bmesh.new()
     for p, r in zip(points, radii):
         bmesh.ops.create_uvsphere(bm, u_segments=segs, v_segments=segs // 2, radius=r, matrix=__import__('mathutils').Matrix.Translation(p))
@@ -121,7 +129,7 @@ def chain_obj(name, points, radii, mat, segs=14):
     return ob
 
 
-def add_fur(ob, hair_mat, count, length, q, thickness=0.0007, seed=1):
+def add_fur(ob, hair_mat, count, length, q, thickness=0.0005, seed=1):
     ob.data.materials.append(hair_mat)
     mod = ob.modifiers.new('Fur', 'PARTICLE_SYSTEM')
     ps = mod.particle_system
@@ -147,19 +155,21 @@ def add_fur(ob, hair_mat, count, length, q, thickness=0.0007, seed=1):
     except Exception:
         st.material = len(ob.data.materials)
     # thin strands: Cycles hair width = particle_size * radius
-    st.particle_size = thickness
+    # hair diameter (metres) = radius_scale * root_radius
+    if hasattr(st, 'radius_scale'):
+        st.radius_scale = thickness
     if hasattr(st, 'root_radius'):
         st.root_radius = 1.0
-        st.tip_radius = 0.25
+        st.tip_radius = 0.3
     return ob
 
 
 def make_mammoth(q):
-    skin = mat_principled('Skin', (0.20, 0.12, 0.08), 0.8)
+    skin = mat_principled('Skin', (0.07, 0.04, 0.025), 0.85)
     ivory = mat_principled('Ivory', (0.93, 0.88, 0.74), 0.35, 0.5, 0.3)
     eye = mat_principled('Eye', (0.01, 0.01, 0.012), 0.12, 0.8, 1.0)
-    fur_a = mat_hair('FurBody', (0.30, 0.17, 0.09))
-    fur_b = mat_hair('FurDark', (0.20, 0.11, 0.065))
+    fur_a = mat_hair('FurBody', (0.16, 0.085, 0.045))
+    fur_b = mat_hair('FurDark', (0.10, 0.052, 0.03))
     heart_m = bpy.data.materials.new('Heart')
     heart_m.use_nodes = True
     hb = heart_m.node_tree.nodes['Principled BSDF']
@@ -184,24 +194,24 @@ def make_mammoth(q):
         return ob
 
     torso = put(sphere_obj('Torso', (0, 0, 0.105), (0.078, 0.10, 0.072), skin, 40, 20))
-    add_fur(torso, fur_a, 1800, 0.026, q, seed=1)
+    add_fur(torso, fur_a, 5000, 0.020, q, seed=1)
     hump = put(sphere_obj('Hump', (0, 0.025, 0.165), (0.058, 0.055, 0.045), skin))
-    add_fur(hump, fur_b, 500, 0.03, q, seed=2)
+    add_fur(hump, fur_b, 1800, 0.024, q, seed=2)
     # skirt of long fur under the belly
     skirt = put(sphere_obj('Skirt', (0, 0, 0.065), (0.082, 0.105, 0.04), skin))
-    add_fur(skirt, fur_b, 900, 0.04, q, seed=3)
+    add_fur(skirt, fur_b, 2500, 0.032, q, seed=3)
 
     head_pivot = bpy.data.objects.new('HeadPivot', None)
     head_pivot.parent = body
     head_pivot.location = (0, 0.085, 0.135)
     bpy.context.collection.objects.link(head_pivot)
     head = put(sphere_obj('Head', (0, 0.03, 0.005), (0.052, 0.055, 0.058), skin), head_pivot)
-    add_fur(head, fur_a, 700, 0.022, q, seed=4)
+    add_fur(head, fur_a, 2500, 0.016, q, seed=4)
     crown = put(sphere_obj('Crown', (0, 0.0, 0.045), (0.04, 0.05, 0.03), skin), head_pivot)
-    add_fur(crown, fur_b, 350, 0.035, q, seed=5)
+    add_fur(crown, fur_b, 1200, 0.026, q, seed=5)
     for sx in (-1, 1):
         ear = put(sphere_obj('Ear%d' % sx, (sx * 0.056, 0.012, 0.012), (0.011, 0.034, 0.042), skin, 20, 12), head_pivot)
-        add_fur(ear, fur_b, 160, 0.012, q, seed=6)
+        add_fur(ear, fur_b, 500, 0.012, q, seed=6)
         eye_o = put(sphere_obj('Eye%d' % sx, (sx * 0.026, 0.078, 0.022), (0.0085, 0.0085, 0.0085), eye, 20, 12), head_pivot)
         parts['eye%d' % sx] = eye_o
     # trunk
@@ -209,7 +219,7 @@ def make_mammoth(q):
     tp = [(0, 0.075 + 0.012 * i * 0.2, 0.0 - 0.012 * i - 0.006 * i * i * 0.12) for i in range(n)]
     tr = [0.024 * (1 - i / (n * 1.25)) + 0.006 for i in range(n)]
     trunk = put(chain_obj('Trunk', tp, tr, skin), head_pivot)
-    add_fur(trunk, fur_a, 260, 0.012, q, seed=7)
+    add_fur(trunk, fur_a, 1200, 0.010, q, seed=7)
     for sx in (-1, 1):
         pts = [(sx * (0.03 + 0.016 * math.sin(i / 8 * 2.1)), 0.07 + 0.012 * i, -0.02 - 0.004 * i + 0.011 * math.sin(i / 8 * math.pi) ** 2 * 1.5) for i in range(9)]
         rad = [0.0085 * (1 - i / 11) for i in range(9)]
@@ -223,10 +233,10 @@ def make_mammoth(q):
             pivot.location = (sx * 0.048, ly, 0.075)
             bpy.context.collection.objects.link(pivot)
             leg = put(sphere_obj('Leg%d%d' % (ix, iy), (0, 0, -0.04), (0.024, 0.026, 0.045), skin, 20, 12), pivot)
-            add_fur(leg, fur_b, 220, 0.022, q, seed=10 + ix * 2 + iy)
+            add_fur(leg, fur_b, 1200, 0.018, q, seed=10 + ix * 2 + iy)
             legs.append((pivot, 1 if (ix + iy) % 2 == 0 else -1))
     tail = put(sphere_obj('Tail', (0, -0.1, 0.11), (0.011, 0.014, 0.03), skin, 16, 10))
-    add_fur(tail, fur_b, 80, 0.025, q, seed=20)
+    add_fur(tail, fur_b, 300, 0.022, q, seed=20)
 
     # heart pool
     hearts = []
