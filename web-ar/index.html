@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0B1220">
+<title>AR Mammoth</title>
+<style>
+  :root { --bg:#0B1220; --panel:rgba(11,18,32,.72); --text:#EDF2F7; --muted:#9FB0C3; --cyan:#29C5E6; --orange:#FF8A3D; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; overflow:hidden; }
+  #video { position:fixed; inset:0; z-index:0; width:100%; height:100%; object-fit:cover; display:none; }
+  canvas { position:fixed; inset:0; z-index:1; touch-action:none; }
+  #overlay { position:fixed; inset:0; z-index:5; pointer-events:none; display:flex; flex-direction:column; justify-content:space-between; padding:max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); }
+  #hud { background:var(--panel); border-radius:16px; padding:12px 14px; backdrop-filter:blur(6px); }
+  #status { font-weight:700; font-size:17px; line-height:1.3; }
+  #mic { font-size:14px; color:var(--muted); margin-top:4px; }
+  #log { font-size:13px; color:var(--muted); margin-top:6px; min-height:1em; }
+  #controls { display:none; gap:8px; flex-wrap:wrap; justify-content:center; pointer-events:auto; }
+  #controls button { background:var(--panel); color:var(--text); border:1px solid rgba(255,255,255,.18); border-radius:999px; padding:10px 14px; font-size:15px; font-weight:600; }
+  #controls button.exit { border-color:var(--orange); color:var(--orange); }
+  /* start screen */
+  #start { position:fixed; inset:0; z-index:10; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:18px; padding:24px; text-align:center; background:radial-gradient(circle at 50% 30%, #16304A 0%, var(--bg) 70%); }
+  #start h1 { margin:0; font-size:34px; letter-spacing:-.5px; }
+  #start p { margin:0; color:var(--muted); font-size:16px; line-height:1.5; max-width:420px; }
+  #start .big { width:min(320px, 90vw); padding:16px; border:0; border-radius:16px; font-size:18px; font-weight:700; }
+  #arBtn { background:var(--cyan); color:#05202A; }
+  #camBtn { background:transparent; color:var(--text); border:1px solid rgba(255,255,255,.25) !important; }
+  #support { font-size:14px; color:var(--orange); min-height:1em; }
+  .tips { font-size:14px; color:var(--muted); line-height:1.6; }
+  .tips b { color:var(--text); }
+</style>
+<script type="importmap">{ "imports": { "three": "./lib/three.module.min.js" } }</script>
+</head>
+<body>
+<video id="video" playsinline muted></video>
+
+<div id="start">
+  <h1>🦣 AR Mammoth</h1>
+  <p>A little mammoth that lives on your table and reacts to you in real time.</p>
+  <button id="arBtn" class="big">Start AR</button>
+  <button id="camBtn" class="big">Camera mode</button>
+  <div id="support"></div>
+  <div class="tips">
+    <b>Stroke it</b> with your finger · <b>tap the table</b> to call it<br>
+    Say <b>“hello”</b>, <b>“come here”</b>, <b>“dance”</b>, <b>“sit”</b>, <b>“jump”</b>, <b>“stop”</b><br>
+    Shine a <b>torch</b> at it in a dim room
+  </div>
+</div>
+
+<div id="overlay">
+  <div id="hud" style="display:none">
+    <div id="status">Starting…</div>
+    <div id="mic">voice: off</div>
+    <div id="log"></div>
+  </div>
+  <div id="controls">
+    <button data-cmd="hello">👋 Hello</button>
+    <button data-cmd="come here">Come</button>
+    <button data-cmd="dance">💃 Dance</button>
+    <button data-cmd="sit">Sit</button>
+    <button data-cmd="jump">Jump</button>
+    <button class="exit" id="exitBtn">Exit</button>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { XREstimatedLight } from './lib/XREstimatedLight.js';
+
+// ---------- UI ----------
+const $ = (id) => document.getElementById(id);
+const ui = { status:$('status'), mic:$('mic'), log:$('log'), hud:$('hud'), controls:$('controls'), start:$('start'), support:$('support') };
+const setStatus = (t) => ui.status.textContent = t;
+const setMic = (t) => ui.mic.textContent = 'voice: ' + t;
+let logLines = [];
+const log = (t) => { logLines.push(t); logLines = logLines.slice(-2); ui.log.textContent = logLines.join(' · '); console.log('[mammoth]', t); };
+
+// ---------- Renderer / scene ----------
+const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.xr.enabled = true;
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.01, 30);
+addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+
+const hemi = new THREE.HemisphereLight(0xffffff, 0x3a3a44, 1.6);
+const sun = new THREE.DirectionalLight(0xffffff, 1.8);
+sun.position.set(0.6, 1.2, 0.8);
+scene.add(hemi, sun);
+const torch = new THREE.PointLight(0xfff1dc, 0, 1.4, 1.5);
+scene.add(torch);
+
+// Real-room lighting from ARCore (WebXR light estimation).
+const xrLight = new XREstimatedLight(renderer);
+let roomLight = false;
+xrLight.addEventListener('estimationstart', () => {
+  roomLight = true; scene.add(xrLight); hemi.visible = false; sun.visible = false;
+  if (xrLight.environment) scene.environment = xrLight.environment;
+  log('Matching your room lighting');
+});
+xrLight.addEventListener('estimationend', () => {
+  roomLight = false; scene.remove(xrLight); hemi.visible = true; sun.visible = true; scene.environment = null;
+});
+
+// ---------- The mammoth (sizes in metres, ~20 cm tall) ----------
+const mat = (hex, rough = 0.85, extra = {}) => new THREE.MeshStandardMaterial({ color: hex, roughness: rough, ...extra });
+const furMat = mat(0x7a5236, 0.95, { flatShading: true });
+const furDark = mat(0x5a3a26, 0.95, { flatShading: true });
+const eyeMat = mat(0x111114, 0.2);
+const tuskMat = mat(0xf2ead6, 0.45);
+const heartMat = mat(0xff5c8a, 0.4, { emissive: 0xff2d6f, emissiveIntensity: 0.6 });
+const blob = new THREE.IcosahedronGeometry(0.5, 2);           // "sphere" of diameter 1 (Unity-style unit)
+const capsule = new THREE.CapsuleGeometry(0.5, 1, 6, 12);      // radius .5, total height 2
+const cyl = new THREE.CylinderGeometry(0.5, 0.5, 2, 16);
+
+function part(geo, m, parent, pos, scale, rotDeg = [0, 0, 0]) {
+  const mesh = new THREE.Mesh(geo, m);
+  mesh.position.set(...pos); mesh.scale.set(...scale);
+  mesh.rotation.set(...rotDeg.map(THREE.MathUtils.degToRad));
+  parent.add(mesh); return mesh;
+}
+
+function buildMammoth() {
+  const root = new THREE.Group();
+  const body = new THREE.Group(); root.add(body);
+  // Z+ is the front (trunk side).
+  part(blob, furMat, body, [0, 0.105, -0.01], [0.15, 0.13, 0.19]);
+  part(blob, furDark, body, [0, 0.16, 0.02], [0.11, 0.07, 0.1]);
+  part(blob, furMat, body, [0, 0.15, 0.09], [0.1, 0.1, 0.09]);
+  part(capsule, furMat, body, [0, 0.09, 0.135], [0.028, 0.045, 0.028], [15, 0, 0]);
+  part(capsule, tuskMat, body, [-0.03, 0.1, 0.13], [0.012, 0.035, 0.012], [60, 0, -20]);
+  part(capsule, tuskMat, body, [0.03, 0.1, 0.13], [0.012, 0.035, 0.012], [60, 0, 20]);
+  part(blob, furDark, body, [-0.055, 0.155, 0.075], [0.015, 0.06, 0.05]);
+  part(blob, furDark, body, [0.055, 0.155, 0.075], [0.015, 0.06, 0.05]);
+  const eyes = [
+    part(new THREE.SphereGeometry(0.5, 16, 12), eyeMat, body, [-0.026, 0.168, 0.128], [0.016, 0.016, 0.016]),
+    part(new THREE.SphereGeometry(0.5, 16, 12), eyeMat, body, [0.026, 0.168, 0.128], [0.016, 0.016, 0.016]),
+  ];
+  for (const x of [-0.045, 0.045]) for (const z of [-0.06, 0.05]) part(cyl, furDark, body, [x, 0.03, z], [0.04, 0.03, 0.04]);
+  part(capsule, furDark, body, [0, 0.11, -0.105], [0.012, 0.025, 0.012], [-30, 0, 0]);
+
+  // Soft contact shadow.
+  const c = document.createElement('canvas'); c.width = c.height = 128;
+  const g = c.getContext('2d'); const grd = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  grd.addColorStop(0, 'rgba(0,0,0,0.55)'); grd.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = grd; g.fillRect(0, 0, 128, 128);
+  const shadow = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 0.26),
+    new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false }));
+  shadow.rotation.x = -Math.PI / 2; shadow.position.y = 0.002; root.add(shadow);
+
+  // Invisible touch target (bigger than the body, easier to stroke).
+  const hit = new THREE.Mesh(new THREE.SphereGeometry(0.13, 12, 8), new THREE.MeshBasicMaterial({ visible: false }));
+  hit.position.set(0, 0.11, 0.02); root.add(hit);
+  return { root, body, eyes, hit };
+}
+
+// ---------- Behaviour ----------
+class Brain {
+  constructor(m) {
+    Object.assign(this, m);
+    this.mood = 'idle'; this.moodT = 0; this.moodDur = 0;
+    this.target = new THREE.Vector3(); this.look = null; this.lookUntil = 0; this.nextHeart = 0;
+    this.eyeBase = m.eyes.map(e => e.scale.clone());
+    this.height = 0.2; this.speed = 0.18;
+  }
+  set(mood, dur) { if (mood !== this.mood) log('Mammoth: ' + mood); this.mood = mood; this.moodT = 0; this.moodDur = dur; }
+  walkTo(p) { this.target.set(p.x, this.root.position.y, p.z); this.set('walking', 20); }
+  pet(now) { if (now > this.nextHeart) { hearts(this, 2); this.nextHeart = now + 0.6; } this.set('happy', 1.2); }
+  greet() { this.lookAtCamera(3); this.set('greeting', 2); }
+  dance() { this.set('dancing', 4); }
+  sit() { this.set('sitting', 6); }
+  jump() { this.set('jumping', 0.8); }
+  calm() { this.set('idle', 0); }
+  dazzle(p) { this.look = p.clone(); this.lookUntil = clock.elapsedTime + 1; if (this.mood === 'idle' || this.mood === 'dazzled') this.set('dazzled', 1.2); }
+  lookAtCamera(sec) { const c = new THREE.Vector3(); currentCamera().getWorldPosition(c); this.look = c; this.lookUntil = clock.elapsedTime + sec; }
+
+  update(dt, t) {
+    this.moodT += dt;
+    if (this.mood !== 'idle' && this.mood !== 'walking' && this.moodT >= this.moodDur) this.set('idle', 0);
+    let face = null;
+    if (this.mood === 'walking') {
+      const to = this.target.clone().sub(this.root.position); to.y = 0;
+      const d = to.length();
+      if (d < 0.02) { this.set('idle', 0); this.lookAtCamera(2); }
+      else { face = this.target; this.root.position.addScaledVector(to.normalize(), Math.min(d, this.speed * dt)); }
+    } else if (this.look && t < this.lookUntil) face = this.look;
+    if (face) {
+      const yaw = Math.atan2(face.x - this.root.position.x, face.z - this.root.position.z);
+      let diff = yaw - this.root.rotation.y; diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+      this.root.rotation.y += Math.sign(diff) * Math.min(Math.abs(diff), 4.2 * dt);
+    }
+    const b = this.body; let sx = 1, sy = 1, sz = 1, hop = 0, rx = 0, ry = 0, rz = 0, squint = 1;
+    switch (this.mood) {
+      case 'idle': sy = 1 + 0.03 * Math.sin(t * 2.2); break;
+      case 'walking': hop = Math.abs(Math.sin(t * 11)) * 0.08; rz = Math.sin(t * 11) * 0.1; break;
+      case 'happy': { const k = Math.abs(Math.sin(t * 12)); sy = 1 - 0.12 * k; sx = sz = 1 + 0.06 * k; rz = Math.sin(t * 14) * 0.12; squint = 0.35; break; }
+      case 'dancing': ry = this.moodT * 5.2; rz = Math.sin(t * 8) * 0.2; hop = Math.abs(Math.sin(t * 8)) * 0.15; break;
+      case 'sitting': sy = 0.72; sx = 1.08; break;
+      case 'jumping': { const u = Math.min(1, this.moodT / this.moodDur); hop = 4 * u * (1 - u) * 0.6; sy = 1 + 0.15 * Math.sin(u * Math.PI); break; }
+      case 'greeting': rx = Math.sin(t * 9) * 0.14; rz = Math.sin(t * 9) * 0.17; hop = Math.abs(Math.sin(t * 6)) * 0.05; break;
+      case 'dazzled': rx = -0.2; ry = Math.sin(t * 30) * 0.07; squint = 0.2; break;
+    }
+    b.scale.set(sx, sy, sz); b.position.y = hop * this.height; b.rotation.set(rx, ry, rz);
+    this.eyes.forEach((e, i) => { e.scale.y += (this.eyeBase[i].y * squint - e.scale.y) * Math.min(1, 20 * dt); });
+  }
+}
+
+const floaters = [];
+function hearts(brain, n) {
+  for (let i = 0; i < n; i++) {
+    const h = new THREE.Mesh(new THREE.SphereGeometry(0.012, 10, 8), heartMat);
+    const start = brain.root.position.clone().add(new THREE.Vector3((Math.random() - .5) * .06, 0.2 + i * 0.02, (Math.random() - .5) * .06));
+    h.position.copy(start); scene.add(h);
+    floaters.push({ h, start, age: -i * 0.15, drift: new THREE.Vector3((Math.random() - .5) * .06, 0.12, (Math.random() - .5) * .06) });
+  }
+}
+function updateFloaters(dt) {
+  for (let i = floaters.length - 1; i >= 0; i--) {
+    const f = floaters[i]; f.age += dt;
+    if (f.age < 0) { f.h.visible = false; continue; }
+    f.h.visible = true; f.h.position.copy(f.start).addScaledVector(f.drift, f.age); f.h.scale.setScalar(1 - Math.min(0.8, f.age / 1.1 * 0.8));
+    if (f.age > 1.1) { scene.remove(f.h); f.h.geometry.dispose(); floaters.splice(i, 1); }
+  }
+}
+
+// ---------- Shared state ----------
+const clock = new THREE.Clock();
+let mode = null;            // 'ar' | 'camera'
+let mammoth = null;         // Brain
+const raycaster = new THREE.Raycaster();
+const currentCamera = () => renderer.xr.isPresenting ? renderer.xr.getCamera() : camera;
+
+function place(pos) {
+  const m = buildMammoth();
+  scene.add(m.root); m.root.position.copy(pos);
+  const c = new THREE.Vector3(); currentCamera().getWorldPosition(c);
+  m.root.rotation.y = Math.atan2(c.x - pos.x, c.z - pos.z);
+  mammoth = new Brain(m);
+  mammoth.greet();
+  setStatus('Stroke it · tap the table · say “hello”');
+  ui.controls.style.display = 'flex';
+}
+
+function rayHitsMammoth(origin, dir) {
+  if (!mammoth) return false;
+  raycaster.set(origin, dir);
+  return raycaster.intersectObject(mammoth.hit, false).length > 0;
+}
+
+// ---------- Voice ----------
+let rec = null, voiceOn = false, handled = new Set();
+function handle(text) {
+  if (!text) return false;
+  const s = ' ' + text.toLowerCase() + ' ';
+  if (!mammoth) { log(`Heard “${text.trim()}” — place it first`); return false; }
+  if (s.includes('come')) mammoth.walkTo(comePoint());
+  else if (s.includes('dance')) mammoth.dance();
+  else if (s.includes(' sit') || s.includes('sit ')) mammoth.sit();
+  else if (s.includes('jump')) mammoth.jump();
+  else if (s.includes('stop') || s.includes('stay')) mammoth.calm();
+  else if (s.includes('hello') || s.includes(' hi ') || s.includes('hey') || s.includes('look at me')) mammoth.greet();
+  else return false;
+  log(`Heard “${text.trim()}”`);
+  return true;
+}
+function startVoice() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { setMic('not supported here — use the buttons'); return; }
+  rec = new SR(); rec.lang = 'en-IN'; rec.continuous = true; rec.interimResults = true;
+  rec.onstart = () => setMic('listening… say “hello”');
+  rec.onresult = (e) => {
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const key = i + ':' + rec._session;
+      if (handled.has(key)) continue;
+      const txt = e.results[i][0].transcript;
+      if (handle(txt)) handled.add(key);
+    }
+  };
+  rec.onerror = (e) => { if (e.error !== 'no-speech' && e.error !== 'aborted') setMic('error: ' + e.error); };
+  rec.onend = () => { if (voiceOn) setTimeout(() => { try { rec._session = (rec._session || 0) + 1; rec.start(); } catch {} }, 250); };
+  voiceOn = true; rec._session = 0;
+  try { rec.start(); } catch (err) { setMic('could not start: ' + err.message); }
+}
+function stopVoice() { voiceOn = false; try { rec && rec.stop(); } catch {} setMic('off'); }
+
+// ---------- Torch ----------
+const torchTmp = new THREE.Vector3();
+let lightBaseline = null, torchOn = false;
+function torchFromRoomLight(dt) {
+  // AR mode: ARCore's main light intensity jumps when a torch shines into the camera's view.
+  if (!roomLight || !mammoth) return;
+  const I = xrLight.directionalLight.intensity;
+  if (lightBaseline === null) lightBaseline = I;
+  const on = I > lightBaseline * 1.8 && I - lightBaseline > 0.6;
+  if (!on) lightBaseline += (I - lightBaseline) * Math.min(1, dt * 0.5);
+  setTorch(on, torchTmp.copy(xrLight.directionalLight.position).normalize().multiplyScalar(0.25).add(mammoth.root.position).setY(mammoth.root.position.y + 0.18), dt);
+}
+function setTorch(on, pos, dt) {
+  if (on && !torchOn) log('Torch detected');
+  torchOn = on;
+  if (on) { torch.position.lerp(pos, Math.min(1, 12 * dt)); mammoth.dazzle(pos); }
+  torch.intensity += ((on ? 2.2 : 0) - torch.intensity) * Math.min(1, 10 * dt);
+}
+
+// Camera mode: find a small very bright spot in the video.
+const probe = document.createElement('canvas'); probe.width = 64; probe.height = 48;
+const pctx = probe.getContext('2d', { willReadFrequently: true });
+let nextProbe = 0;
+function torchFromVideo(dt, t) {
+  if (!mammoth || t < nextProbe) { if (mammoth) setTorch(torchOn, torch.position, dt); return; }
+  nextProbe = t + 0.1;
+  const v = $('video'); if (!v.videoWidth) return;
+  // Match CSS object-fit: cover crop so image coords map to screen coords.
+  const vr = v.videoWidth / v.videoHeight, sr = innerWidth / innerHeight;
+  let sw = v.videoWidth, sh = v.videoHeight, sx = 0, sy = 0;
+  if (vr > sr) { sw = v.videoHeight * sr; sx = (v.videoWidth - sw) / 2; } else { sh = v.videoWidth / sr; sy = (v.videoHeight - sh) / 2; }
+  pctx.drawImage(v, sx, sy, sw, sh, 0, 0, 64, 48);
+  const d = pctx.getImageData(0, 0, 64, 48).data;
+  let sum = 0, n = 0, cx = 0, cy = 0;
+  for (let i = 0, p = 0; i < d.length; i += 4, p++) {
+    const l = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]; sum += l;
+    if (l >= 248) { n++; cx += p % 64; cy += (p / 64) | 0; }
+  }
+  const mean = sum / (64 * 48), frac = n / (64 * 48);
+  const on = n >= 2 && frac < 0.12 && mean < 248 - 70;
+  if (on) {
+    const ndc = new THREE.Vector2((cx / n + .5) / 64 * 2 - 1, -((cy / n + .5) / 48 * 2 - 1));
+    raycaster.setFromCamera(ndc, camera);
+    const dist = camera.position.distanceTo(mammoth.root.position) * 0.7;
+    raycaster.ray.at(dist, torchTmp);
+  }
+  setTorch(on, torchTmp, dt);
+}
+
+// ---------- AR mode (WebXR) ----------
+let hitSource = null, transientSource = null, reticle = null, activeInput = null, startedOnMammoth = false, pettedThisTouch = false;
+const lastTouchFloor = new THREE.Vector3(); let haveTouchFloor = false;
+
+function makeReticle() {
+  const r = new THREE.Mesh(new THREE.RingGeometry(0.05, 0.065, 40).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x29C5E6 }));
+  r.matrixAutoUpdate = false; r.visible = false; scene.add(r); return r;
+}
+
+async function startAR() {
+  const session = await navigator.xr.requestSession('immersive-ar', {
+    requiredFeatures: ['hit-test'],
+    optionalFeatures: ['dom-overlay', 'light-estimation', 'local-floor'],
+    domOverlay: { root: $('overlay') },
+  });
+  mode = 'ar';
+  enterUI();
+  renderer.xr.setReferenceSpaceType('local');
+  await renderer.xr.setSession(session);
+  reticle = reticle || makeReticle();
+  const viewer = await session.requestReferenceSpace('viewer');
+  hitSource = await session.requestHitTestSource({ space: viewer });
+  try { transientSource = await session.requestHitTestSourceForTransientInput({ profile: 'generic-touchscreen' }); } catch { transientSource = null; }
+
+  session.addEventListener('selectstart', (e) => {
+    activeInput = e.inputSource; pettedThisTouch = false;
+    const pose = e.frame.getPose(e.inputSource.targetRaySpace, renderer.xr.getReferenceSpace());
+    startedOnMammoth = pose ? poseHitsMammoth(pose) : false;
+    if (startedOnMammoth) { mammoth.pet(clock.elapsedTime); pettedThisTouch = true; }
+  });
+  session.addEventListener('selectend', () => {
+    activeInput = null;
+    if (!mammoth) { if (reticle.visible) place(new THREE.Vector3().setFromMatrixPosition(reticle.matrix)); return; }
+    if (!startedOnMammoth && !pettedThisTouch) {
+      if (haveTouchFloor) mammoth.walkTo(lastTouchFloor);
+      else if (reticle.visible) mammoth.walkTo(new THREE.Vector3().setFromMatrixPosition(reticle.matrix));
+    }
+  });
+  session.addEventListener('end', () => { stopVoice(); location.reload(); });
+  setStatus('Point at a table and move the phone slowly');
+  startVoice();
+}
+
+function poseHitsMammoth(pose) {
+  const m = new THREE.Matrix4().fromArray(pose.transform.matrix);
+  const o = new THREE.Vector3().setFromMatrixPosition(m);
+  const d = new THREE.Vector3(0, 0, -1).transformDirection(m);
+  return rayHitsMammoth(o, d);
+}
+
+function arFrame(frame, dt) {
+  const ref = renderer.xr.getReferenceSpace();
+  if (hitSource && !mammoth) {
+    const hits = frame.getHitTestResults(hitSource);
+    if (hits.length) {
+      const p = hits[0].getPose(ref); reticle.visible = true; reticle.matrix.fromArray(p.transform.matrix);
+      setStatus('Tap to place your mammoth');
+    } else { reticle.visible = false; setStatus('Point at a table and move the phone slowly'); }
+  } else if (reticle) reticle.visible = false;
+
+  if (transientSource) {
+    for (const r of frame.getHitTestResultsForTransientInput(transientSource)) {
+      if (r.results.length) { lastTouchFloor.setFromMatrixPosition(new THREE.Matrix4().fromArray(r.results[0].getPose(ref).transform.matrix)); haveTouchFloor = true; }
+    }
+  }
+  // Stroking: finger held and moving over the mammoth.
+  if (activeInput && mammoth) {
+    const pose = frame.getPose(activeInput.targetRaySpace, ref);
+    if (pose && poseHitsMammoth(pose)) { mammoth.pet(clock.elapsedTime); pettedThisTouch = true; }
+  }
+  torchFromRoomLight(dt);
+}
+
+function comePoint() {
+  if (mode === 'camera') return new THREE.Vector3(0, floorY, -0.65);
+  const cam = currentCamera(); const c = new THREE.Vector3(); cam.getWorldPosition(c);
+  const f = new THREE.Vector3(); cam.getWorldDirection(f); f.y = 0; f.normalize();
+  const p = c.addScaledVector(f, 0.3); p.y = mammoth.root.position.y; return p;
+}
+
+// ---------- Camera mode (fallback: phone camera + 3D, no WebXR needed) ----------
+const floorY = -0.3;
+async function startCamera() {
+  mode = 'camera';
+  enterUI();
+  const v = $('video');
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 } }, audio: false });
+    v.srcObject = stream; await v.play(); v.style.display = 'block';
+  } catch (err) { log('No camera: ' + err.message); scene.background = new THREE.Color(0x1a2433); }
+  camera.position.set(0, 0, 0); camera.lookAt(0, floorY, -0.95);
+  place(new THREE.Vector3(0, floorY, -0.95));
+  let down = null, petted = false;
+  const canvas = renderer.domElement;
+  const ndc = (e) => new THREE.Vector2(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  const overMammoth = (e) => { raycaster.setFromCamera(ndc(e), camera); return raycaster.intersectObject(mammoth.hit, false).length > 0; };
+  canvas.addEventListener('pointerdown', (e) => { down = e; petted = overMammoth(e); if (petted) mammoth.pet(clock.elapsedTime); });
+  canvas.addEventListener('pointermove', (e) => { if (down && overMammoth(e)) { mammoth.pet(clock.elapsedTime); petted = true; } });
+  canvas.addEventListener('pointerup', (e) => {
+    if (down && !petted) {
+      raycaster.setFromCamera(ndc(e), camera);
+      const hit = new THREE.Vector3();
+      if (raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -floorY), hit)) mammoth.walkTo(hit);
+    }
+    down = null;
+  });
+  startVoice();
+}
+
+// ---------- Start screen ----------
+function enterUI() { ui.start.style.display = 'none'; ui.hud.style.display = 'block'; }
+document.querySelectorAll('#controls button[data-cmd]').forEach(b => {
+  b.addEventListener('beforexrselect', (e) => e.preventDefault());
+  b.addEventListener('click', () => handle(b.dataset.cmd));
+});
+$('exitBtn').addEventListener('beforexrselect', (e) => e.preventDefault());
+$('exitBtn').addEventListener('click', () => { const s = renderer.xr.getSession(); if (s) s.end(); else location.reload(); });
+
+$('camBtn').onclick = () => startCamera();
+$('arBtn').onclick = () => startAR().catch(err => { ui.support.textContent = 'AR could not start: ' + err.message + ' — try Camera mode.'; mode = null; ui.start.style.display = 'flex'; ui.hud.style.display = 'none'; });
+
+(async () => {
+  const ok = navigator.xr && await navigator.xr.isSessionSupported('immersive-ar').catch(() => false);
+  if (!ok) {
+    $('arBtn').disabled = true; $('arBtn').style.opacity = 0.4;
+    ui.support.textContent = 'Full AR needs Chrome on an ARCore Android phone. Camera mode works everywhere.';
+  }
+})();
+
+// ---------- Loop ----------
+renderer.setAnimationLoop((time, frame) => {
+  const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
+  if (mode === 'ar' && frame) arFrame(frame, dt);
+  if (mode === 'camera') torchFromVideo(dt, t);
+  if (mammoth) mammoth.update(dt, t);
+  updateFloaters(dt);
+  renderer.render(scene, camera);
+});
+</script>
+</body>
+</html>
