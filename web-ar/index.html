@@ -11,6 +11,7 @@
   html, body { margin:0; height:100%; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; overflow:hidden; }
   #video { position:fixed; inset:0; z-index:0; width:100%; height:100%; object-fit:cover; display:none; }
   canvas { position:fixed; inset:0; z-index:1; touch-action:none; }
+  #handCanvas { z-index:2; pointer-events:none; width:100%; height:100%; }
   #overlay { position:fixed; inset:0; z-index:5; pointer-events:none; display:flex; flex-direction:column; justify-content:space-between; padding:max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); }
   #hud { background:var(--panel); border-radius:16px; padding:12px 14px; backdrop-filter:blur(6px); }
   #status { font-weight:700; font-size:17px; line-height:1.3; }
@@ -24,8 +25,9 @@
   #start h1 { margin:0; font-size:34px; letter-spacing:-.5px; }
   #start p { margin:0; color:var(--muted); font-size:16px; line-height:1.5; max-width:420px; }
   #start .big { width:min(320px, 90vw); padding:16px; border:0; border-radius:16px; font-size:18px; font-weight:700; }
-  #arBtn { background:var(--cyan); color:#05202A; }
-  #camBtn { background:transparent; color:var(--text); border:1px solid rgba(255,255,255,.25) !important; }
+  #camBtn { background:var(--cyan); color:#05202A; }
+  #arBtn { background:transparent; color:var(--text); border:1px solid rgba(255,255,255,.25) !important; }
+  .small { font-size:13px; color:var(--muted); margin-top:-10px; }
   #support { font-size:14px; color:var(--orange); min-height:1em; }
   .tips { font-size:14px; color:var(--muted); line-height:1.6; }
   .tips b { color:var(--text); }
@@ -34,15 +36,17 @@
 </head>
 <body>
 <video id="video" playsinline muted></video>
+<canvas id="handCanvas"></canvas>
 
 <div id="start">
   <h1>🦣 AR Mammoth</h1>
-  <p>A little mammoth that lives on your table and reacts to you in real time.</p>
-  <button id="arBtn" class="big">Start AR</button>
-  <button id="camBtn" class="big">Camera mode</button>
+  <p>A little mammoth that reacts to your real hands, your voice and light — in real time.</p>
+  <button id="camBtn" class="big">✋ Start with real hands</button>
+  <div class="small">Prop the phone up (or hold it still) and reach in with your hand</div>
+  <button id="arBtn" class="big">Table AR (touch only)</button>
   <div id="support"></div>
   <div class="tips">
-    <b>Stroke it</b> with your finger · <b>tap the table</b> to call it<br>
+    <b>Pet it</b> with your hand · <b>poke</b> it · <b>wave</b> at it · hold your <b>open palm</b> still and it comes<br>
     Say <b>“hello”</b>, <b>“come here”</b>, <b>“dance”</b>, <b>“sit”</b>, <b>“jump”</b>, <b>“stop”</b><br>
     Shine a <b>torch</b> at it in a dim room
   </div>
@@ -166,7 +170,7 @@ class Brain {
     this.mood = 'idle'; this.moodT = 0; this.moodDur = 0;
     this.target = new THREE.Vector3(); this.look = null; this.lookUntil = 0; this.nextHeart = 0;
     this.eyeBase = m.eyes.map(e => e.scale.clone());
-    this.height = 0.2; this.speed = 0.18;
+    this.height = 0.2; this.speed = 0.18; this.lean = 0;
   }
   set(mood, dur) { if (mood !== this.mood) log('Mammoth: ' + mood); this.mood = mood; this.moodT = 0; this.moodDur = dur; }
   walkTo(p) { this.target.set(p.x, this.root.position.y, p.z); this.set('walking', 20); }
@@ -205,6 +209,7 @@ class Brain {
       case 'greeting': rx = Math.sin(t * 9) * 0.14; rz = Math.sin(t * 9) * 0.17; hop = Math.abs(Math.sin(t * 6)) * 0.05; break;
       case 'dazzled': rx = -0.2; ry = Math.sin(t * 30) * 0.07; squint = 0.2; break;
     }
+    rz -= this.lean * 0.28;   // leans away from your hand while you press on it
     b.scale.set(sx, sy, sz); b.position.y = hop * this.height; b.rotation.set(rx, ry, rz);
     this.eyes.forEach((e, i) => { e.scale.y += (this.eyeBase[i].y * squint - e.scale.y) * Math.min(1, 20 * dt); });
   }
@@ -429,6 +434,7 @@ async function startCamera() {
   } catch (err) { log('No camera: ' + err.message); scene.background = new THREE.Color(0x1a2433); }
   camera.position.set(0, 0, 0); camera.lookAt(0, floorY, -0.95);
   place(new THREE.Vector3(0, floorY, -0.95));
+  initHands();
   let down = null, petted = false;
   const canvas = renderer.domElement;
   const ndc = (e) => new THREE.Vector2(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
@@ -444,6 +450,140 @@ async function startCamera() {
     down = null;
   });
   startVoice();
+}
+
+
+// ---------- Real hand tracking (MediaPipe Hand Landmarker, runs on the phone) ----------
+const handCanvas = $('handCanvas'); const hctx = handCanvas.getContext('2d');
+function sizeHandCanvas() { handCanvas.width = innerWidth * devicePixelRatio; handCanvas.height = innerHeight * devicePixelRatio; }
+sizeHandCanvas(); addEventListener('resize', sizeHandCanvas);
+let landmarker = null, lastVideoTime = -1, showPoints = true;
+const BONES = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
+const TIPS = [4, 8, 12, 16, 20], PALM = [0, 5, 9, 13, 17];
+const hs = { seenSince: 0, prev: null, prevT: 0, stillSince: 0, waveDir: 0, flips: [], wasTouching: false, present: false };
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+
+async function initHands() {
+  setStatus('Loading hand tracking…');
+  try {
+    const { FilesetResolver, HandLandmarker } = await import('./lib/mediapipe/vision_bundle.mjs');
+    const fileset = await FilesetResolver.forVisionTasks(new URL('./lib/mediapipe/wasm', location.href).href);
+    const opts = (delegate) => ({
+      baseOptions: { modelAssetPath: new URL('./lib/mediapipe/hand_landmarker.task', location.href).href, delegate },
+      runningMode: 'VIDEO', numHands: 2, minHandDetectionConfidence: 0.5, minHandPresenceConfidence: 0.5, minTrackingConfidence: 0.5,
+    });
+    try { landmarker = await HandLandmarker.createFromOptions(fileset, opts('GPU')); }
+    catch (e) { console.warn('GPU hand tracking unavailable, using CPU', e); landmarker = await HandLandmarker.createFromOptions(fileset, opts('CPU')); }
+    setStatus('Reach in and touch the mammoth with your hand');
+    log('Hand tracking ready');
+  } catch (err) { setStatus('Hand tracking failed: ' + err.message); console.error(err); }
+}
+
+function videoMapping(v) {
+  const vw = v.videoWidth, vh = v.videoHeight, sc = Math.max(innerWidth / vw, innerHeight / vh);
+  const dw = vw * sc, dh = vh * sc, ox = (innerWidth - dw) / 2, oy = (innerHeight - dh) / 2;
+  return { ox, oy, dw, dh, map: (p) => ({ x: ox + p.x * dw, y: oy + p.y * dh }) };
+}
+
+function mammothScreenBox() {
+  const box = new THREE.Box3().setFromObject(mammoth.body);
+  let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9; const v = new THREE.Vector3();
+  for (const x of [box.min.x, box.max.x]) for (const y of [box.min.y, box.max.y]) for (const z of [box.min.z, box.max.z]) {
+    v.set(x, y, z).project(camera);
+    const sx = (v.x + 1) / 2 * innerWidth, sy = (1 - v.y) / 2 * innerHeight;
+    minX = Math.min(minX, sx); maxX = Math.max(maxX, sx); minY = Math.min(minY, sy); maxY = Math.max(maxY, sy);
+  }
+  return { minX, minY, maxX, maxY, cx: (minX + maxX) / 2, cy: (minY + maxY) / 2, w: maxX - minX, h: maxY - minY };
+}
+
+function screenToFloor(p) {
+  raycaster.setFromCamera(new THREE.Vector2(p.x / innerWidth * 2 - 1, -(p.y / innerHeight) * 2 + 1), camera);
+  const hit = new THREE.Vector3();
+  return raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -floorY), hit) ? hit : null;
+}
+
+function handFrame(dt, t) {
+  const v = $('video');
+  if (!landmarker || !mammoth || v.readyState < 2 || !v.videoWidth) return;
+  if (v.currentTime === lastVideoTime) return;
+  lastVideoTime = v.currentTime;
+  let res;
+  if (window.__testHandsScreen) {   // test hook: feed hand landmarks given in screen pixels
+    const M0 = videoMapping(v), pts = window.__testHandsScreen();
+    res = { landmarks: pts.map((h) => h.map((q) => ({ x: (q.x - M0.ox) / M0.dw, y: (q.y - M0.oy) / M0.dh }))) };
+  } else res = landmarker.detectForVideo(v, performance.now());
+  hctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+  hctx.clearRect(0, 0, innerWidth, innerHeight);
+  const M = videoMapping(v);
+  const hands = (res.landmarks || []).map((lm) => lm.map(M.map));
+  if (!hands.length) {
+    hs.prev = null; hs.wasTouching = false; hs.stillSince = 0;
+    if (hs.present) { hs.present = false; log('Hand left'); }
+    return;
+  }
+  if (!hs.present) { hs.present = true; hs.seenSince = t; log('Hand detected'); }
+
+  // Occlusion: paint the real hand's camera pixels on top of the mammoth.
+  hctx.globalCompositeOperation = 'source-over';
+  hctx.fillStyle = hctx.strokeStyle = '#fff'; hctx.lineCap = hctx.lineJoin = 'round';
+  for (const h of hands) {
+    hctx.lineWidth = dist(h[0], h[9]) * 0.36;
+    hctx.beginPath(); for (const [a, b] of BONES) { hctx.moveTo(h[a].x, h[a].y); hctx.lineTo(h[b].x, h[b].y); } hctx.stroke();
+    hctx.beginPath(); PALM.forEach((i, k) => k ? hctx.lineTo(h[i].x, h[i].y) : hctx.moveTo(h[i].x, h[i].y)); hctx.closePath(); hctx.fill();
+  }
+  hctx.globalCompositeOperation = 'source-in';
+  hctx.drawImage(v, M.ox, M.oy, M.dw, M.dh);
+  hctx.globalCompositeOperation = 'source-over';
+  if (showPoints) { hctx.fillStyle = 'rgba(41,197,230,0.9)'; for (const h of hands) for (const i of TIPS) { hctx.beginPath(); hctx.arc(h[i].x, h[i].y, 5, 0, 7); hctx.fill(); } }
+
+  // Pick the hand closest to the mammoth.
+  const B = mammothScreenBox(), pad = Math.min(B.w, B.h) * 0.06;
+  const inside = (p) => p.x > B.minX + pad && p.x < B.maxX - pad && p.y > B.minY + pad && p.y < B.maxY - pad;
+  let h = hands[0], bd = 1e9;
+  for (const c of hands) { const d = dist(c[9], { x: B.cx, y: B.cy }); if (d < bd) { bd = d; h = c; } }
+
+  const H = innerHeight;
+  const contacts = [...TIPS, ...PALM].filter((i) => inside(h[i])).length;
+  const touching = contacts >= 2;
+  const center = { x: (h[0].x + h[9].x) / 2, y: (h[0].y + h[9].y) / 2 }, tip = h[8];
+  let speed = 0, tipSpeed = 0, vx = 0;
+  if (hs.prev) {
+    const ddt = Math.max(1e-3, t - hs.prevT);
+    speed = dist(center, hs.prev.center) / ddt / H; tipSpeed = dist(tip, hs.prev.tip) / ddt / H; vx = (center.x - hs.prev.center.x) / ddt / H;
+  }
+  hs.prev = { center, tip }; hs.prevT = t;
+
+  // It watches your hand.
+  const floorPt = screenToFloor(center);
+  if (floorPt && mammoth.mood !== 'walking') { mammoth.look = floorPt; mammoth.lookUntil = t + 0.4; }
+
+  // Touch: poke = fast jab with the index finger; otherwise stroking / pressing = petting.
+  if (touching && !hs.wasTouching && tipSpeed > 1.6 && t - hs.seenSince > 0.6 && inside(tip)) { mammoth.jump(); log('Poke!'); }
+  else if (touching) {
+    mammoth.lean = THREE.MathUtils.clamp((center.x - B.cx) / (B.w * 0.5), -1, 1);
+    if (speed > 0.1 || contacts >= 4) mammoth.pet(t);
+  } else mammoth.lean *= 0.85;
+  hs.wasTouching = touching;
+
+  // Gestures with an open hand away from the mammoth.
+  const open = [8, 12, 16, 20].every((ti, k) => dist(h[ti], h[0]) > dist(h[[6, 10, 14, 18][k]], h[0]) * 1.1);
+  if (open && !touching) {
+    // Wave: palm moves left-right-left quickly.
+    const dir = Math.sign(vx);
+    if (Math.abs(vx) > 0.3 && dir !== hs.waveDir) { hs.waveDir = dir; hs.flips.push(t); }
+    hs.flips = hs.flips.filter((x) => t - x < 1.5);
+    if (hs.flips.length >= 3) { hs.flips = []; mammoth.greet(); log('You waved'); }
+    // Offer: hold the open palm still for a moment and it walks to your hand.
+    if (speed < 0.08) {
+      if (!hs.stillSince) hs.stillSince = t;
+      if (t - hs.stillSince > 1.2 && mammoth.mood !== 'walking' && floorPt) {
+        hs.stillSince = t + 3;   // cooldown
+        const target = floorPt.clone();
+        target.z = THREE.MathUtils.clamp(target.z, -1.4, -0.55); target.x = THREE.MathUtils.clamp(target.x, -0.5, 0.5);
+        mammoth.walkTo(target); log('Coming to your hand');
+      }
+    } else hs.stillSince = 0;
+  } else hs.stillSince = 0;
 }
 
 // ---------- Start screen ----------
@@ -462,7 +602,7 @@ $('arBtn').onclick = () => startAR().catch(err => { ui.support.textContent = 'AR
   const ok = navigator.xr && await navigator.xr.isSessionSupported('immersive-ar').catch(() => false);
   if (!ok) {
     $('arBtn').disabled = true; $('arBtn').style.opacity = 0.4;
-    ui.support.textContent = 'Full AR needs Chrome on an ARCore Android phone. Camera mode works everywhere.';
+    ui.support.textContent = 'Table AR needs Chrome on an ARCore Android phone. Real-hands mode works everywhere.';
   }
 })();
 
@@ -470,7 +610,7 @@ $('arBtn').onclick = () => startAR().catch(err => { ui.support.textContent = 'AR
 renderer.setAnimationLoop((time, frame) => {
   const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
   if (mode === 'ar' && frame) arFrame(frame, dt);
-  if (mode === 'camera') torchFromVideo(dt, t);
+  if (mode === 'camera') { torchFromVideo(dt, t); handFrame(dt, t); }
   if (mammoth) mammoth.update(dt, t);
   updateFloaters(dt);
   renderer.render(scene, camera);
