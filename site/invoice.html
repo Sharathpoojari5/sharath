@@ -1,0 +1,35 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Free GST Invoice Generator India – CGST SGST IGST, Print to PDF</title>
+<meta name="description" content="Free online GST invoice maker for India. Auto CGST/SGST/IGST, amount in words, print or save as PDF. No signup, runs in your browser.">
+<link rel="stylesheet" href="style.css"></head><body>
+<header><div class="w"><a href="/">📊 Small Business Toolkit India</a></div></header>
+<main class="w">
+<h1>Free GST Invoice Generator</h1>
+<p class="lead noprint">No signup. Your data never leaves your browser. Fill in, then click Print → Save as PDF.</p>
+<div class="row"><div><label>Your business name</label><input id="sn"></div><div><label>Your GSTIN</label><input id="sg"></div><div><label>Your state code (e.g. 29)</label><input id="ss" value="29"></div></div>
+<div class="row"><div><label>Customer name</label><input id="cn"></div><div><label>Customer GSTIN</label><input id="cg"></div><div><label>Customer state code</label><input id="cs" value="29"></div></div>
+<div class="row"><div><label>Invoice no.</label><input id="no" value="INV-001"></div><div><label>Date</label><input id="dt" type="date"></div><div><label>UPI / bank details</label><input id="bk"></div></div>
+<table id="t"><thead><tr><th>Item</th><th>Qty</th><th>Rate ₹</th><th>GST %</th><th>Taxable</th><th>Tax</th><th>Total</th></tr></thead><tbody></tbody>
+<tfoot><tr><th colspan="4" style="text-align:right">Total</th><th id="xt">0</th><th id="xx">0</th><th id="xg">0</th></tr></tfoot></table>
+<p id="tax" style="color:var(--mut)"></p><p id="words"><b></b></p>
+<p class="noprint"><button class="btn alt" onclick="add()">+ Add item</button> <button class="btn" onclick="print()">Print / Save PDF</button></p>
+<div class="card noprint"><b>Need expense, stock and lead tracking too?</b> Get all 4 Excel templates for ₹299. <a href="index.html">See the toolkit →</a></div>
+<div class="noprint"><h2>How GST is split</h2><p>If your state code and the customer's state code are the same, GST is split equally into CGST and SGST. If they differ, the full amount is IGST. Common rates are 0, 5, 12, 18 and 28%. This tool is a calculation aid, not tax advice.</p></div>
+</main>
+<footer><div class="w">© Small Business Toolkit India</div></footer>
+<script>
+const $=id=>document.getElementById(id),tb=document.querySelector('#t tbody');
+$('dt').valueAsDate=new Date();
+function add(){const r=tb.insertRow();r.innerHTML='<td><input class="i"></td><td><input class="q" type="number" value="1" min="0"></td><td><input class="p" type="number" value="0" min="0"></td><td><select class="g"><option>0<option>5<option>12<option selected>18<option>28</select></td><td class="a">0</td><td class="b">0</td><td class="c">0</td>';r.querySelectorAll('input,select').forEach(e=>e.oninput=calc)}
+const f=n=>n.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+function calc(){let T=0,X=0;[...tb.rows].forEach(r=>{const q=+r.querySelector('.q').value,p=+r.querySelector('.p').value,g=+r.querySelector('.g').value,a=q*p,x=a*g/100;r.querySelector('.a').textContent=f(a);r.querySelector('.b').textContent=f(x);r.querySelector('.c').textContent=f(a+x);T+=a;X+=x});
+$('xt').textContent=f(T);$('xx').textContent=f(X);$('xg').textContent=f(T+X);
+const same=$('ss').value.trim()===$('cs').value.trim();
+$('tax').textContent=same?`Same state → CGST ₹${f(X/2)} + SGST ₹${f(X/2)}`:`Different state → IGST ₹${f(X)}`;
+$('words').firstChild.textContent='In words: '+words(Math.round(T+X))+' only'}
+function words(n){if(!n)return'Zero Rupees';const o='One Two Three Four Five Six Seven Eight Nine Ten Eleven Twelve Thirteen Fourteen Fifteen Sixteen Seventeen Eighteen Nineteen'.split(' '),t='_ _ Twenty Thirty Forty Fifty Sixty Seventy Eighty Ninety'.split(' ');
+const b=x=>x<20?o[x-1]||'':t[Math.floor(x/10)]+(x%10?' '+o[x%10-1]:'');
+const h=x=>(x>=100?o[Math.floor(x/100)-1]+' Hundred '+(x%100?'':''):'')+b(x%100);
+let s='';[[1e7,'Crore'],[1e5,'Lakh'],[1e3,'Thousand']].forEach(([d,l])=>{const q=Math.floor(n/d);if(q){s+=h(q)+' '+l+' ';n%=d}});if(n)s+=h(n);return'Rupees '+s.trim().replace(/\s+/g,' ')}
+['ss','cs'].forEach(i=>$(i).oninput=calc);add();calc();
+</script></body></html>
