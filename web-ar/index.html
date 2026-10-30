@@ -27,6 +27,12 @@
   #start .big { width:min(320px, 90vw); padding:16px; border:0; border-radius:16px; font-size:18px; font-weight:700; }
   #arBtn { background:var(--cyan); color:#05202A; }
   #camBtn { background:transparent; color:var(--text); border:1px solid rgba(255,255,255,.25) !important; }
+  #recBtn { background:#E4572E !important; border-color:#E4572E !important; color:#fff !important; }
+  #reel { position:fixed; inset:0; z-index:20; display:none; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:20px; text-align:center; background:var(--bg); }
+  #reel video { max-width:92vw; max-height:62vh; border-radius:14px; background:#000; }
+  #reel .bar { width:min(340px,86vw); height:10px; border-radius:6px; background:#22344d; overflow:hidden; }
+  #reel .bar i { display:block; height:100%; width:0; background:var(--cyan); }
+  #reel a.btn, #reel button.btn { display:inline-block; padding:14px 22px; border-radius:14px; border:0; font-size:17px; font-weight:700; background:var(--cyan); color:#05202A; text-decoration:none; }
   .small { font-size:13px; color:var(--muted); margin-top:-10px; }
   #support { font-size:14px; color:var(--orange); min-height:1em; }
   .tips { font-size:14px; color:var(--muted); line-height:1.6; }
@@ -42,7 +48,9 @@
   <p>A little mammoth that reacts to your real hands, your voice and light — in real time.</p>
   <button id="arBtn" class="big">✋ Start AR on my table</button>
   <div class="small">Chrome on an Android phone with ARCore · reach in with your real hand</div>
-  <button id="camBtn" class="big">Camera mode (any phone)</button>
+  <button id="reelBtn" class="big" style="background:#E4572E;color:#fff">🎬 Record a reel (best looking)</button>
+  <div class="small">Prop the phone up, record yourself reaching in, get a finished video</div>
+  <button id="camBtn" class="big">Live camera mode (any phone)</button>
   <div id="support"></div>
   <div class="tips">
     Reach in and <b>pet it with your real hand</b> · <b>poke</b> it · <b>wave</b> at it · hold your <b>open palm</b> still and it comes<br>
@@ -64,7 +72,19 @@
     <button data-cmd="dance">💃 Dance</button>
     <button data-cmd="sit">Sit</button>
     <button data-cmd="jump">Jump</button>
+    <button id="recBtn" style="display:none">⏺ Record</button>
     <button class="exit" id="exitBtn">Exit</button>
+  </div>
+</div>
+
+<div id="reel">
+  <div id="reelTitle" style="font-size:20px;font-weight:700">Rendering your reel…</div>
+  <div class="bar"><i id="reelBar"></i></div>
+  <div id="reelMsg" style="color:var(--muted);font-size:14px;max-width:360px"></div>
+  <video id="reelOut" controls playsinline loop style="display:none"></video>
+  <div id="reelActions" style="display:none;gap:10px;flex-wrap:wrap;justify-content:center">
+    <a id="reelDl" class="btn" download="mammoth-reel.mp4">⬇ Save video</a>
+    <button id="reelAgain" class="btn" style="background:transparent;color:var(--text);border:1px solid rgba(255,255,255,.3)">Record again</button>
   </div>
 </div>
 
@@ -180,8 +200,8 @@ class Brain {
   sit() { this.set('sitting', 6); }
   jump() { this.set('jumping', 0.8); }
   calm() { this.set('idle', 0); }
-  dazzle(p) { this.look = p.clone(); this.lookUntil = clock.elapsedTime + 1; if (this.mood === 'idle' || this.mood === 'dazzled') this.set('dazzled', 1.2); }
-  lookAtCamera(sec) { const c = new THREE.Vector3(); currentCamera().getWorldPosition(c); this.look = c; this.lookUntil = clock.elapsedTime + sec; }
+  dazzle(p) { this.look = p.clone(); this.lookUntil = nowT() + 1; if (this.mood === 'idle' || this.mood === 'dazzled') this.set('dazzled', 1.2); }
+  lookAtCamera(sec) { const c = new THREE.Vector3(); currentCamera().getWorldPosition(c); this.look = c; this.lookUntil = nowT() + sec; }
 
   update(dt, t) {
     this.moodT += dt;
@@ -235,6 +255,8 @@ function updateFloaters(dt) {
 
 // ---------- Shared state ----------
 const clock = new THREE.Clock();
+let simT = null;                       // when rendering a reel, reactions run on recorded time
+const nowT = () => (simT !== null ? simT : clock.elapsedTime);
 let mode = null;            // 'ar' | 'camera'
 let mammoth = null;         // Brain
 const raycaster = new THREE.Raycaster();
@@ -505,19 +527,24 @@ function mammothScreenBox(project) {
 }
 
 // Paint the real hand (cut out of the camera image) on top of the 3D scene so it looks like the hand is in front.
-function drawHandCutout(hands, src, ox, oy, dw, dh, isFront) {
-  hctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
-  hctx.clearRect(0, 0, innerWidth, innerHeight);
+function drawHandCutout(hands, src, ox, oy, dw, dh, isFront, target) {
+  const out = target || hctx;
+  if (!target) { hctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0); hctx.clearRect(0, 0, innerWidth, innerHeight); }
   const front = hands.filter(isFront);
-  hctx.globalCompositeOperation = 'source-over';
-  hctx.fillStyle = hctx.strokeStyle = '#fff'; hctx.lineCap = hctx.lineJoin = 'round';
+  // draw the mask on a scratch canvas, cut the video through it, then paste onto the target
+  const hctxMain = hctx; const scratch = target ? (drawHandCutout.sc || (drawHandCutout.sc = document.createElement('canvas'))) : null;
+  let hctx_ = hctxMain;
+  if (target) { scratch.width = innerWidth; scratch.height = innerHeight; hctx_ = scratch.getContext('2d'); hctx_.setTransform(1, 0, 0, 1, 0, 0); hctx_.clearRect(0, 0, innerWidth, innerHeight); }
+  hctx_.globalCompositeOperation = 'source-over';
+  hctx_.fillStyle = hctx_.strokeStyle = '#fff'; hctx_.lineCap = hctx_.lineJoin = 'round';
   for (const h of front) {
-    hctx.lineWidth = dist(h[0], h[9]) * 0.36;
-    hctx.beginPath(); for (const [a, b] of BONES) { hctx.moveTo(h[a].x, h[a].y); hctx.lineTo(h[b].x, h[b].y); } hctx.stroke();
-    hctx.beginPath(); PALM.forEach((i, k) => k ? hctx.lineTo(h[i].x, h[i].y) : hctx.moveTo(h[i].x, h[i].y)); hctx.closePath(); hctx.fill();
+    hctx_.lineWidth = dist(h[0], h[9]) * 0.36;
+    hctx_.beginPath(); for (const [a, b] of BONES) { hctx_.moveTo(h[a].x, h[a].y); hctx_.lineTo(h[b].x, h[b].y); } hctx_.stroke();
+    hctx_.beginPath(); PALM.forEach((i, k) => k ? hctx_.lineTo(h[i].x, h[i].y) : hctx_.moveTo(h[i].x, h[i].y)); hctx_.closePath(); hctx_.fill();
   }
-  if (front.length) { hctx.globalCompositeOperation = 'source-in'; hctx.drawImage(src, ox, oy, dw, dh); hctx.globalCompositeOperation = 'source-over'; }
-  if (showPoints) { hctx.fillStyle = 'rgba(41,197,230,0.9)'; for (const h of hands) for (const i of TIPS) { hctx.beginPath(); hctx.arc(h[i].x, h[i].y, 5, 0, 7); hctx.fill(); } }
+  if (front.length) { hctx_.globalCompositeOperation = 'source-in'; hctx_.drawImage(src, ox, oy, dw, dh); hctx_.globalCompositeOperation = 'source-over'; }
+  if (target && front.length) { out.drawImage(scratch, 0, 0, innerWidth, innerHeight); }
+  if (showPoints && !target) { hctx_.fillStyle = 'rgba(41,197,230,0.9)'; for (const h of hands) for (const i of TIPS) { hctx_.beginPath(); hctx_.arc(h[i].x, h[i].y, 5, 0, 7); hctx_.fill(); } }
 }
 
 // Turns hand positions into mammoth reactions.  hands: arrays of 21 points in screen pixels (optionally with .w3 = world position).
@@ -542,7 +569,8 @@ function reactToHands(hands, t, ctx) {
 
   // It watches your hand.
   const floorPt = ctx.floorOf(center);
-  if (floorPt && mammoth.mood !== 'walking') { mammoth.look = floorPt; mammoth.lookUntil = t + 0.4; }
+  const lookPt = ctx.lookCenter ? ctx.floorOf(ctx.lookCenter()) : floorPt;   // reel mode looks ahead
+  if (lookPt && mammoth.mood !== 'walking') { mammoth.look = lookPt; mammoth.lookUntil = t + 0.4; }
 
   // Touch: poke = fast jab with the index finger; otherwise stroking / pressing = petting.
   if (touching && !hs.wasTouching && tipSpeed > 1.6 && t - hs.seenSince > 0.6 && inside(tip)) { mammoth.jump(); log('Poke!'); }
@@ -701,6 +729,145 @@ function arHandFrame(session, frame, dt, t) {
   });
 }
 
+// ---------- Record a reel: record first, render afterwards (like a post-production pipeline) ----------
+import { Muxer, ArrayBufferTarget } from './lib/mp4-muxer.mjs';
+let rendering = false, recorder = null, recChunks = [], recStart = 0, recTimer = null;
+const FPS = 30;
+
+function pickMime() { for (const m of ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4']) if (window.MediaRecorder && MediaRecorder.isTypeSupported(m)) return m; return ''; }
+function toggleRecord() {
+  const btn = $('recBtn');
+  if (recorder && recorder.state === 'recording') { recorder.stop(); return; }
+  const stream = $('video').srcObject; if (!stream) { log('No camera to record'); return; }
+  recChunks = [];
+  recorder = new MediaRecorder(stream, { mimeType: pickMime() || undefined, videoBitsPerSecond: 8e6 });
+  recorder.ondataavailable = (e) => { if (e.data && e.data.size) recChunks.push(e.data); };
+  recorder.onstop = () => { clearInterval(recTimer); btn.textContent = '⏺ Record'; renderReel(new Blob(recChunks, { type: recorder.mimeType || 'video/webm' })); };
+  recorder.start(250); recStart = performance.now(); btn.textContent = '⏹ Stop (0s)';
+  setStatus('Recording… reach in and play with the mammoth');
+  recTimer = setInterval(() => {
+    const sec = Math.round((performance.now() - recStart) / 1000); btn.textContent = `⏹ Stop (${sec}s)`;
+    if (sec >= 20) recorder.stop();
+  }, 250);
+}
+
+const once = (el, ev) => new Promise((r) => el.addEventListener(ev, r, { once: true }));
+const evenSize = (n) => Math.max(2, Math.round(n / 2) * 2);
+
+function smoothTracks(raw) {
+  const n = raw.length, out = raw.map((h) => h && h.map((q) => ({ x: q.x, y: q.y })));
+  // 1) fill short gaps (<= 6 frames) by interpolating between the neighbouring detections
+  let i = 0;
+  while (i < n) {
+    if (out[i]) { i++; continue; }
+    let j = i; while (j < n && !out[j]) j++;
+    if (i > 0 && j < n && j - i <= 6) {
+      const a = out[i - 1], b = out[j];
+      for (let k = i; k < j; k++) { const f = (k - i + 1) / (j - i + 1); out[k] = a.map((q, m) => ({ x: q.x + (b[m].x - q.x) * f, y: q.y + (b[m].y - q.y) * f })); }
+    }
+    i = j;
+  }
+  // 2) light smoothing, forwards and backwards (no lag, because the whole clip is known)
+  const pass = (arr, dir) => { let prev = null; const idx = [...Array(n).keys()]; if (dir < 0) idx.reverse();
+    for (const k of idx) { const h = arr[k]; if (!h) { prev = null; continue; } if (prev) h.forEach((q, m) => { q.x = prev[m].x * 0.4 + q.x * 0.6; q.y = prev[m].y * 0.4 + q.y * 0.6; }); prev = h; } };
+  pass(out, 1); pass(out, -1);
+  return out;
+}
+
+async function makeEncoder(W, H) {
+  if (!window.VideoEncoder) throw new Error('This browser cannot export video (needs Chrome).');
+  for (const [codec, str] of [['avc', 'avc1.4d0028'], ['avc', 'avc1.42001f'], ['vp9', 'vp09.00.10.08']]) {
+    const cfg = { codec: str, width: W, height: H, bitrate: 5e6, framerate: FPS };
+    let sup = false; try { sup = (await VideoEncoder.isConfigSupported(cfg)).supported; } catch {}
+    if (!sup) continue;
+    const muxer = new Muxer({ target: new ArrayBufferTarget(), video: { codec, width: W, height: H, frameRate: FPS }, fastStart: 'in-memory' });
+    const encoder = new VideoEncoder({ output: (chunk, meta) => muxer.addVideoChunk(chunk, meta), error: (e) => { throw e; } });
+    encoder.configure(cfg);
+    return { muxer, encoder, codec };
+  }
+  throw new Error('No video encoder available on this phone.');
+}
+
+async function renderReel(blob) {
+  rendering = true;
+  const panel = $('reel'), bar = $('reelBar'), msg = $('reelMsg'), out = $('reelOut');
+  panel.style.display = 'flex'; out.style.display = 'none'; $('reelActions').style.display = 'none'; $('reelTitle').textContent = 'Rendering your reel…'; bar.style.width = '0%';
+  const prog = (f, m) => { bar.style.width = (f * 100).toFixed(1) + '%'; if (m) msg.textContent = m; };
+  try {
+    await initHands(); if (!landmarker) throw new Error('Hand tracking did not load.');
+    const rv = document.createElement('video'); rv.muted = true; rv.playsInline = true; rv.preload = 'auto'; rv.src = URL.createObjectURL(blob);
+    await once(rv, 'loadedmetadata');
+    const measured = (performance.now() - recStart) / 1000;
+    if (!isFinite(rv.duration)) { rv.currentTime = 1e7; await new Promise((r) => { rv.ontimeupdate = () => { rv.ontimeupdate = null; r(); }; setTimeout(r, 1500); }); }
+    const dur = isFinite(rv.duration) && rv.duration > 0 ? rv.duration : measured;
+    const seek = (t) => new Promise((r) => { const done = () => { rv.removeEventListener('seeked', done); r(); }; rv.addEventListener('seeked', done); rv.currentTime = Math.min(t, Math.max(0, dur - 0.05)); });
+    const n = Math.max(2, Math.min(FPS * 20, Math.floor((dur - 0.1) * FPS)));
+    await seek(0);
+
+    // PASS 1 — watch the whole clip and find the hand in every frame.
+    const raw = new Array(n); let prevC = null;
+    for (let i = 0; i < n; i++) {
+      await seek(i / FPS);
+      let lms;
+      if (window.__testHandsNormFrame) lms = window.__testHandsNormFrame(i) || [];
+      else lms = landmarker.detectForVideo(rv, performance.now()).landmarks || [];
+      let pick = null;
+      if (lms.length) { pick = lms[0]; if (prevC) { let bd = 1e9; for (const h of lms) { const d = Math.hypot(h[9].x - prevC.x, h[9].y - prevC.y); if (d < bd) { bd = d; pick = h; } } } prevC = { x: pick[9].x, y: pick[9].y }; }
+      raw[i] = pick;
+      if (i % 5 === 0) prog(0.45 * i / n, `Step 1 of 2: finding your hand… ${Math.round(100 * i / n)}%`);
+    }
+    const hands = smoothTracks(raw);
+
+    // PASS 2 — render the mammoth, reacting with look-ahead, and export.
+    const q = Math.min(2, 720 / innerWidth), W = evenSize(innerWidth * q), Hh = evenSize(innerHeight * q);
+    const oc = document.createElement('canvas'); oc.width = W; oc.height = Hh; const octx = oc.getContext('2d');
+    const { muxer, encoder } = await makeEncoder(W, Hh);
+    const home = mammoth.root.position.clone(), yaw = mammoth.root.rotation.y;
+    mammoth.root.position.copy(home); mammoth.root.rotation.y = yaw; mammoth.mood = 'idle'; mammoth.look = null; mammoth.lean = 0; mammoth.nextHeart = 0;
+    for (const f of floaters.splice(0)) { scene.remove(f.h); f.h.geometry.dispose(); }
+    Object.assign(hs, { seenSince: 0, prev: null, prevT: 0, stillSince: 0, waveDir: 0, flips: [], wasTouching: false, present: false });
+    lastVideoTime = -1;
+    const project = (p) => { p.project(camera); return { x: (p.x + 1) / 2 * innerWidth, y: (1 - p.y) / 2 * innerHeight }; };
+    const centreOf = (h, M) => { const a = M.map(h[0]), b = M.map(h[9]); return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; };
+    for (let i = 0; i < n; i++) {
+      const t = i / FPS; simT = t;
+      await seek(t);
+      const M = videoMapping(rv);
+      const h = hands[i] ? hands[i].map(M.map) : null;
+      const ahead = hands[Math.min(n - 1, i + 8)] || hands[i];     // where the hand will be in ~0.27 s
+      if (h) {
+        handsSeen(t);
+        reactToHands([h], t, {
+          B: mammothScreenBox(project),
+          floorOf: (c) => { const qn = new THREE.Vector2(c.x / innerWidth * 2 - 1, -(c.y / innerHeight) * 2 + 1); raycaster.setFromCamera(qn, camera); const hit = new THREE.Vector3(); return raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -floorY), hit) ? hit : null; },
+          limitTarget: (p) => { p.z = THREE.MathUtils.clamp(p.z, -1.4, -0.55); p.x = THREE.MathUtils.clamp(p.x, -0.5, 0.5); return p; },
+          lookCenter: () => (ahead ? centreOf(ahead, M) : centreOf(hands[i], M)),
+        });
+      } else { hs.prev = null; hs.wasTouching = false; hs.stillSince = 0; mammoth.lean *= 0.85; if (hs.present) { hs.present = false; } }
+      mammoth.update(1 / FPS, t); updateFloaters(1 / FPS);
+      renderer.render(scene, camera);
+      octx.setTransform(q, 0, 0, q, 0, 0); octx.clearRect(0, 0, innerWidth, innerHeight);
+      octx.drawImage(rv, M.ox, M.oy, M.dw, M.dh);
+      octx.drawImage(renderer.domElement, 0, 0, innerWidth, innerHeight);
+      if (h) drawHandCutout([h], rv, M.ox, M.oy, M.dw, M.dh, () => true, octx);
+      octx.setTransform(1, 0, 0, 1, 0, 0);
+      const frame = new VideoFrame(oc, { timestamp: Math.round(i * 1e6 / FPS) });
+      encoder.encode(frame, { keyFrame: i % FPS === 0 }); frame.close();
+      if (encoder.encodeQueueSize > 8) await new Promise((r) => setTimeout(r, 10));
+      if (i % 3 === 0) prog(0.45 + 0.55 * i / n, `Step 2 of 2: adding the mammoth… ${Math.round(100 * i / n)}%`);
+    }
+    await encoder.flush(); muxer.finalize();
+    const mp4 = new Blob([muxer.target.buffer], { type: 'video/mp4' });
+    simT = null; prog(1, '');
+    out.src = URL.createObjectURL(mp4); out.style.display = 'block'; out.play().catch(() => {});
+    $('reelDl').href = out.src; $('reelActions').style.display = 'flex'; $('reelTitle').textContent = 'Your reel is ready';
+    window.__reelResult = { bytes: mp4.size, frames: n, duration: dur };
+  } catch (err) {
+    console.error(err); simT = null; $('reelTitle').textContent = 'Could not render the reel'; msg.textContent = err.message; $('reelActions').style.display = 'flex'; $('reelDl').style.display = 'none';
+  }
+}
+$('reelAgain').onclick = () => location.reload();
+
 // ---------- Start screen ----------
 function enterUI() { ui.start.style.display = 'none'; ui.hud.style.display = 'block'; }
 document.querySelectorAll('#controls button[data-cmd]').forEach(b => {
@@ -711,6 +878,8 @@ $('exitBtn').addEventListener('beforexrselect', (e) => e.preventDefault());
 $('exitBtn').addEventListener('click', () => { const s = renderer.xr.getSession(); if (s) s.end(); else location.reload(); });
 
 $('camBtn').onclick = () => startCamera();
+$('reelBtn').onclick = async () => { await startCamera(); $('recBtn').style.display = ''; setStatus('Prop the phone up, then tap Record and reach in'); };
+$('recBtn').addEventListener('click', toggleRecord);
 $('arBtn').onclick = () => startAR().catch(err => { ui.support.textContent = 'AR could not start: ' + err.message + ' — try Camera mode.'; mode = null; ui.start.style.display = 'flex'; ui.hud.style.display = 'none'; });
 
 (async () => {
@@ -724,6 +893,7 @@ $('arBtn').onclick = () => startAR().catch(err => { ui.support.textContent = 'AR
 // ---------- Loop ----------
 window.__arTest = { arHandFrame, getMammoth: () => mammoth, camera, clock, hs, THREE };   // test hook
 renderer.setAnimationLoop((time, frame) => {
+  if (rendering) return;
   const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
   if (mode === 'ar' && frame) arFrame(frame, dt);
   if (mode === 'camera') { torchFromVideo(dt, t); handFrame(dt, t); }
