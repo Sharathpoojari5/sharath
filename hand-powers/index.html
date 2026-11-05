@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#05060d">
+<title>Hand Powers</title>
+<meta name="description" content="Raise your hand. Shoot lightning, hold a black hole, set your fingers on fire. Record it and post it.">
+<style>
+  :root{--bg:#05060d;--ink:#eef2ff;--dim:#8d97b8;--acc:#7c5cff}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Arial,sans-serif;overflow:hidden;overscroll-behavior:none}
+  #app{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(1200px 800px at 50% 0,#14173a,#05060d 70%)}
+  #frame{position:relative;height:100%;max-width:100%;aspect-ratio:9/16;background:#000;overflow:hidden}
+  @media (min-aspect-ratio:9/16){#frame{height:min(100%,100vh);box-shadow:0 0 0 1px #1c2147,0 30px 120px #3b2bb855;border-radius:0}}
+  canvas#out{position:absolute;inset:0;width:100%;height:100%;display:block}
+  video#cam{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+  .layer{position:absolute;inset:0;pointer-events:none}
+  .layer>*{pointer-events:auto}
+  #top{position:absolute;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top) + 14px) 16px 0;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
+  .brand{font-weight:800;letter-spacing:.22em;font-size:12px;color:#fff;text-shadow:0 0 12px #7c5cff}
+  .fps{font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums}
+  #hint{position:absolute;left:0;right:0;top:42%;text-align:center;font-size:20px;font-weight:700;text-shadow:0 2px 18px #000;pointer-events:none;transition:opacity .4s;padding:0 24px}
+  #hint small{display:block;margin-top:8px;font-size:14px;font-weight:500;color:#cdd3f5}
+  #modeName{position:absolute;left:0;right:0;top:22%;text-align:center;font-size:44px;font-weight:900;letter-spacing:.06em;opacity:0;transition:opacity .5s;pointer-events:none;text-shadow:0 0 30px currentColor}
+  #bar{position:absolute;left:0;right:0;bottom:0;padding:14px 12px calc(env(safe-area-inset-bottom) + 16px);display:flex;gap:10px;align-items:center;justify-content:center;background:linear-gradient(transparent,#000a 60%)}
+  .mode{appearance:none;border:1px solid #ffffff2a;background:#10132bcc;color:var(--ink);border-radius:16px;padding:10px 14px;font:700 13px inherit;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:78px;backdrop-filter:blur(8px)}
+  .mode span{font-size:24px;line-height:1}
+  .mode.on{border-color:#fff;background:#2a2470dd;box-shadow:0 0 22px #7c5cff88}
+  #rec{appearance:none;width:74px;height:74px;border-radius:50%;border:4px solid #fff;background:transparent;padding:0;position:relative;flex:none}
+  #rec::after{content:"";position:absolute;inset:7px;border-radius:50%;background:#ff2d55;transition:all .2s}
+  #rec.live::after{inset:20px;border-radius:8px}
+  #rec svg{position:absolute;inset:-4px;width:calc(100% + 8px);height:calc(100% + 8px);transform:rotate(-90deg)}
+  #rec circle{fill:none;stroke:#ff2d55;stroke-width:4;stroke-dasharray:226;stroke-dashoffset:226}
+  #start{position:absolute;inset:0;background:radial-gradient(700px 520px at 50% 28%,#2c1f86cc,#05060dee 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:28px;gap:14px;z-index:10}
+  #start h1{font-size:46px;line-height:1;margin:0;letter-spacing:.04em;font-weight:900;background:linear-gradient(90deg,#9ee7ff,#b79bff,#ff9ad5);-webkit-background-clip:text;background-clip:text;color:transparent}
+  #start p{margin:0;max-width:300px;color:#cdd3f5;font-size:16px;line-height:1.45}
+  .btn{appearance:none;border:0;border-radius:999px;padding:16px 30px;font:800 17px inherit;color:#fff;background:linear-gradient(90deg,#7c5cff,#ff4fa3);box-shadow:0 8px 40px #7c5cff88}
+  .link{appearance:none;background:none;border:0;color:var(--dim);font:600 14px inherit;text-decoration:underline;padding:8px}
+  #msg{color:#ffb3c1;font-size:14px;max-width:300px;min-height:18px}
+  #loading{font-size:13px;color:var(--dim)}
+  #result{position:absolute;inset:0;background:#05060df2;z-index:20;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:18px}
+  #result.show{display:flex}
+  #result video{max-height:68%;max-width:100%;border-radius:14px;box-shadow:0 0 0 1px #2b3170}
+  #result .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  #result .btn{padding:13px 22px;font-size:15px}
+  #result .btn.alt{background:#1a1e44;box-shadow:none}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="frame">
+    <canvas id="out" width="720" height="1280"></canvas>
+    <video id="cam" playsinline muted autoplay></video>
+    <div class="layer" id="ui">
+      <div id="top"><div class="brand">HAND POWERS</div><div class="fps" id="fps"></div></div>
+      <div id="modeName"></div>
+      <div id="hint">Show your hand ✋<small>close it into a fist, then open it fast</small></div>
+      <div id="bar">
+        <button class="mode on" data-mode="lightning"><span>⚡</span>Lightning</button>
+        <button class="mode" data-mode="galaxy"><span>🌌</span>Galaxy</button>
+        <button id="rec" aria-label="Record"><svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="36"/></svg></button>
+        <button class="mode" data-mode="fire"><span>🔥</span>Fire</button>
+      </div>
+    </div>
+    <div id="start">
+      <h1>HAND<br>POWERS</h1>
+      <p>Raise your hand. Shoot lightning, hold a galaxy, set your fingers on fire. Then record it and post it.</p>
+      <button class="btn" id="go">Start camera</button>
+      <div id="msg"></div>
+      <button class="link" id="demo">or try it without a camera</button>
+      <div id="loading"></div>
+    </div>
+    <div id="result">
+      <video id="resVid" controls playsinline loop></video>
+      <div class="row">
+        <button class="btn" id="save">Save video</button>
+        <button class="btn alt" id="share">Share</button>
+        <button class="btn alt" id="again">Record again</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+/* ============================ basics ============================ */
+const W = 720, H = 1280;
+const cv = document.getElementById('out'), ctx = cv.getContext('2d');
+const cam = document.getElementById('cam');
+const $ = (id) => document.getElementById(id);
+const qs = new URLSearchParams(location.search);
+const DEMO_Q = qs.get('demo');                       // ?demo=lightning|galaxy|fire  -> no camera (also used for testing)
+let mode = qs.get('mode') || DEMO_Q || 'lightning';
+let useDemo = !!DEMO_Q, started = false, landmarker = null;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const rnd = (a = 1, b) => b === undefined ? Math.random() * a : a + Math.random() * (b - a);
+const TAU = Math.PI * 2;
+
+/* glow sprites: one pre-rendered soft dot per colour, drawn with additive blending (fast on phones) */
+const sprites = {};
+function sprite(r, g, b) {
+  const k = r + ',' + g + ',' + b; if (sprites[k]) return sprites[k];
+  const c = document.createElement('canvas'); c.width = c.height = 128;
+  const x = c.getContext('2d'), gr = x.createRadialGradient(64, 64, 0, 64, 64, 64);
+  gr.addColorStop(0, `rgba(255,255,255,1)`); gr.addColorStop(.16, `rgba(${r},${g},${b},.95)`);
+  gr.addColorStop(.5, `rgba(${r},${g},${b},.28)`); gr.addColorStop(1, `rgba(${r},${g},${b},0)`);
+  x.fillStyle = gr; x.fillRect(0, 0, 128, 128); return sprites[k] = c;
+}
+function glow(x, y, rad, rgb, a = 1) {
+  ctx.globalAlpha = a; const s = sprite(...rgb); ctx.drawImage(s, x - rad, y - rad, rad * 2, rad * 2);
+}
+
+/* ============================ audio ============================ */
+let AC = null, master = null, recDest = null, drone = null, fireSrc = null;
+function initAudio() {
+  if (AC) return;
+  AC = new (window.AudioContext || window.webkitAudioContext)();
+  master = AC.createGain(); master.gain.value = .8; master.connect(AC.destination);
+  recDest = AC.createMediaStreamDestination(); master.connect(recDest);
+  // continuous layers
+  drone = { o1: AC.createOscillator(), o2: AC.createOscillator(), f: AC.createBiquadFilter(), g: AC.createGain() };
+  drone.o1.type = 'sawtooth'; drone.o2.type = 'sine'; drone.f.type = 'lowpass'; drone.f.frequency.value = 300; drone.g.gain.value = 0;
+  drone.o1.connect(drone.f); drone.o2.connect(drone.f); drone.f.connect(drone.g); drone.g.connect(master);
+  drone.o1.frequency.value = 55; drone.o2.frequency.value = 110; drone.o1.start(); drone.o2.start();
+  const nb = AC.createBuffer(1, AC.sampleRate * 2, AC.sampleRate), d = nb.getChannelData(0); let last = 0;
+  for (let i = 0; i < d.length; i++) { last = (last + (Math.random() * 2 - 1) * .08) * .985; d[i] = last * 5; }   // brown-ish noise
+  const src = AC.createBufferSource(); src.buffer = nb; src.loop = true;
+  const f = AC.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 900; const g = AC.createGain(); g.gain.value = 0;
+  src.connect(f); f.connect(g); g.connect(master); src.start(); fireSrc = { g, f };
+  window.__noise = AC.createBuffer(1, AC.sampleRate * .4, AC.sampleRate);
+  const n2 = window.__noise.getChannelData(0); for (let i = 0; i < n2.length; i++) n2[i] = Math.random() * 2 - 1;
+}
+function crackle(vol = .25) {
+  if (!AC) return; const s = AC.createBufferSource(); s.buffer = window.__noise;
+  s.playbackRate.value = rnd(.8, 1.6); const f = AC.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = rnd(1500, 4500);
+  const g = AC.createGain(); const t = AC.currentTime; g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + rnd(.04, .12));
+  s.connect(f); f.connect(g); g.connect(master); s.start(t); s.stop(t + .15);
+}
+function boom(vol = .9) {
+  if (!AC) return; const t = AC.currentTime, o = AC.createOscillator(), g = AC.createGain();
+  o.type = 'sine'; o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(28, t + .7);
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + .9); o.connect(g); g.connect(master); o.start(t); o.stop(t + 1);
+  const s = AC.createBufferSource(); s.buffer = window.__noise; const f = AC.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 700;
+  const g2 = AC.createGain(); g2.gain.setValueAtTime(vol * .8, t); g2.gain.exponentialRampToValueAtTime(.001, t + .5); s.connect(f); f.connect(g2); g2.connect(master); s.start(t);
+}
+function setLayers(droneVol, dronePitch, fireVol) {
+  if (!AC) return; const t = AC.currentTime;
+  drone.g.gain.setTargetAtTime(droneVol, t, .08); drone.o1.frequency.setTargetAtTime(dronePitch, t, .1);
+  drone.o2.frequency.setTargetAtTime(dronePitch * 2.01, t, .1); drone.f.frequency.setTargetAtTime(150 + dronePitch * 5, t, .1);
+  fireSrc.g.gain.setTargetAtTime(fireVol, t, .12);
+}
+
+/* ============================ hands ============================ */
+// A "hand" = 21 smoothed points in canvas pixels + derived values every effect needs.
+let hands = [];                                  // current, smoothed
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+function describe(pts, prev) {
+  const palm = { x: 0, y: 0 }; for (const i of [0, 5, 9, 13, 17]) { palm.x += pts[i].x / 5; palm.y += pts[i].y / 5; }
+  const size = dist(pts[0], pts[9]) || 1;                                    // wrist -> middle knuckle ~ one palm length
+  const reach = (dist(pts[8], pts[0]) + dist(pts[12], pts[0]) + dist(pts[16], pts[0]) + dist(pts[20], pts[0])) / 4 / size;
+  const open = clamp((reach - 1.35) / (2.05 - 1.35), 0, 1);                  // fist ~0, flat hand ~1
+  const h = { pts, palm, size, open, tips: [4, 8, 12, 16, 20].map(i => pts[i]), vx: 0, vy: 0, closedFor: prev ? prev.closedFor : 0, wasClosed: false, released: false };
+  if (prev) { h.vx = palm.x - prev.palm.x; h.vy = palm.y - prev.palm.y; }
+  return h;
+}
+function smoothInto(prev, raw, a) {
+  return raw.map((p, i) => prev ? { x: lerp(prev[i].x, p.x, a), y: lerp(prev[i].y, p.y, a) } : { x: p.x, y: p.y });
+}
+function setHands(rawList, dt) {                 // rawList: array of arrays of 21 {x,y} in canvas px
+  const out = [], used = new Set();
+  for (const raw of rawList) {
+    const c = { x: (raw[0].x + raw[9].x) / 2, y: (raw[0].y + raw[9].y) / 2 };
+    let best = null, bd = 1e9;
+    hands.forEach((h, i) => { if (used.has(i)) return; const d = Math.hypot(h.palm.x - c.x, h.palm.y - c.y); if (d < bd && d < 360) { bd = d; best = i; } });
+    const prev = best !== null ? (used.add(best), hands[best]) : null;
+    const pts = smoothInto(prev && prev.pts, raw, prev ? .55 : 1);
+    const h = describe(pts, prev);
+    if (prev) h.open = lerp(prev.open, h.open, .5);
+    // fist -> open "release" detection
+    if (h.open < .28) h.closedFor = (prev ? prev.closedFor : 0) + dt; else { h.released = prev && prev.closedFor > .35 && h.open > .6; h.closedFor = 0; }
+    out.push(h);
+  }
+  hands = out;
+}
+
+/* ============================ particles ============================ */
+const P = [];                                     // generic additive particles
+function spawn(o) { if (P.length < 2600) P.push(o); }
+function stepParticles(dt) {
+  for (let i = P.length - 1; i >= 0; i--) {
+    const p = P[i]; p.life -= dt; if (p.life <= 0) { P.splice(i, 1); continue; }
+    p.vx *= Math.pow(p.drag ?? .98, dt * 60); p.vy = p.vy * Math.pow(p.drag ?? .98, dt * 60) + (p.g || 0) * dt;
+    p.x += p.vx * dt * 60; p.y += p.vy * dt * 60;
+  }
+}
+function drawParticles() {
+  ctx.globalCompositeOperation = 'lighter';
+  for (const p of P) {
+    const t = p.life / p.max;
+    const col = p.fire ? fireColor(t) : p.rgb;
+    const a = p.fire ? clamp(t * 1.5, 0, 1) * p.a : Math.min(1, t * 2) * p.a;
+    glow(p.x, p.y, p.size * (p.fire ? (.4 + t * .9) : (p.shrink ? t : 1)), col, a);
+  }
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+}
+function fireColor(t) {                           // t: 1 young -> 0 old
+  if (t > .8) return [255, 240, 190]; if (t > .55) return [255, 190, 60]; if (t > .3) return [255, 90, 20]; if (t > .12) return [190, 30, 10]; return [70, 30, 30];
+}
+
+/* ============================ effects ============================ */
+let flash = 0, shake = 0, shocks = [];
+let boltCache = new Map(), frameNo = 0;
+
+function makeBolt(x1, y1, x2, y2, disp) {
+  const pts = [[x1, y1]];
+  (function sub(ax, ay, bx, by, d) {
+    const dx = bx - ax, dy = by - ay, len = Math.hypot(dx, dy);
+    if (len < 16) { pts.push([bx, by]); return; }
+    const mx = (ax + bx) / 2 + (-dy / len) * (Math.random() - .5) * d, my = (ay + by) / 2 + (dx / len) * (Math.random() - .5) * d;
+    sub(ax, ay, mx, my, d * .55); sub(mx, my, bx, by, d * .55);
+  })(x1, y1, x2, y2, disp);
+  return pts;
+}
+function strokeBolt(pts, w, rgb, a) {
+  ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+  ctx.lineWidth = w; ctx.strokeStyle = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${a})`; ctx.stroke();
+}
+function drawBolt(pts, power = 1) {
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.globalCompositeOperation = 'lighter';
+  strokeBolt(pts, 22 * power, [60, 90, 255], .10); strokeBolt(pts, 11 * power, [110, 170, 255], .25);
+  strokeBolt(pts, 5 * power, [190, 230, 255], .7); strokeBolt(pts, 1.8 * power, [255, 255, 255], 1);
+  ctx.globalCompositeOperation = 'source-over';
+}
+function boltFor(key, x1, y1, x2, y2, disp, refresh = 2) {            // keep a bolt for a couple of frames, then re-roll (flicker)
+  const c = boltCache.get(key);
+  if (c && frameNo - c.f < refresh) return c.pts;
+  const pts = makeBolt(x1, y1, x2, y2, disp); boltCache.set(key, { f: frameNo, pts });
+  if (Math.random() < .5) crackle(.05 + Math.random() * .08);
+  return pts;
+}
+
+function lightning(dt) {
+  const live = new Set();
+  hands.forEach((h, hi) => {
+    const pw = clamp(h.size / 150, .6, 1.5);
+    const charge = 1 - h.open;                                         // fist = charging
+    // orb in the palm
+    ctx.globalCompositeOperation = 'lighter';
+    glow(h.palm.x, h.palm.y, h.size * (.9 + charge * 1.1 + Math.sin(frameNo * .7) * .08), [90, 140, 255], .55 + charge * .4);
+    glow(h.palm.x, h.palm.y, h.size * (.35 + charge * .4), [230, 245, 255], .9);
+    // arcs between neighbouring fingertips
+    if (h.open > .3) for (let i = 0; i < 4; i++) {
+      const a = h.tips[i], b = h.tips[i + 1], k = `h${hi}t${i}`; live.add(k);
+      drawBolt(boltFor(k, a.x, a.y, b.x, b.y, h.size * .5), pw * .8);
+    }
+    // each fingertip throws a short random arc
+    h.tips.forEach((t, i) => {
+      glow(t.x, t.y, h.size * .38, [150, 200, 255], .8);
+      const k = `s${hi}${i}`; live.add(k);
+      const c = boltCache.get(k);
+      if (!c || frameNo - c.f >= 3) {
+        const ang = rnd(TAU), len = rnd(.9, 2.2) * h.size * (.4 + h.open * .8);
+        const pts = makeBolt(t.x, t.y, t.x + Math.cos(ang) * len, t.y + Math.sin(ang) * len, len * .6); boltCache.set(k, { f: frameNo, pts });
+        if (Math.random() < .3) crackle(.05);
+      }
+      if (Math.random() < .75) drawBolt(boltCache.get(k).pts, pw * .55);
+    });
+    // fist -> bolts crawl in from the palm edge
+    if (charge > .5) for (let i = 0; i < 3; i++) {
+      const k = `c${hi}${i}`; live.add(k); const ang = frameNo * .35 + i * 2.1, r = h.size * 1.6;
+      drawBolt(boltFor(k, h.palm.x, h.palm.y, h.palm.x + Math.cos(ang) * r, h.palm.y + Math.sin(ang) * r, h.size * .7, 2), pw * .7);
+    }
+    // release = giant strike
+    if (h.released) megaStrike(h);
+  });
+  // two hands: thick bolts between them
+  if (hands.length === 2) {
+    const [a, b] = hands; const pw = 1.4;
+    drawBolt(boltFor('pp0', a.palm.x, a.palm.y, b.palm.x, b.palm.y, dist(a.palm, b.palm) * .35, 2), pw * 1.3); live.add('pp0');
+    for (let i = 1; i < 5; i++) { const k = 'pp' + i; live.add(k); drawBolt(boltFor(k, a.tips[i].x, a.tips[i].y, b.tips[i].x, b.tips[i].y, dist(a.palm, b.palm) * .3, 2), pw * .8); }
+  }
+  for (const k of [...boltCache.keys()]) if (!live.has(k)) boltCache.delete(k);
+  // flying strikes (from release)
+  for (let i = strikes.length - 1; i >= 0; i--) { const s = strikes[i]; s.life -= dt; if (s.life <= 0) { strikes.splice(i, 1); continue; } drawBolt(s.pts, 2.2 * Math.min(1, s.life * 6)); }
+}
+const strikes = [];
+function megaStrike(h) {
+  flash = 1; shake = 14; boom(.8); for (let i = 0; i < 4; i++) setTimeout(() => crackle(.3), i * 60);
+  for (let i = 0; i < 7; i++) {
+    const ang = rnd(TAU), tx = h.palm.x + Math.cos(ang) * 1100, ty = h.palm.y + Math.sin(ang) * 1100;
+    strikes.push({ pts: makeBolt(h.palm.x, h.palm.y, tx, ty, 420), life: rnd(.12, .3) });
+  }
+  shocks.push({ x: h.palm.x, y: h.palm.y, r: 20, max: 700, rgb: [120, 170, 255] });
+}
+
+/* ---------- galaxy / black hole ---------- */
+const GAL = []; for (let i = 0; i < 1100; i++) { const u = Math.random(); GAL.push({ r: .06 + Math.pow(u, 1.7) * .94, th: rnd(TAU), arm: Math.floor(rnd(3)), s: rnd(.8, 1.3), h: Math.random(), z: rnd(-1, 1) }); }
+let galaxyPos = null, galaxyOpen = 1, galaxyAngle = 0;
+function galaxy(dt) {
+  if (!hands.length) { galaxyPos = null; return; }
+  let cx, cy, R, open;
+  if (hands.length === 2) {
+    const [a, b] = hands; cx = (a.palm.x + b.palm.x) / 2; cy = (a.palm.y + b.palm.y) / 2; R = clamp(dist(a.palm, b.palm) * .62, 90, 420); open = (a.open + b.open) / 2;
+  } else { const h = hands[0]; cx = h.palm.x; cy = h.palm.y - h.size * .55; R = h.size * 2.6; open = h.open; }
+  if (!galaxyPos) galaxyPos = { x: cx, y: cy, r: R }; else { galaxyPos.x = lerp(galaxyPos.x, cx, .35); galaxyPos.y = lerp(galaxyPos.y, cy, .35); galaxyPos.r = lerp(galaxyPos.r, R, .25); }
+  galaxyOpen = lerp(galaxyOpen, open, .3);
+  const size = galaxyPos.r * (.22 + .78 * galaxyOpen);                           // closing a fist squeezes the whole galaxy
+  galaxyAngle += dt * (.5 + (1 - galaxyOpen) * 2.4);
+  const tilt = .46, rot = -.35, cr = Math.cos(rot), sr = Math.sin(rot);
+  ctx.globalCompositeOperation = 'lighter';
+  glow(galaxyPos.x, galaxyPos.y, size * 1.55, [110, 70, 255], .35 + (1 - galaxyOpen) * .35);
+  glow(galaxyPos.x, galaxyPos.y, size * .8, [255, 140, 70], .22);
+  for (const g of GAL) {
+    const th = g.th + galaxyAngle * g.s / Math.sqrt(g.r) * .6 + g.r * 5.2 + g.arm * (TAU / 3);
+    const rr = g.r * size, px = Math.cos(th) * rr, py = Math.sin(th) * rr * tilt;
+    const x = galaxyPos.x + px * cr - py * sr, y = galaxyPos.y + px * sr + py * cr + g.z * rr * .06;
+    const hue = g.r < .25 ? [255, 190, 120] : g.h < .55 ? [140, 120, 255] : g.h < .85 ? [100, 200, 255] : [255, 130, 210];
+    glow(x, y, 5 + (1 - g.r) * 11, hue, (.45 + (1 - g.r) * .55) * (.6 + .4 * galaxyOpen + .4 * (1 - galaxyOpen)));
+  }
+  // event horizon: dark core with a hot photon ring
+  ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+  const ho = size * (.1 + (1 - galaxyOpen) * .06);
+  const bg = ctx.createRadialGradient(galaxyPos.x, galaxyPos.y, 0, galaxyPos.x, galaxyPos.y, ho * 1.9);
+  bg.addColorStop(0, 'rgba(0,0,0,1)'); bg.addColorStop(.52, 'rgba(0,0,0,1)'); bg.addColorStop(.6, 'rgba(255,200,130,.9)'); bg.addColorStop(.72, 'rgba(255,120,60,.35)'); bg.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = bg; ctx.beginPath(); ctx.arc(galaxyPos.x, galaxyPos.y, ho * 1.9, 0, TAU); ctx.fill();
+  setLayers(.22, 45 + (1 - galaxyOpen) * 60, 0);
+  hands.forEach(h => { if (h.released) explode(galaxyPos.x, galaxyPos.y, galaxyPos.r); });
+}
+function explode(x, y, R) {
+  flash = .9; shake = 18; boom(1);
+  shocks.push({ x, y, r: 10, max: 900, rgb: [190, 150, 255] }); shocks.push({ x, y, r: 0, max: 600, rgb: [255, 170, 100] });
+  for (let i = 0; i < 380; i++) {
+    const a = rnd(TAU), sp = rnd(2, 22);
+    spawn({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp * .8, life: rnd(.7, 1.9), max: 1.9, size: rnd(6, 20), rgb: [[150, 120, 255], [110, 210, 255], [255, 150, 220], [255, 200, 120]][i & 3], a: .9, drag: .965, shrink: true });
+  }
+}
+
+/* ---------- fire ---------- */
+function fire(dt) {
+  let flames = 0;
+  hands.forEach(h => {
+    const charge = 1 - h.open, big = h.size / 140;
+    const emit = (x, y, n, sz, up) => { for (let i = 0; i < n; i++) { flames++; spawn({ x: x + rnd(-8, 8), y: y + rnd(-6, 6), vx: rnd(-1.4, 1.4) + h.vx * .1, vy: -rnd(2, 5.5) * up, life: rnd(.45, 1.05), max: 1.05, size: sz * rnd(.7, 1.3) * big, fire: true, a: .9, drag: .975, g: -60 }); } };
+    h.tips.forEach(t => emit(t.x, t.y, 3, 34, 1));
+    emit(h.palm.x, h.palm.y - h.size * .2, 5 + Math.round(charge * 12), 52 + charge * 40, 1 + charge * .8);
+    if (charge > .6) { for (let i = 0; i < 4; i++) emit(h.palm.x + rnd(-40, 40), h.palm.y - h.size * .5, 2, 90, 1.7); }
+    ctx.globalCompositeOperation = 'lighter'; glow(h.palm.x, h.palm.y, h.size * (1.4 + charge), [255, 120, 30], .3 + charge * .25);
+    if (h.released) { flash = .6; shake = 12; boom(.8); shocks.push({ x: h.palm.x, y: h.palm.y, r: 10, max: 800, rgb: [255, 150, 60] });
+      for (let i = 0; i < 260; i++) { const a = rnd(TAU), sp = rnd(3, 20); spawn({ x: h.palm.x, y: h.palm.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 3, life: rnd(.5, 1.4), max: 1.4, size: rnd(30, 80), fire: true, a: .9, drag: .96, g: -80 }); } }
+  });
+  setLayers(0, 55, clamp(flames / 60, 0, .5));
+}
+
+/* ============================ frame loop ============================ */
+const MODES = { lightning: ['LIGHTNING', '#8fb4ff'], galaxy: ['GALAXY', '#c2a4ff'], fire: ['FIRE', '#ffa04a'] };
+function setMode(m, announce = true) {
+  mode = m; document.querySelectorAll('.mode').forEach(b => b.classList.toggle('on', b.dataset.mode === m));
+  P.length = 0; boltCache.clear(); galaxyPos = null; setLayers(0, 55, 0);
+  if (announce) { const el = $('modeName'); el.textContent = MODES[m][0]; el.style.color = MODES[m][1]; el.style.opacity = 1; setTimeout(() => el.style.opacity = 0, 900); }
+}
+document.querySelectorAll('.mode').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
+
+let lastT = performance.now(), fpsAcc = 0, fpsN = 0, noHandFor = 0;
+function drawBackdrop() {
+  if (useDemo) {                                           // calm dark "room" so the effects read well in screenshots
+    const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#1b1f33'); g.addColorStop(1, '#0a0b14'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#ffffff08'; for (let i = 0; i < 9; i++) ctx.fillRect(40 + i * 78, 520 + (i % 3) * 20, 50, 380);
+    return;
+  }
+  const vw = cam.videoWidth, vh = cam.videoHeight; if (!vw) { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); return; }
+  const s = Math.max(W / vw, H / vh), dw = vw * s, dh = vh * s;
+  ctx.save(); ctx.translate(W, 0); ctx.scale(-1, 1);       // mirror like a selfie
+  ctx.drawImage(cam, (W - dw) / 2, (H - dh) / 2, dw, dh); ctx.restore();
+  ctx.fillStyle = 'rgba(0,0,8,.32)'; ctx.fillRect(0, 0, W, H);                // darken a little so light effects pop
+}
+function toCanvas(l) {                                      // MediaPipe normalised point -> canvas pixel (cover-fit, mirrored)
+  const vw = cam.videoWidth, vh = cam.videoHeight, s = Math.max(W / vw, H / vh), dw = vw * s, dh = vh * s;
+  return { x: W - (l.x * dw + (W - dw) / 2), y: l.y * dh + (H - dh) / 2 };
+}
+
+/* synthetic hands for demo/testing */
+function fakeHand(cx, cy, scale, open, ang = 0) {
+  const base = { 5: [-.35, -.95], 9: [-.05, -1.05], 13: [.25, -.98], 17: [.52, -.85] }, pts = new Array(21);
+  pts[0] = [0, 0]; const rotp = (x, y) => [cx + (x * Math.cos(ang) - y * Math.sin(ang)) * scale, cy + (x * Math.sin(ang) + y * Math.cos(ang)) * scale];
+  const L = .3 + .7 * open, spread = { 5: -.18, 9: -.04, 13: .1, 17: .28 };
+  for (const k of [5, 9, 13, 17]) { let [x, y] = base[k]; pts[k] = [x, y]; let a = -Math.PI / 2 + spread[k] * (.4 + open * .8); const segs = [.45, .3, .28];
+    for (let j = 1; j <= 3; j++) { x += Math.cos(a) * segs[j - 1] * L * 1.45; y += Math.sin(a) * segs[j - 1] * L * 1.45 + (1 - open) * .22 * j; pts[k + j] = [x, y]; } }
+  let tx = -.55, ty = -.35; pts[1] = [tx, ty]; const ta = -2.2 + (1 - open) * 1.1;
+  for (let j = 2; j <= 4; j++) { tx += Math.cos(ta) * .32 * (.5 + open * .5); ty += Math.sin(ta) * .32 * (.5 + open * .5); pts[j] = [tx, ty]; }
+  for (const i of [2, 3, 4]) if (!pts[i]) pts[i] = [tx, ty];
+  return pts.map(p => { const [x, y] = rotp(p[0], p[1]); return { x, y }; });
+}
+function demoHands(t) {
+  const q = parseFloat(qs.get('open') ?? 'NaN'), two = qs.has('two');
+  const open = isNaN(q) ? (Math.sin(t * 1.4) * .5 + .5) : q;
+  const hs = [fakeHand(two ? 230 : 360, 760 + Math.sin(t * .9) * 40, 150, open, Math.sin(t * .7) * .25)];
+  if (two) hs.push(fakeHand(500, 780, 150, open, -.2));
+  return hs;
+}
+
+let lastVideoTime = -1, lastRaw = [];
+async function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = Math.min(.05, (now - lastT) / 1000); lastT = now; frameNo++;
+  fpsAcc += dt; fpsN++; if (fpsAcc > 1) { $('fps').textContent = Math.round(fpsN / fpsAcc) + ' fps'; fpsAcc = 0; fpsN = 0; }
+  if (!started) { drawBackdrop(); return; }
+  // detect
+  let raw;
+  if (useDemo) raw = window.__rawHands || demoHands(now / 1000);
+  else {
+    raw = lastRaw;
+    if (landmarker && cam.readyState >= 2 && cam.currentTime !== lastVideoTime) {
+      lastVideoTime = cam.currentTime;
+      try { const r = landmarker.detectForVideo(cam, now); lastRaw = raw = (r.landmarks || []).map(l => l.map(toCanvas)); } catch (e) { /* skip a frame */ }
+    }
+  }
+  setHands(raw, dt);
+  noHandFor = hands.length ? 0 : noHandFor + dt;
+  $('hint').style.opacity = noHandFor > .5 || !hands.length ? 1 : 0;
+  // draw
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  if (shake > .3) { ctx.translate(rnd(-shake, shake), rnd(-shake, shake)); shake *= .86; } else shake = 0;
+  drawBackdrop();
+  if (mode === 'lightning') { setLayers(0, 55, 0); lightning(dt); } else if (mode === 'galaxy') galaxy(dt); else fire(dt);
+  stepParticles(dt); drawParticles();
+  // shockwaves
+  ctx.globalCompositeOperation = 'lighter';
+  for (let i = shocks.length - 1; i >= 0; i--) { const s = shocks[i]; s.r += (s.max - s.r) * .12 + 4; const a = clamp(1 - s.r / s.max, 0, 1);
+    if (a < .02) { shocks.splice(i, 1); continue; } ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, TAU); ctx.lineWidth = 6 + a * 26; ctx.strokeStyle = `rgba(${s.rgb[0]},${s.rgb[1]},${s.rgb[2]},${a * .6})`; ctx.stroke(); }
+  if (flash > .02) { ctx.globalAlpha = flash * .55; ctx.fillStyle = '#fff'; ctx.fillRect(-40, -40, W + 80, H + 80); ctx.globalAlpha = 1; flash *= .84; }
+  ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+  // watermark so shared clips point back here
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.font = '600 22px -apple-system,Segoe UI,Arial'; ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.shadowColor = '#000'; ctx.shadowBlur = 6; ctx.fillText('HAND POWERS · ' + location.host, W / 2, H - 150); ctx.shadowBlur = 0;
+}
+
+/* ============================ camera + tracker ============================ */
+async function loadTracker() {
+  $('loading').textContent = 'Loading hand tracker…';
+  const { FilesetResolver, HandLandmarker } = await import('./lib/mediapipe/vision_bundle.mjs');
+  const fileset = await FilesetResolver.forVisionTasks(new URL('./lib/mediapipe/wasm', location.href).href);
+  const opts = (delegate) => ({ baseOptions: { modelAssetPath: new URL('./lib/mediapipe/hand_landmarker.task', location.href).href, delegate }, runningMode: 'VIDEO', numHands: 2,
+    minHandDetectionConfidence: .5, minHandPresenceConfidence: .5, minTrackingConfidence: .5 });
+  try { landmarker = await HandLandmarker.createFromOptions(fileset, opts('GPU')); }
+  catch (e) { console.warn('GPU unavailable, using CPU', e); landmarker = await HandLandmarker.createFromOptions(fileset, opts('CPU')); }
+  $('loading').textContent = '';
+}
+async function startCamera() {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: 'user', width: { ideal: 720 }, height: { ideal: 1280 }, frameRate: { ideal: 30 } } });
+  cam.srcObject = stream; await cam.play();
+}
+async function begin(demo) {
+  initAudio(); if (AC.state === 'suspended') AC.resume();
+  $('msg').textContent = '';
+  try {
+    if (demo) useDemo = true; else { await startCamera(); await loadTracker(); }
+  } catch (e) {
+    console.error(e); $('loading').textContent = '';
+    $('msg').textContent = e && e.name === 'NotAllowedError' ? 'Camera blocked. Allow camera access in your browser, or try the no-camera demo.' : 'Could not start: ' + (e.message || e);
+    return;
+  }
+  started = true; $('start').style.display = 'none'; setMode(mode, true);
+}
+$('go').addEventListener('click', () => begin(false));
+$('demo').addEventListener('click', () => begin(true));
+if (DEMO_Q) { initAudioSoon(); started = true; $('start').style.display = 'none'; setMode(mode, false); }
+function initAudioSoon() { /* audio needs a user gesture; demo/test mode runs silent */ }
+
+/* ============================ recording ============================ */
+let rec = null, recChunks = [], recTimer = null, recStart = 0, lastBlob = null, lastType = '';
+const MAXREC = 15000;
+function pickType() {
+  const c = ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+  return c.find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || '';
+}
+function startRec() {
+  if (!window.MediaRecorder) { alert('Recording is not supported in this browser. Try Chrome or Safari.'); return; }
+  initAudio(); if (AC.state === 'suspended') AC.resume();
+  const vs = cv.captureStream(30), tracks = [...vs.getVideoTracks(), ...recDest.stream.getAudioTracks()];
+  lastType = pickType(); recChunks = [];
+  rec = new MediaRecorder(new MediaStream(tracks), lastType ? { mimeType: lastType, videoBitsPerSecond: 6e6 } : { videoBitsPerSecond: 6e6 });
+  rec.ondataavailable = (e) => { if (e.data && e.data.size) recChunks.push(e.data); };
+  rec.onstop = () => { clearInterval(recTimer); $('rec').classList.remove('live'); $('rec').querySelector('circle').style.strokeDashoffset = 226;
+    lastBlob = new Blob(recChunks, { type: (rec.mimeType || lastType || 'video/webm').split(';')[0] }); showResult(); };
+  rec.start(200); recStart = performance.now(); $('rec').classList.add('live');
+  recTimer = setInterval(() => { const p = (performance.now() - recStart) / MAXREC; $('rec').querySelector('circle').style.strokeDashoffset = 226 * (1 - clamp(p, 0, 1)); if (p >= 1) stopRec(); }, 100);
+}
+function stopRec() { if (rec && rec.state !== 'inactive') rec.stop(); }
+$('rec').addEventListener('click', () => { if (rec && rec.state === 'recording') stopRec(); else startRec(); });
+function ext() { return lastBlob && lastBlob.type.includes('mp4') ? 'mp4' : 'webm'; }
+function showResult() {
+  const v = $('resVid'); if (v.src) URL.revokeObjectURL(v.src); v.src = URL.createObjectURL(lastBlob); v.play().catch(() => {});
+  $('result').classList.add('show');
+}
+$('again').addEventListener('click', () => { $('resVid').pause(); $('result').classList.remove('show'); });
+$('save').addEventListener('click', () => { const a = document.createElement('a'); a.href = URL.createObjectURL(lastBlob); a.download = 'hand-powers.' + ext(); document.body.appendChild(a); a.click(); a.remove(); });
+$('share').addEventListener('click', async () => {
+  const f = new File([lastBlob], 'hand-powers.' + ext(), { type: lastBlob.type });
+  if (navigator.canShare && navigator.canShare({ files: [f] })) { try { await navigator.share({ files: [f], title: 'Hand Powers', text: 'I made this with my hand 🤯' }); } catch (e) { } }
+  else $('save').click();
+});
+
+/* test hooks (used by the automated checks, harmless in production) */
+window.__hp = { setMode, setHands: (raw) => { window.__rawHands = raw; }, fakeHand, get hands() { return hands; }, get mode() { return mode; } };
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
