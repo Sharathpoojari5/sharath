@@ -21,30 +21,30 @@ export class Cinematic {
     const bigE = big.adj.find(e => e.w >= 9) || big.adj[0], bx = bigE.n.x - big.x, bz = bigE.n.z - big.z, bl = Math.hypot(bx, bz) || 1, bdx = bx / bl, bdz = bz / bl;
     const H = h.H, temple = w.temple;
     return [
-      { dur: 7, tod: 5.9 * 60, rain: false, music: 'title', focus: [h.x + fx * 30, h.z + fz * 30], cap: 'Karkala. Udupi district. Population: small. Opinions: many.', title: 'dawn',
+      { dur: 7, tod: 5.9 * 60, rain: false, music: 'title', focus: [h.x + fx * 30, h.z + fz * 30], cap: 'T01', title: 'dawn',
         cam: (u) => { const d = lerp(78, 44, sm(u)), x = h.x + fx * d, z = h.z + fz * d; return { p: [x, w.groundH(x, z) + lerp(3, 6, u), z], l: [h.x, H + 9, h.z], fov: 50 }; } },
-      { dur: 8, tod: 6.6 * 60, rain: false, music: 'trailer', focus: [bs.x, bs.z], cap: 'A hill older than the traffic.',
+      { dur: 8, tod: 6.6 * 60, rain: false, music: 'trailer', focus: [bs.x, bs.z], cap: 'T02',
         cam: (u) => { const p = L3([h.x + fx * 55, H + 26, h.z + fz * 55], [bs.x + 30, 38, bs.z + 40], sm(u)); return { p, l: L3([h.x, H + 6, h.z], [bs.x, 0, bs.z], sm(u)), fov: 62 }; } },
-      { dur: 7, tod: 17.1 * 60, rain: false, music: 'trailer', focus: [kb[0], kb[1] + 40], cap: 'A basadi in the middle of a lake.',
+      { dur: 7, tod: 17.1 * 60, rain: false, music: 'trailer', focus: [kb[0], kb[1] + 40], cap: 'T03',
         cam: (u) => { const a = lerp(-0.9, 0.2, sm(u)), r = lerp(60, 44, u); return { p: [kb[0] + Math.sin(a) * r, 5.5, kb[1] + 8 + Math.cos(a) * r * 0.9], l: [kb[0], 6, kb[1]], fov: 50 }; } },
-      { dur: 8, tod: 11 * 60, rain: false, music: 'trailer', focus: [q[0], q[1]], cap: 'Buses named after gods. Drivers named after nobody.',
+      { dur: 8, tod: 11 * 60, rain: false, music: 'trailer', focus: [q[0], q[1]], cap: 'T04',
         setup: (g, d) => { d.veh = this.spawnRoad('bus', q[0] + dx * 80, q[1] + dz * 80, -dx, -dz); d.veh2 = this.spawnRoad('auto', q[0] + dx * 22, q[1] + dz * 22, -dx, -dz); },
         cam: (u) => { const s = u * 46; return { p: [q[0] + dx * s - dz * 1.8, 2.3, q[1] + dz * s + dx * 1.8], l: [q[0] + dx * (s + 24), 1.8, q[1] + dz * (s + 24)], fov: 62 }; },
         beats: [[3.2, (g) => g.audio.horn('bus', 0.3)], [5.5, (g) => g.audio.horn('auto', 0.25)]] },
-      { dur: 7, tod: 15.4 * 60, rain: false, music: 'trailer', focus: [bs.x, bs.z], cap: 'Autos that say pom pom.',
+      { dur: 7, tod: 15.4 * 60, rain: false, music: 'trailer', focus: [bs.x, bs.z], cap: 'T05',
         cam: (u) => { const al = [Math.cos(bs.rot), -Math.sin(bs.rot)], k = lerp(-34, 34, sm(u)); return { p: [bs.x - bs.n[0] * 26 + al[0] * k, 3.4, bs.z - bs.n[1] * 26 + al[1] * k], l: [bs.x - bs.n[0] * 4, 2.4, bs.z - bs.n[1] * 4], fov: 56 }; },
         beats: [[1.5, (g) => g.audio.horn('auto', 0.3)], [2.6, (g) => g.audio.horn('auto', 0.3)], [4.5, (g) => g.audio.horn('bus', 0.25)]] },
-      { dur: 8, tod: 15.2 * 60, rain: true, music: 'rain', focus: [big.x, big.z], cap: 'It will rain at four. Karkala is punctual only about rain.',
+      { dur: 8, tod: 15.2 * 60, rain: true, music: 'rain', focus: [big.x, big.z], cap: 'T06',
         setup: (g, d) => { d.veh = this.spawnRoad('scooter', big.x + bdx * 6, big.z + bdz * 6, bdx, bdz, 'ai', true); },
         follow: (d) => d.veh, back: 6.5, up: 2.6 },
-      { dur: 8, tod: 14 * 60, rain: false, music: 'chase', focus: [big.x + bdx * 40, big.z + bdz * 40], cap: 'Jeep chases. Gossip first, fine later.',
+      { dur: 8, tod: 14 * 60, rain: false, music: 'chase', focus: [big.x + bdx * 40, big.z + bdz * 40], cap: 'T07',
         setup: (g, d) => { d.veh = this.spawnRoad('scooter', big.x + bdx * 50, big.z + bdz * 50, bdx, bdz, 'ai', true); d.veh.v = 9; d.jeep = this.spawnRoad('jeep', big.x + bdx * 20, big.z + bdz * 20, bdx, bdz, 'cine', true); d.jeep.police = true; d.jeep.v = 10; },
         follow: (d) => d.jeep, back: 9, up: 3.2, chase: true },
-      { dur: 6, tod: 12 * 60, rain: false, music: 'trailer', focus: [q[0] - dx * 10, q[1] - dz * 10], cap: 'Right of way: cow.',
+      { dur: 6, tod: 12 * 60, rain: false, music: 'trailer', focus: [q[0] - dx * 10, q[1] - dz * 10], cap: 'T08',
         setup: (g, d) => { const cow = new Cow(g, q[0] + dx * 18 - dz * 1.0, q[1] + dz * 18 + dx * 1.0); cow.keep = true; cow.h = Math.atan2(dx, dz) + 1.5; cow.t = 99; cow.moving = false; g.cows.push(cow); d.cow = cow; d.veh = this.spawnRoad('bus', q[0] - dx * 40, q[1] - dz * 40, dx, dz); },
         cam: (u, g, d) => ({ p: [d.cow.x - dx * 8 + dz * 3.2, 1.3, d.cow.z - dz * 8 - dx * 3.2], l: [d.cow.x, 1.1, d.cow.z], fov: 48 }),
         beats: [[2.0, (g) => g.audio.horn('bus', 0.35)], [4.0, (g) => g.audio.horn('bus', 0.35)]] },
-      { dur: 7, tod: 20.7 * 60, rain: false, music: 'night', focus: [q[0], q[1]], cap: 'Goli baje at five. Always.',
+      { dur: 7, tod: 20.7 * 60, rain: false, music: 'night', focus: [q[0], q[1]], cap: 'T09',
         cam: (u) => ({ p: [q[0] - dx * 14 + dz * 4, lerp(2.2, 24, sm(u)), q[1] - dz * 14 - dx * 4], l: [q[0] + dx * 30, lerp(2, 4, u), q[1] + dz * 30], fov: 60 }) },
       { dur: 9, tod: 17.8 * 60, rain: false, music: 'ending', focus: [h.x + fx * 30, h.z + fz * 30], title: 'logo', cap: '',
         cam: (u) => { const a = lerp(0.9, -0.15, sm(u)) + f; return { p: [h.x + Math.sin(a) * 24, H + 8 - u * 2, h.z + Math.cos(a) * 24], l: [h.x, H + 8.5, h.z], fov: 54 }; } },
@@ -123,7 +123,7 @@ export class Cinematic {
     const bar = H * 0.11; x.fillStyle = '#000'; x.fillRect(0, 0, W, bar); x.fillRect(0, H - bar, W, bar);
     const fs = Math.round(H * 0.044), a = Math.min(1, this.sT / 0.5, (s.dur - this.sT) / 0.4);
     x.textAlign = 'center'; x.textBaseline = 'middle';
-    if (s.cap) { x.globalAlpha = Math.max(0, a); x.font = `800 ${fs}px "Noto Sans Kannada","Kannada Sangam MN",Inter,system-ui,sans-serif`; x.fillStyle = '#fff'; x.shadowColor = '#000'; x.shadowBlur = 14; x.fillText(s.cap, W / 2, H - bar - fs * 1.5, W * 0.88); x.shadowBlur = 0; x.globalAlpha = 1; }
+    if (s.cap) { x.globalAlpha = Math.max(0, a); x.font = `800 ${fs}px "Noto Sans Kannada","Kannada Sangam MN",Inter,system-ui,sans-serif`; x.fillStyle = '#fff'; x.shadowColor = '#000'; x.shadowBlur = 14; x.fillText(Voice.text(s.cap), W / 2, H - bar - fs * 1.5, W * 0.88); x.shadowBlur = 0; x.globalAlpha = 1; }
     if (s.title === 'dawn') {
       const ua = Math.min(1, Math.max(0, (this.sT - 1.2) / 1.2)) * Math.min(1, (s.dur - this.sT) / 0.8); x.globalAlpha = ua;
       x.font = `900 ${Math.round(H * 0.13)}px "Noto Sans Kannada","Kannada Sangam MN",system-ui,sans-serif`; x.fillStyle = '#fde047'; x.shadowColor = '#000'; x.shadowBlur = 24; x.fillText('ಕಾರ್ಕಳ', W / 2, H * 0.3);

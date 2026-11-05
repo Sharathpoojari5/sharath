@@ -1,4 +1,6 @@
 import { Game } from './game.js';
+import { setScript } from './story.js';
+import { Voice, LANG_NAME } from './voice.js';
 
 const $ = (id) => document.getElementById(id);
 const TIPS = [
@@ -22,6 +24,8 @@ async function boot() {
   const bar = $('bar'), msg = $('loadmsg');
   const progress = (p, m) => { bar.style.width = Math.round(p * 100) + '%'; if (m) msg.textContent = m + '…'; };
   progress(0.03, 'Downloading Karkala');
+  setScript(await (await fetch('voice/script.json')).json());
+  try { Voice.manifest = await (await fetch('voice/manifest.json')).json(); } catch (e) { Voice.manifest = { kn: [], tcy: [], en: [] }; }   // no recordings yet: fall back to browser speech / text
   const map = await (await fetch('data/karkala.json')).json();
   progress(0.1, 'Waking up the town');
   await new Promise(r => setTimeout(r, 30));
@@ -31,6 +35,9 @@ async function boot() {
   progress(1, 'Ready');
   game.renderer.render(game.scene, game.cam);
   $('loading').classList.add('done');
+  const paint = () => document.querySelectorAll('.lang button').forEach(b => b.classList.toggle('on', b.dataset.l === Voice.lang));
+  document.querySelectorAll('.lang button').forEach(b => b.onclick = () => { Voice.setLang(b.dataset.l); paint(); });
+  paint();
   const hasSave = game.save.done.length > 0;
   $('play').textContent = hasSave ? 'Continue' : 'Play';
   $('play').disabled = false; $('trailer').disabled = false; $('trailerSave').disabled = !window.MediaRecorder;

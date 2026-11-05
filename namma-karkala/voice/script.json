@@ -1,0 +1,414 @@
+{
+ "_readme": "Single source of truth for every spoken line. Edit kn / tcy here, then re-generate voices (colab/namma_karkala_voices.ipynb) and reload the game. IMPORTANT: the Tulu (tcy) text is a FIRST DRAFT written without a native speaker. Please have a fluent Tulu speaker correct it before recording or releasing. Written in Kannada script, which is how Tulu is commonly typed.",
+ "speakers": {
+  "RAJU": "young adult man in his late twenties, warm and a little tired, relaxed pace, Karkala coastal Kannada accent",
+  "AMMA": "middle-aged woman, caring and a bit scolding, quick and affectionate, coastal Karnataka accent",
+  "AJJI": "elderly woman, sharp and loud, brisk, market-seller voice",
+  "ARCHAKARU": "older man, calm priestly voice, slow, gentle, slightly deep",
+  "PRAMOD": "young man, cheerful and fast, friendly and teasing, bus-conductor energy",
+  "OWNER": "middle-aged man, gruff, busy, shouting over a hot kitchen",
+  "CANTEEN": "older man, dry and sarcastic, flat humorous delivery",
+  "SHWETHA": "young woman, bright and chatty, fast, bubbly",
+  "THIEF": "young man, panicked and out of breath, fast, apologetic",
+  "PEDESTRIAN": "adult voice, annoyed and loud, short exclamation",
+  "NARRATOR": "calm documentary narrator, mature male voice, clear, warm, medium pace, dry humour"
+ },
+ "lines": {
+  "L01": {
+   "w": "NARRATOR",
+   "en": "Karkala bus stand. Four thirty in the evening.",
+   "kn": "ಕಾರ್ಕಳ ಬಸ್ ನಿಲ್ದಾಣ. ಸಂಜೆ ನಾಲ್ಕೂವರೆ.",
+   "tcy": "ಕಾರ್ಕಳ ಬಸ್ ನಿಲ್ದಾಣ. ಸಂಜೆ ನಾಲ್ಕೂವರೆ."
+  },
+  "L02": {
+   "w": "RAJU",
+   "en": "Four years in Bengaluru. Three of them stuck at Silk Board. My laptop is on twelve percent and my soul is on two.",
+   "kn": "ಬೆಂಗಳೂರಿನಲ್ಲಿ ನಾಲ್ಕು ವರ್ಷ. ಅದರಲ್ಲಿ ಮೂರು ವರ್ಷ ಸಿಲ್ಕ್ ಬೋರ್ಡ್‌ನಲ್ಲೇ ಕಳೆದೆ. ಲ್ಯಾಪ್‌ಟಾಪ್‌ನಲ್ಲಿ ಹನ್ನೆರಡು ಪರ್ಸೆಂಟ್ ಚಾರ್ಜ್, ನನ್ನ ಜೀವದಲ್ಲಿ ಎರಡು.",
+   "tcy": "ಬೆಂಗಳೂರುಡು ನಾಲ್ಕ್ ವರ್ಸ. ಅಟ್ಟ್ ಮೂಜಿ ವರ್ಸ ಸಿಲ್ಕ್ ಬೋರ್ಡ್‌ಡೇ ಕಳೆಯೆ. ಲ್ಯಾಪ್‌ಟಾಪ್‌ಡ್ ಪನ್ನೆರಡ್ ಪರ್ಸೆಂಟ್ ಚಾರ್ಜ್, ಎನ್ನ ಜೀವೊಡು ಎರಡ್."
+  },
+  "L03": {
+   "w": "RAJU",
+   "en": "Karkala. The hill is still there. The cows are still there. Nobody has asked me for my sprint update.",
+   "kn": "ಕಾರ್ಕಳ. ಬೆಟ್ಟ ಇನ್ನೂ ಅಲ್ಲೇ ಇದೆ. ದನಗಳೂ ಅಲ್ಲೇ ಇವೆ. ಯಾರೂ ನನ್ನ ಸ್ಪ್ರಿಂಟ್ ಅಪ್‌ಡೇಟ್ ಕೇಳಿಲ್ಲ.",
+   "tcy": "ಕಾರ್ಕಳ. ಬೆಟ್ಟ ಇತ್ತೆ ಅಲ್ಲೇ ಉಂಡು. ದನಕುಲುಲಾ ಅಲ್ಲೇ ಉಲ್ಲೆರ್. ಒರ್ವುಲಾ ಎನ್ನ ಸ್ಪ್ರಿಂಟ್ ಅಪ್‌ಡೇಟ್ ಕೇನೊಜ್ಜಿ."
+  },
+  "L04": {
+   "w": "AMMA",
+   "en": "Raju! Did you reach? Did you eat? Ajja's scooter is parked near Gandhi Maidan. He wanted you to have it.",
+   "kn": "ರಾಜು! ತಲುಪಿದ್ಯಾ? ಊಟ ಆಯ್ತಾ? ಅಜ್ಜನ ಸ್ಕೂಟರ್ ಗಾಂಧಿ ಮೈದಾನದ ಹತ್ರ ನಿಲ್ಲಿಸಿದ್ದಾರೆ. ಅದು ನಿನಗೇ ಅಂತ ಅವರು ಹೇಳಿದ್ರು.",
+   "tcy": "ರಾಜು! ತಲುಪಿಯಾ? ಊಟ ಆಂಡಾ? ಅಜ್ಜನ ಸ್ಕೂಟರ್ ಗಾಂಧಿ ಮೈದಾನದ ಕರ್ಯ ಉಂಡು. ಅವು ನಿಕ್ಕೇ ಪಂದ್ ಅಜ್ಜ ಪಂಡೆರ್."
+  },
+  "L05": {
+   "w": "RAJU",
+   "en": "Amma, it is twenty-five years old.",
+   "kn": "ಅಮ್ಮಾ, ಅದಕ್ಕೆ ಇಪ್ಪತ್ತೈದು ವರ್ಷ ಆಯ್ತು.",
+   "tcy": "ಅಮ್ಮಾ, ಅವೆಕ್ ಇಪ್ಪತ್ತ್ದೈನ್ ವರ್ಸ ಆಂಡ್."
+  },
+  "L06": {
+   "w": "AMMA",
+   "en": "And still better than your Bengaluru auto driver. Take it to the temple first. Pooja, then pizza.",
+   "kn": "ಆದ್ರೂ ನಿನ್ನ ಬೆಂಗಳೂರಿನ ಆಟೋಗಿಂತ ಚೆನ್ನಾಗಿದೆ. ಮೊದಲು ದೇವಸ್ಥಾನಕ್ಕೆ ಹೋಗು. ಪೂಜೆ ಆದ್ಮೇಲೆ ಪಿಜ್ಜಾ.",
+   "tcy": "ಆಂಡಲಾ ನಿನ್ನ ಬೆಂಗಳೂರುದ ಆಟೋಡ್ದ್ ಲಾಯಿಕ ಉಂಡು. ಮದಲ್ ದೇವಸ್ಥಾನೊಗು ಪೋ. ಪೂಜೆ ಆತ್ಂಡ್ ಬೊಕ್ಕ ಪಿಜ್ಜಾ."
+  },
+  "L07": {
+   "w": "RAJU",
+   "en": "It still smells of Ajja's attar and petrol. Okay. One kick, and we go.",
+   "kn": "ಅಜ್ಜನ ಅತ್ತರ್ ಮತ್ತೆ ಪೆಟ್ರೋಲ್ ವಾಸನೆ ಇನ್ನೂ ಇದೆ. ಸರಿ, ಒಂದು ಕಿಕ್ ಹೊಡೆದು ಹೋಗೋಣ.",
+   "tcy": "ಅಜ್ಜನ ಅತ್ತರ್ ಬೊಕ್ಕ ಪೆಟ್ರೋಲ್ ವಾಸನೆ ಇತ್ತೆ ಉಂಡು. ಸರಿ, ಒಂಜಿ ಕಿಕ್ ಹೊಡೆದ್ ಪೋಯಿ."
+  },
+  "L08": {
+   "w": "ARCHAKARU",
+   "en": "Raju? Gopalayya's grandson? Come, come. Lemon under the front wheel, kumkuma on the headlight. Slowly, magu.",
+   "kn": "ರಾಜು? ಗೋಪಾಲಯ್ಯನ ಮೊಮ್ಮಗನಾ? ಬಾ ಬಾ. ಮುಂದಿನ ಚಕ್ರದ ಕೆಳಗೆ ನಿಂಬೆಹಣ್ಣು, ಹೆಡ್‌ಲೈಟ್‌ಗೆ ಕುಂಕುಮ. ನಿಧಾನಕ್ಕೆ ಹೋಗು ಮಗು.",
+   "tcy": "ರಾಜು? ಗೋಪಾಲಯ್ಯನ ಮೊಮ್ಮಗನಾ? ಬಲೆ ಬಲೆ. ಮುಟ್ಟದ ಚಕ್ರದ ಅಡಿಟ್ ನಿಂಬೆಹಣ್ಣ್, ಹೆಡ್‌ಲೈಟ್‌ಗ್ ಕುಂಕುಮ. ಮೆತ್ತಗ್ ಪೋಲೆ, ಮಗಾ."
+  },
+  "L09": {
+   "w": "ARCHAKARU",
+   "en": "Your Ajja rode this scooter to this gate every Thursday for thirty years. Not once did he go above twenty.",
+   "kn": "ನಿನ್ನ ಅಜ್ಜ ಮೂವತ್ತು ವರ್ಷ ಪ್ರತಿ ಗುರುವಾರ ಈ ಸ್ಕೂಟರ್‌ನಲ್ಲಿ ಇಲ್ಲಿಗೆ ಬರುತ್ತಿದ್ದರು. ಒಂದು ಬಾರಿಯೂ ಇಪ್ಪತ್ತಕ್ಕಿಂತ ಹೆಚ್ಚು ಹೋಗಲಿಲ್ಲ.",
+   "tcy": "ನಿನ್ನ ಅಜ್ಜ ಮೂವತ್ತ್ ವರ್ಸ ಪ್ರತಿ ಗುರುವಾರ ಈ ಸ್ಕೂಟರ್‌ಡ್ ಇಡೆಗ್ ಬತ್ತೊಂದಿತ್ತೆರ್. ಒಂಜಿ ಸರ್ತಿಲಾ ಇಪ್ಪತ್ತ್‌ಗ್ದ್ ಜಾಸ್ತಿ ಪೋಯೆರ್ ಇಜ್ಜಿ."
+  },
+  "L10": {
+   "w": "RAJU",
+   "en": "A blessed 1998 scooter, a full tank, and a town that has not changed. We are unstoppable.",
+   "kn": "ಆಶೀರ್ವಾದ ಪಡೆದ ೧೯೯೮ರ ಸ್ಕೂಟರ್, ತುಂಬಿದ ಟ್ಯಾಂಕ್, ಬದಲಾಗದ ಊರು. ನನ್ನನ್ನು ಯಾರೂ ತಡೆಯಕ್ಕಾಗಲ್ಲ.",
+   "tcy": "ಆಶೀರ್ವಾದ ಆತಿನ ೧೯೯೮ದ ಸ್ಕೂಟರ್, ತುಂಬಿನ ಟ್ಯಾಂಕ್, ಬದಲ್ ಆಯಿಜ್ಜಿನ ಊರು. ಎನ್ನ ಏರ್‌ಲಾ ತಡೆಯಂದ್."
+  },
+  "L11": {
+   "w": "OWNER",
+   "en": "You! Gopalayya's grandson! You have a scooter? Forty goli baje for the college canteen. Hot hot. Wrap them well.",
+   "kn": "ಏಯ್! ಗೋಪಾಲಯ್ಯನ ಮೊಮ್ಮಗ! ಸ್ಕೂಟರ್ ಇದೆಯಾ? ಕಾಲೇಜು ಕ್ಯಾಂಟೀನ್‌ಗೆ ನಲವತ್ತು ಗೋಳಿಬಜೆ. ಬಿಸಿ ಬಿಸಿ. ಚೆನ್ನಾಗಿ ಕಟ್ಟಿ ಕೊಡ್ತೀನಿ.",
+   "tcy": "ಏ! ಗೋಪಾಲಯ್ಯನ ಮೊಮ್ಮಗ! ಸ್ಕೂಟರ್ ಉಂಡಾ? ಕಾಲೇಜ್ ಕ್ಯಾಂಟೀನ್‌ಗ್ ನಲ್ವತ್ತ್ ಗೋಳಿಬಜೆ. ಬಿಸಿ ಬಿಸಿ. ಲಾಯಿಕ ಕಟ್ಟ್ ದೀಪೆ."
+  },
+  "L12": {
+   "w": "RAJU",
+   "en": "Anna, I am a software engineer.",
+   "kn": "ಅಣ್ಣಾ, ನಾನು ಸಾಫ್ಟ್‌ವೇರ್ ಇಂಜಿನಿಯರ್.",
+   "tcy": "ಅಣ್ಣಾ, ಯಾನ್ ಸಾಫ್ಟ್‌ವೇರ್ ಇಂಜಿನಿಯರ್."
+  },
+  "L13": {
+   "w": "OWNER",
+   "en": "Today you are a delivery boy. Two minutes is hot. Three minutes is a cold bonda. Go!",
+   "kn": "ಇವತ್ತು ನೀನು ಡೆಲಿವರಿ ಹುಡುಗ. ಎರಡು ನಿಮಿಷ ಆದ್ರೆ ಬಿಸಿ. ಮೂರು ನಿಮಿಷ ಆದ್ರೆ ತಣ್ಣಗಿನ ಬೋಂಡ. ಹೋಗು!",
+   "tcy": "ಇತ್ತೆ ಈರ್ ಡೆಲಿವರಿ ಬಾಲೆ. ಎರಡ್ ನಿಮಿಷ ಆಂಡ ಬಿಸಿ. ಮೂಜಿ ನಿಮಿಷ ಆಂಡ ತಂಪು ಬೋಂಡ. ಪೋ!"
+  },
+  "L14": {
+   "w": "CANTEEN",
+   "en": "Still hot! Who are you? Hotel Raj Mahal sent a new boy?",
+   "kn": "ಇನ್ನೂ ಬಿಸಿ ಇದೆ! ನೀನು ಯಾರು? ಹೋಟೆಲ್ ರಾಜ್ ಮಹಲ್‌ನವರು ಹೊಸ ಹುಡುಗನನ್ನ ಕಳಿಸಿದ್ರಾ?",
+   "tcy": "ಇತ್ತೆಲಾ ಬಿಸಿ ಉಂಡು! ಈರ್ ಏರ್? ಹೋಟೆಲ್ ರಾಜ್ ಮಹಲ್‌ದಕುಲು ಪೊಸ ಬಾಲೆನ್ ಕಡಪುಡೆರಾ?"
+  },
+  "L15": {
+   "w": "RAJU",
+   "en": "Just a boy with a scooter. And a degree.",
+   "kn": "ಸ್ಕೂಟರ್ ಇರೋ ಒಬ್ಬ ಹುಡುಗ ಅಷ್ಟೇ. ಜೊತೆಗೆ ಒಂದು ಡಿಗ್ರಿ.",
+   "tcy": "ಸ್ಕೂಟರ್ ಉಪ್ಪುನ ಒಬ್ಬ ಬಾಲೆ ಅತ್ತೆ. ಒಟ್ಟುಗು ಒಂಜಿ ಡಿಗ್ರಿ."
+  },
+  "L16": {
+   "w": "CANTEEN",
+   "en": "Keep your degree. Keep these two goli baje as well. Students will survive one more lecture.",
+   "kn": "ಡಿಗ್ರಿ ನೀನೇ ಇಟ್ಕೋ. ಈ ಎರಡು ಗೋಳಿಬಜೆ ಕೂಡ ತಗೋ. ವಿದ್ಯಾರ್ಥಿಗಳು ಇನ್ನೊಂದು ಕ್ಲಾಸ್ ಬದುಕ್ತಾರೆ.",
+   "tcy": "ಡಿಗ್ರಿ ನೀನೇ ದೀಂಡ. ಈ ಎರಡ್ ಗೋಳಿಬಜೆಲಾ ತೆಲೆ. ವಿದ್ಯಾರ್ಥಿಲು ಇನ್ನೊಂಜಿ ಕ್ಲಾಸ್ ಬದುಕುವೆರ್."
+  },
+  "L17": {
+   "w": "PRAMOD",
+   "en": "Machaa! You are back! Listen, I have fever and the bus has a schedule. Take SRI DURGA on the town round. Stop at every stop. Right?",
+   "kn": "ಮಚ್ಚಾ! ವಾಪಸ್ ಬಂದ್ಯಾ! ಕೇಳು, ನನಗೆ ಜ್ವರ, ಬಸ್ಸಿಗೆ ಟೈಮ್‌ಟೇಬಲ್ ಇದೆ. ಶ್ರೀ ದುರ್ಗಾ ತಗೊಂಡು ಊರಿನ ರೌಂಡ್ ಹೊಡಿ. ಪ್ರತಿ ಸ್ಟಾಪ್‌ನಲ್ಲೂ ನಿಲ್ಲಿಸು. ಸರಿ?",
+   "tcy": "ಮಚ್ಚಾ! ಕಡಪುಡ್ ಬತ್ತೆ! ಕೇಣ್, ಎನಕ್ ಜ್ವರ, ಬಸ್ಸ್‌ಗ್ ಟೈಮ್‌ಟೇಬಲ್ ಉಂಡು. ಶ್ರೀ ದುರ್ಗಾ ದೆತ್ತೊಂಡು ಊರುದ ರೌಂಡ್ ಹೊಡೆ. ಪ್ರತಿ ಸ್ಟಾಪ್‌ಡ್ ನಿಲ್ಲಿಸ್. ಸರಿಯಾ?"
+  },
+  "L18": {
+   "w": "RAJU",
+   "en": "I have never driven a bus.",
+   "kn": "ನಾನು ಯಾವತ್ತೂ ಬಸ್ ಓಡಿಸಿಲ್ಲ.",
+   "tcy": "ಯಾನ್ ಏಪಲಾ ಬಸ್ ಓಡಿಸಿಜ್ಜಿ."
+  },
+  "L19": {
+   "w": "PRAMOD",
+   "en": "Nobody drives a bus. You just hold the horn and trust the Lord. And honk. A bus that does not honk is not a bus.",
+   "kn": "ಬಸ್ ಯಾರೂ ಓಡಿಸಲ್ಲ. ಹಾರ್ನ್ ಒತ್ತಿ ದೇವರ ಮೇಲೆ ಭಾರ ಹಾಕಬೇಕು. ಹಾರ್ನ್ ಹೊಡಿ. ಹಾರ್ನ್ ಹೊಡೀದ ಬಸ್ ಬಸ್ಸೇ ಅಲ್ಲ.",
+   "tcy": "ಬಸ್ ಏರ್‌ಲಾ ಓಡಿಸಂದ್. ಹಾರ್ನ್ ಒತ್ತ್‌ದ್ ದೇವೆರ್ ಮೇಲ್ ಭಾರ ಪಾಡೊಡು. ಹಾರ್ನ್ ಹೊಡೆ. ಹಾರ್ನ್ ಹೊಡೆಯಂದಿನ ಬಸ್ ಬಸ್ಸೇ ಅತ್ತ್."
+  },
+  "L20": {
+   "w": "RAJU",
+   "en": "Gears like a washing machine. Okay, Karkala, please stay out of my way.",
+   "kn": "ಗೇರ್ ವಾಷಿಂಗ್ ಮೆಷಿನ್‌ನ ಹಾಗಿದೆ. ಸರಿ ಕಾರ್ಕಳ, ದಯವಿಟ್ಟು ನನ್ನ ದಾರಿಗೆ ಅಡ್ಡ ಬರಬೇಡ.",
+   "tcy": "ಗೇರ್ ವಾಷಿಂಗ್ ಮೆಷಿನ್‌ದ ಲೆಕ್ಕ ಉಂಡು. ಸರಿ ಕಾರ್ಕಳ, ದಯಮಾಡ್ ಎನ್ನ ದಾರಿಗ್ ಅಡ್ಡ ಬೇಡ."
+  },
+  "L21": {
+   "w": "PRAMOD",
+   "en": "Full bus, no scratches? You are a natural, machaa. Quit software. Join the transport business.",
+   "kn": "ಪೂರ್ತಿ ಬಸ್, ಒಂದು ಗೀರೂ ಇಲ್ಲ? ನೀನು ಹುಟ್ಟು ಡ್ರೈವರ್, ಮಚ್ಚಾ. ಸಾಫ್ಟ್‌ವೇರ್ ಬಿಡು. ಟ್ರಾನ್ಸ್‌ಪೋರ್ಟ್ ಬಿಸಿನೆಸ್‌ಗೆ ಬಾ.",
+   "tcy": "ಪೂರ್ತಿ ಬಸ್, ಒಂಜಿ ಗೀರ್‌ಲಾ ಇಜ್ಜಿ? ಈರ್ ಹುಟ್ಟು ಡ್ರೈವರ್, ಮಚ್ಚಾ. ಸಾಫ್ಟ್‌ವೇರ್ ಬುಡ್ಪು. ಟ್ರಾನ್ಸ್‌ಪೋರ್ಟ್ ಬಿಸಿನೆಸ್‌ಗ್ ಬಲೆ."
+  },
+  "L22": {
+   "w": "RAJU",
+   "en": "Pramod, I think I only lost two mirrors and my dignity.",
+   "kn": "ಪ್ರಮೋದ್, ನಾನು ಎರಡು ಕನ್ನಡಿ ಮತ್ತು ನನ್ನ ಮಾನ ಮಾತ್ರ ಕಳ್ಕೊಂಡೆ ಅನ್ಸುತ್ತೆ.",
+   "tcy": "ಪ್ರಮೋದ್, ಯಾನ್ ಎರಡ್ ಕನ್ನಡಿ ಬೊಕ್ಕ ಎನ್ನ ಮಾನ ಮಾತ್ರ ಕಳೆದ್ ಬತ್ತೆ ಅನ್ನಂದ್ ತೋಜುಂಡು."
+  },
+  "L23": {
+   "w": "AJJI",
+   "en": "Ayyo! That boy in the red cap took my whole mallige basket! Twenty moLa, fresh from Udupi! Catch him, Raju!",
+   "kn": "ಅಯ್ಯೋ! ಆ ಕೆಂಪು ಟೋಪಿ ಹುಡುಗ ನನ್ನ ಮಲ್ಲಿಗೆ ಬುಟ್ಟಿ ಪೂರ್ತಿ ತಗೊಂಡು ಹೋದ! ಇಪ್ಪತ್ತು ಮೊಳ, ಉಡುಪಿಯಿಂದ ತಂದಿದ್ದು! ಹಿಡಿ ಅವನನ್ನ, ರಾಜು!",
+   "tcy": "ಅಯ್ಯೋ! ಆ ಕೆಂಪು ಟೋಪಿದ ಬಾಲೆ ಎನ್ನ ಮಲ್ಲಿಗೆ ಬುಟ್ಟಿ ಪೂರ ದೆತ್ತೊಂಡು ಪೋಯೆ! ಇಪ್ಪತ್ತ್ ಮೊಳ, ಉಡುಪಿದ್ದ್ ಕಡತ್ತಿನ! ಪಿರಿಯಲೆ ಅವೆನ್, ರಾಜು!"
+  },
+  "L24": {
+   "w": "RAJU",
+   "en": "Ajji, how do you know my name?",
+   "kn": "ಅಜ್ಜಿ, ನಿಮಗೆ ನನ್ನ ಹೆಸರು ಹೇಗೆ ಗೊತ್ತು?",
+   "tcy": "ಅಜ್ಜಿ, ಈರೆಗ್ ಎನ್ನ ಪುದರ್ ಎಂಚ ಗೊತ್ತು?"
+  },
+  "L25": {
+   "w": "AJJI",
+   "en": "I sold your mother mallige for forty years. Go! He is on the black motorbike!",
+   "kn": "ನಿನ್ನ ಅಮ್ಮನಿಗೆ ನಲವತ್ತು ವರ್ಷ ಮಲ್ಲಿಗೆ ಮಾರಿದ್ದೇನೆ. ಹೋಗು! ಅವನು ಕಪ್ಪು ಬೈಕಲ್ಲಿ ಹೋದ!",
+   "tcy": "ನಿನ್ನ ಅಮ್ಮೆಗ್ ನಲ್ವತ್ತ್ ವರ್ಸ ಮಲ್ಲಿಗೆ ಮಾರ್ದೆ. ಪೋ! ಅಯ್ಯ ಕಪ್ಪು ಬೈಕ್‌ಡ್ ಪೋಯೆ!"
+  },
+  "L26": {
+   "w": "THIEF",
+   "en": "Sorry sorry! It was for my girlfriend. She said no flowers, no coffee.",
+   "kn": "ಸಾರಿ ಸಾರಿ! ಗರ್ಲ್‌ಫ್ರೆಂಡ್‌ಗೋಸ್ಕರ. ಹೂವೂ ಬೇಡ, ಕಾಫಿಯೂ ಬೇಡ ಅಂದ್ಲು.",
+   "tcy": "ಸಾರಿ ಸಾರಿ! ಗರ್ಲ್‌ಫ್ರೆಂಡ್‌ಗ್. ಪೂವುಲಾ ಬೇಡ, ಕಾಫಿಲಾ ಬೇಡ ಪಂಡ್ಲು."
+  },
+  "L27": {
+   "w": "RAJU",
+   "en": "Then buy her flowers. With money.",
+   "kn": "ಹಾಗಾದ್ರೆ ಹೂವು ಕೊಂಡ್ಕೋ. ದುಡ್ಡು ಕೊಟ್ಟು.",
+   "tcy": "ಅತ್ತಾಂಡ ಪೂ ಕೊರ್ಲೆ. ಪೈಸೆ ಕೊರ್ದ್."
+  },
+  "L28": {
+   "w": "AJJI",
+   "en": "Raju, here is ₹700 for the petrol. And tell your amma I said the mallige is on the house.",
+   "kn": "ರಾಜು, ಪೆಟ್ರೋಲ್‌ಗೆ ಏಳುನೂರು ರೂಪಾಯಿ ತಗೋ. ಮಲ್ಲಿಗೆ ಉಚಿತ ಅಂತ ನಿನ್ನ ಅಮ್ಮನಿಗೆ ಹೇಳು.",
+   "tcy": "ರಾಜು, ಪೆಟ್ರೋಲ್‌ಗ್ ಏಳ್‌ನೂರ್ ರೂಪಾಯಿ ದೆಪ್ಪುಲೆ. ಮಲ್ಲಿಗೆ ಫ್ರೀ ಪಂದ್ ನಿನ್ನ ಅಮ್ಮೆಗ್ ಪಂಡ್."
+  },
+  "L29": {
+   "w": "SHWETHA",
+   "en": "Raju anna! Remember me? Pai uncle's daughter. My Insta needs a photo of the basadi in Aanekere. Golden hour. Please?",
+   "kn": "ರಾಜು ಅಣ್ಣಾ! ನೆನಪಿದ್ಯಾ? ಪೈ ಅಂಕಲ್ ಮಗಳು. ನನ್ನ ಇನ್ಸ್ಟಾಗೆ ಆನೆಕೆರೆಯ ಬಸದಿಯ ಫೋಟೋ ಬೇಕು. ಗೋಲ್ಡನ್ ಅವರ್. ಪ್ಲೀಸ್?",
+   "tcy": "ರಾಜು ಅಣ್ಣಾ! ನೆನಪುಂಡಾ? ಪೈ ಅಂಕಲ್ದ ಮಗಳ್. ಎನ್ನ ಇನ್ಸ್ಟಾಗ್ ಆನೆಕೆರೆದ ಬಸದಿದ ಫೋಟೋ ಬೋಡು. ಗೋಲ್ಡನ್ ಅವರ್. ಪ್ಲೀಸ್?"
+  },
+  "L30": {
+   "w": "RAJU",
+   "en": "You need a photographer?",
+   "kn": "ನಿನಗೆ ಫೋಟೋಗ್ರಾಫರ್ ಬೇಕಾ?",
+   "tcy": "ನಿಕ್ಕ್ ಫೋಟೋಗ್ರಾಫರ್ ಬೋಡಾ?"
+  },
+  "L31": {
+   "w": "SHWETHA",
+   "en": "No. I need someone with a phone, patience, and no opinions about filters.",
+   "kn": "ಇಲ್ಲ. ಫೋನ್, ತಾಳ್ಮೆ, ಫಿಲ್ಟರ್ ಬಗ್ಗೆ ಅಭಿಪ್ರಾಯ ಇಲ್ಲದವರು ಬೇಕು.",
+   "tcy": "ಅತ್ತ್. ಫೋನ್, ತಾಳ್ಮೆ, ಫಿಲ್ಟರ್ ಬಗ್ಗೆ ಅಭಿಪ್ರಾಯ ಇಜ್ಜಂದಿನಕುಲು ಬೋಡು."
+  },
+  "L32": {
+   "w": "RAJU",
+   "en": "A temple floating in the middle of a lake, and the sun going down behind it. Bengaluru has a lake too. It is on fire.",
+   "kn": "ಕೆರೆಯ ಮಧ್ಯೆ ತೇಲುವ ದೇವಸ್ಥಾನ, ಹಿಂದೆ ಸೂರ್ಯ ಮುಳುಗ್ತಿದ್ದಾನೆ. ಬೆಂಗಳೂರಲ್ಲೂ ಕೆರೆ ಇದೆ. ಅದು ಹೊತ್ತಿ ಉರೀತಿದೆ.",
+   "tcy": "ಕೆರೆದ ನಡುಟು ತೇಲುನ ದೇವಸ್ಥಾನ, ಮುಟ್ಟ ಸೂರ್ಯ ಮುಳುಗೊಂದುಂಡು. ಬೆಂಗಳೂರುಡುಲಾ ಕೆರೆ ಉಂಡು. ಅವು ಉರಿದ್ ಪೋವೊಂದುಂಡು."
+  },
+  "L33": {
+   "w": "SHWETHA",
+   "en": "Four hundred likes in ten minutes! You are hired. Next: Bahubali Betta. Everyone goes there, and nobody goes alone.",
+   "kn": "ಹತ್ತು ನಿಮಿಷದಲ್ಲಿ ನಾನೂರು ಲೈಕ್ಸ್! ನೀನು ಹೈರ್ ಆದೆ. ಮುಂದೆ ಬಾಹುಬಲಿ ಬೆಟ್ಟ. ಎಲ್ಲರೂ ಹೋಗ್ತಾರೆ, ಯಾರೂ ಒಬ್ಬರೇ ಹೋಗಲ್ಲ.",
+   "tcy": "ಹತ್ತ್ ನಿಮಿಷೊಡು ನಾನೂರ್ ಲೈಕ್ಸ್! ಈರ್ ಹೈರ್ ಆತೆರ್. ಬೊಕ್ಕ ಬಾಹುಬಲಿ ಬೆಟ್ಟ. ಎಲ್ಲೆರ್ ಪೋವೆರ್, ಒರ್ವುಲಾ ಒಬ್ಬನೇ ಪೋಪುಜ್ಜಿ."
+  },
+  "L34": {
+   "w": "RAJU",
+   "en": "I think I should go alone.",
+   "kn": "ನಾನು ಒಬ್ಬನೇ ಹೋಗಬೇಕು ಅನ್ಸುತ್ತೆ.",
+   "tcy": "ಯಾನ್ ಒಬ್ಬನೇ ಪೋಯೆರೆ ಆವು ಅನ್ನಂದ್ ತೋಜುಂಡು."
+  },
+  "L35": {
+   "w": "NARRATOR",
+   "en": "Bahubali Betta. Forty-two feet of granite, standing in silence for five hundred years.",
+   "kn": "ಬಾಹುಬಲಿ ಬೆಟ್ಟ. ನಲವತ್ತೆರಡು ಅಡಿ ಕಗ್ಗಲ್ಲು, ಐದುನೂರು ವರ್ಷಗಳಿಂದ ಮೌನವಾಗಿ ನಿಂತಿದೆ.",
+   "tcy": "ಬಾಹುಬಲಿ ಬೆಟ್ಟ. ನಲ್ವತ್ತೆರಡ್ ಅಡಿ ಕಗ್ಗಲ್ಲ್, ಐನೂರ್ ವರ್ಸಡ್ದ್ ಮೌನವಾದ್ ನಿಂತುಂಡು."
+  },
+  "L36": {
+   "w": "RAJU",
+   "en": "Ajja brought me here when I was six. I counted the steps. I lost count at two hundred.",
+   "kn": "ಅಜ್ಜ ನಾನು ಆರು ವರ್ಷದವನಿದ್ದಾಗ ಇಲ್ಲಿಗೆ ಕರೆತಂದಿದ್ದರು. ನಾನು ಮೆಟ್ಟಿಲು ಎಣಿಸಿದೆ. ಇನ್ನೂರರ ಮೇಲೆ ಲೆಕ್ಕ ತಪ್ಪಿತು.",
+   "tcy": "ಅಜ್ಜ ಯಾನ್ ಆರ್ ವರ್ಸದಕುಲು ಇಪ್ಪುನೆಗ ಇಡೆಗ್ ಕರ್ಕೊಂದ್ ಬತ್ತೆರ್. ಯಾನ್ ಮೆಟ್ಟಿಲ್ ಎಣಿಸಿದೆ. ಇನ್ನೂರ್‌ದ ಮಿತ್ತ್ ಲೆಕ್ಕ ತಪ್ಪಾಂಡ್."
+  },
+  "L37": {
+   "w": "RAJU",
+   "en": "Every step, he said, is one less worry.",
+   "kn": "ಪ್ರತಿ ಮೆಟ್ಟಿಲು ಒಂದು ಚಿಂತೆ ಕಡಿಮೆ ಅಂತ ಅವರು ಹೇಳ್ತಿದ್ರು.",
+   "tcy": "ಪ್ರತಿ ಮೆಟ್ಟಿಲ್ ಒಂಜಿ ಚಿಂತೆ ಕಮ್ಮಿ ಪಂದ್ ಅಜ್ಜ ಪನ್ಪೊಂದಿತ್ತೆರ್."
+  },
+  "L38": {
+   "w": "NARRATOR",
+   "en": "Sunrise on Bahubali Betta.",
+   "kn": "ಬಾಹುಬಲಿ ಬೆಟ್ಟದಲ್ಲಿ ಸೂರ್ಯೋದಯ.",
+   "tcy": "ಬಾಹುಬಲಿ ಬೆಟ್ಟೊಡು ಸೂರ್ಯೋದಯ."
+  },
+  "L39": {
+   "w": "RAJU",
+   "en": "Five hundred years of standing still. And I thought I was good at patience.",
+   "kn": "ಐದುನೂರು ವರ್ಷ ಸುಮ್ಮನೆ ನಿಂತಿದೆ. ನಾನು ತಾಳ್ಮೆಯವನು ಅಂದುಕೊಂಡಿದ್ದೆ.",
+   "tcy": "ಐನೂರ್ ವರ್ಸ ಸುಮ್ಮನೆ ನಿಂತುಂಡು. ಯಾನ್ ತಾಳ್ಮೆದಾಯೆ ಪಂದ್ ಉಂತೊಂದಿತ್ತೆ."
+  },
+  "L40": {
+   "w": "AMMA",
+   "en": "Raju! Where are you? It is six in the morning. Are you on that hill again?",
+   "kn": "ರಾಜು! ಎಲ್ಲಿದ್ದೀಯ? ಬೆಳಿಗ್ಗೆ ಆರು ಗಂಟೆ. ಮತ್ತೆ ಆ ಬೆಟ್ಟದ ಮೇಲಿದ್ದೀಯಾ?",
+   "tcy": "ರಾಜು! ಎಲ್ಲಿ ಉಲ್ಲ? ಉಬೆ ಆರ್ ಗಂಟೆ. ಒರಿ ಆ ಬೆಟ್ಟದ ಮಿತ್ತ್ ಉಲ್ಲಾ?"
+  },
+  "L41": {
+   "w": "RAJU",
+   "en": "Amma... I am staying.",
+   "kn": "ಅಮ್ಮಾ... ನಾನು ಇಲ್ಲೇ ಇರ್ತೀನಿ.",
+   "tcy": "ಅಮ್ಮಾ... ಯಾನ್ ಇಡೇ ಉಪ್ಪೆ."
+  },
+  "L42": {
+   "w": "AMMA",
+   "en": "Staying? In Karkala? Your boss in Bengaluru will cry.",
+   "kn": "ಇರ್ತೀಯಾ? ಕಾರ್ಕಳದಲ್ಲಾ? ಬೆಂಗಳೂರಿನ ಬಾಸ್ ಅಳ್ತಾನೆ.",
+   "tcy": "ಉಪ್ಪುವಾ? ಕಾರ್ಕಳೊಡಾ? ಬೆಂಗಳೂರುದ ಬಾಸ್ ಅರ್ಪೆ."
+  },
+  "L43": {
+   "w": "RAJU",
+   "en": "He can cry on a video call. I will work from here. From the temple steps, if I must.",
+   "kn": "ವಿಡಿಯೋ ಕಾಲ್‌ನಲ್ಲಿ ಅಳಲಿ. ನಾನು ಇಲ್ಲಿಂದಲೇ ಕೆಲಸ ಮಾಡ್ತೀನಿ. ಬೇಕಾದ್ರೆ ದೇವಸ್ಥಾನದ ಮೆಟ್ಟಿಲ ಮೇಲೆ ಕೂತು.",
+   "tcy": "ವಿಡಿಯೋ ಕಾಲ್‌ಡ್ ಅರ್ಪಡ್. ಯಾನ್ ಇಡ್ದೇ ಕೆಲಸ ಮಲ್ಪೆ. ಬೋಡಾಂಡ ದೇವಸ್ಥಾನದ ಮೆಟ್ಟಿಲ್ ಮೇಲ್ ಕುಲ್ಲ್‌ದ್."
+  },
+  "L44": {
+   "w": "AMMA",
+   "en": "Then come home for breakfast. And bring bread. And mallige from Ajji.",
+   "kn": "ಹಾಗಾದ್ರೆ ತಿಂಡಿಗೆ ಮನೆಗೆ ಬಾ. ಬ್ರೆಡ್ ತಗೊಂಡು ಬಾ. ಅಜ್ಜಿಯಿಂದ ಮಲ್ಲಿಗೆ ಕೂಡ.",
+   "tcy": "ಅತ್ತಾಂಡ ತಿಂಡಿಗ್ ಇಲ್ಲ್‌ಗ್ ಬಲೆ. ಬ್ರೆಡ್ ದೆತ್ತೊಂದು ಬಲೆ. ಅಜ್ಜಿದ್ದ್ ಮಲ್ಲಿಗೆಲಾ."
+  },
+  "L45": {
+   "w": "RAJU",
+   "en": "Bread and mallige. Coming, Amma.",
+   "kn": "ಬ್ರೆಡ್ ಮತ್ತು ಮಲ್ಲಿಗೆ. ಬರ್ತೀನಮ್ಮ.",
+   "tcy": "ಬ್ರೆಡ್ ಬೊಕ್ಕ ಮಲ್ಲಿಗೆ. ಬರ್ಪೆ ಅಮ್ಮಾ."
+  },
+  "L46": {
+   "w": "NARRATOR",
+   "en": "The traffic will still be late. The rain will still be punctual. And Karkala will still be home.",
+   "kn": "ಟ್ರಾಫಿಕ್ ಇನ್ನೂ ತಡವಾಗಿರುತ್ತೆ. ಮಳೆ ಇನ್ನೂ ಸರಿಯಾದ ಸಮಯಕ್ಕೆ ಬರುತ್ತೆ. ಕಾರ್ಕಳ ಇನ್ನೂ ಮನೆಯಾಗಿರುತ್ತೆ.",
+   "tcy": "ಟ್ರಾಫಿಕ್ ಇತ್ತೆಲಾ ತಡ ಆಪುಂಡು. ಮಳೆ ಇತ್ತೆಲಾ ಸರಿ ಟೈಮ್‌ಗ್ ಬರ್ಪುಂಡು. ಕಾರ್ಕಳ ಇತ್ತೆಲಾ ಇಲ್ಲ್ ಆದ್ ಉಪ್ಪುಂಡು."
+  },
+  "Q01": {
+   "w": "PEDESTRIAN",
+   "en": "Hey! Can't you see?",
+   "kn": "ಏಯ್! ಕಣ್ಣು ಕಾಣಲ್ವಾ?",
+   "tcy": "ಏ! ಕಣ್ಣ್ ಕಾಣಂದಾ?"
+  },
+  "Q02": {
+   "w": "PEDESTRIAN",
+   "en": "What is this, man!",
+   "kn": "ಏನ್ ಮಾರಾಯ!",
+   "tcy": "ಎಂಚ ಮಾರಾಯ!"
+  },
+  "Q03": {
+   "w": "PEDESTRIAN",
+   "en": "Look where you are going!",
+   "kn": "ಸ್ವಲ್ಪ ನೋಡಿ ಹೋಗಿ!",
+   "tcy": "ಸ್ವಲ್ಪ ತೂದ್ ಪೋಲೆ!"
+  },
+  "Q04": {
+   "w": "PEDESTRIAN",
+   "en": "Ayyo, my leg!",
+   "kn": "ಅಯ್ಯೋ, ನನ್ನ ಕಾಲು!",
+   "tcy": "ಅಯ್ಯೋ, ಎನ್ನ ಕಾಲ್!"
+  },
+  "Q05": {
+   "w": "PEDESTRIAN",
+   "en": "What is this, I say?!",
+   "kn": "ಏನ್ರೀ ಇದು?!",
+   "tcy": "ದಾನೆ ಮಾರಾಯ?!"
+  },
+  "Q06": {
+   "w": "PEDESTRIAN",
+   "en": "I'll call the police!",
+   "kn": "ಪೊಲೀಸ್‌ಗೆ ಕಾಲ್ ಮಾಡ್ತೀನಿ!",
+   "tcy": "ಪೊಲೀಸ್‌ಗ್ ಕಾಲ್ ಮಲ್ಪುವೆ!"
+  },
+  "Q07": {
+   "w": "PEDESTRIAN",
+   "en": "My vehicle! Stop right there!",
+   "kn": "ನನ್ನ ಗಾಡಿ! ಇಲ್ಲೇ ನಿಲ್ಲು!",
+   "tcy": "ಎನ್ನ ಗಾಡಿ! ಇಡೆ ನಿಲ್ಲ್!"
+  },
+  "Q08": {
+   "w": "PEDESTRIAN",
+   "en": "Hey! Thief! Thief!",
+   "kn": "ಏಯ್! ಕಳ್ಳ! ಕಳ್ಳ!",
+   "tcy": "ಏ! ಕಳ್ಳ! ಕಳ್ಳ!"
+  },
+  "Q09": {
+   "w": "PEDESTRIAN",
+   "en": "Amma! My vehicle is gone!",
+   "kn": "ಅಮ್ಮಾ! ಗಾಡಿ ಹೋಯ್ತು!",
+   "tcy": "ಅಮ್ಮಾ! ಗಾಡಿ ಪೋಂಡು!"
+  },
+  "Q10": {
+   "w": "NARRATOR",
+   "en": "You hit a cow. In Karkala. Everyone saw.",
+   "kn": "ನೀನು ದನಕ್ಕೆ ಗುದ್ದಿದೆ. ಕಾರ್ಕಳದಲ್ಲಿ. ಎಲ್ಲರೂ ನೋಡಿದ್ರು.",
+   "tcy": "ಈರ್ ದನೆಗ್ ಗುದ್ದಿದ. ಕಾರ್ಕಳೊಡು. ಎಲ್ಲೆರ್ಲಾ ತೂದೆರ್."
+  },
+  "Q11": {
+   "w": "NARRATOR",
+   "en": "The cow is fine. Your reputation is not.",
+   "kn": "ದನ ಚೆನ್ನಾಗಿದೆ. ನಿನ್ನ ಮರ್ಯಾದೆ ಇಲ್ಲ.",
+   "tcy": "ದನ ಲಾಯಿಕ ಉಂಡು. ನಿನ್ನ ಮರ್ಯಾದೆ ಇಜ್ಜಿ."
+  },
+  "T01": {
+   "w": "NARRATOR",
+   "en": "Karkala. Udupi district. Population: small. Opinions: many.",
+   "kn": "ಕಾರ್ಕಳ. ಉಡುಪಿ ಜಿಲ್ಲೆ. ಜನಸಂಖ್ಯೆ: ಕಡಿಮೆ. ಅಭಿಪ್ರಾಯ: ಬಹಳ.",
+   "tcy": "ಕಾರ್ಕಳ. ಉಡುಪಿ ಜಿಲ್ಲೆ. ಜನ: ಕಮ್ಮಿ. ಅಭಿಪ್ರಾಯ: ಬಾರಿ."
+  },
+  "T02": {
+   "w": "NARRATOR",
+   "en": "A hill older than the traffic.",
+   "kn": "ಟ್ರಾಫಿಕ್‌ಗಿಂತ ಹಳೆಯ ಬೆಟ್ಟ.",
+   "tcy": "ಟ್ರಾಫಿಕ್ದ್ ಪಜಿಯ ಬೆಟ್ಟ."
+  },
+  "T03": {
+   "w": "NARRATOR",
+   "en": "A basadi in the middle of a lake.",
+   "kn": "ಕೆರೆಯ ಮಧ್ಯದಲ್ಲಿ ಒಂದು ಬಸದಿ.",
+   "tcy": "ಕೆರೆದ ನಡುಟು ಒಂಜಿ ಬಸದಿ."
+  },
+  "T04": {
+   "w": "NARRATOR",
+   "en": "Buses named after gods. Drivers named after nobody.",
+   "kn": "ದೇವರ ಹೆಸರಿನ ಬಸ್ಸುಗಳು. ಯಾರದೂ ಹೆಸರಿಲ್ಲದ ಡ್ರೈವರ್‌ಗಳು.",
+   "tcy": "ದೇವೆರ್ ಪುದರ್‌ದ ಬಸ್ಸ್‌ಲು. ಏರ್‌ದಲಾ ಪುದರ್ ಇಜ್ಜಂದಿ ಡ್ರೈವರ್‌ಲು."
+  },
+  "T05": {
+   "w": "NARRATOR",
+   "en": "Autos that say pom pom.",
+   "kn": "ಪೊಂ ಪೊಂ ಅನ್ನೋ ಆಟೋಗಳು.",
+   "tcy": "ಪೊಂ ಪೊಂ ಪಂಡುನ ಆಟೋಲು."
+  },
+  "T06": {
+   "w": "NARRATOR",
+   "en": "It will rain at four. Karkala is punctual only about rain.",
+   "kn": "ನಾಲ್ಕು ಗಂಟೆಗೆ ಮಳೆ ಬರುತ್ತೆ. ಕಾರ್ಕಳ ಮಳೆಗೆ ಮಾತ್ರ ಸಮಯಪಾಲನೆ.",
+   "tcy": "ನಾಲ್ಕ್ ಗಂಟೆಗ್ ಮಳೆ ಬರ್ಪುಂಡು. ಕಾರ್ಕಳ ಮಳೆಗ್ ಮಾತ್ರ ಟೈಮ್ ಪಾಲಿಸುಂಡು."
+  },
+  "T07": {
+   "w": "NARRATOR",
+   "en": "Jeep chases. Gossip first, fine later.",
+   "kn": "ಜೀಪ್ ಚೇಸ್. ಮೊದಲು ಗಾಸಿಪ್, ಆಮೇಲೆ ದಂಡ.",
+   "tcy": "ಜೀಪ್ ಚೇಸ್. ಮದಲ್ ಗಾಸಿಪ್, ಬೊಕ್ಕ ದಂಡ."
+  },
+  "T08": {
+   "w": "NARRATOR",
+   "en": "Right of way: cow.",
+   "kn": "ದಾರಿಯ ಹಕ್ಕು: ದನಕ್ಕೆ.",
+   "tcy": "ದಾರಿದ ಹಕ್ಕ್: ದನೆಗ್."
+  },
+  "T09": {
+   "w": "NARRATOR",
+   "en": "Goli baje at five. Always.",
+   "kn": "ಐದು ಗಂಟೆಗೆ ಗೋಳಿಬಜೆ. ಯಾವಾಗಲೂ.",
+   "tcy": "ಐದ್ ಗಂಟೆಗ್ ಗೋಳಿಬಜೆ. ಏತ್‌ಲಾ."
+  }
+ }
+}

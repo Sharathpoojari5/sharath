@@ -9,6 +9,7 @@ export class Audio {
     // engine: two detuned oscillators through a low-pass
     this.musicGain = c.createGain(); this.musicGain.gain.value = 1.5; this.musicGain.connect(this.master);
     this.music = new Music(c, this.musicGain); this.musicOn = true;
+    this.voiceGain = c.createGain(); this.voiceGain.gain.value = 1.7; this.voiceGain.connect(this.master);
     this.recDest = c.createMediaStreamDestination(); this.master.connect(this.recDest);
     // ambience: crickets (night), distant traffic hum, wind
     this.cric = { o: c.createOscillator(), lfo: c.createOscillator(), lg: c.createGain(), g: c.createGain() };
@@ -44,6 +45,7 @@ export class Audio {
       if (info.templeDist < 140 && !info.scene && Math.random() < 0.6) { const v = 0.1 * (1 - info.templeDist / 140); this.music.bell(t + 0.05, 560 + Math.random() * 90, v); this.bellT = 0; }
     }
   }
+  duck(on) { if (this.ctx) this.musicGain.gain.setTargetAtTime(on ? 0.45 : 1.5, this.ctx.currentTime, 0.2); }
   setMusic(on) { this.musicOn = on; }
   /** Short syllable-like blips used as a fallback "voice" while text is typed. */
   blip(who, ch) {

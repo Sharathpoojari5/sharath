@@ -66,6 +66,10 @@
   #dchip{flex:none;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:22px;color:#111;margin-top:2px}
   #dwho{font-weight:900;letter-spacing:.1em;text-transform:uppercase;font-size:13px}
   #dtxt{font-size:clamp(17px,2.1vw,23px);line-height:1.4;margin-top:3px;min-height:2.8em;font-family:"Noto Sans Kannada",system-ui,sans-serif}
+  #dsub{font-size:14px;color:#cbb89a;font-style:italic;margin-top:4px;display:none}
+  .lang{display:flex;gap:8px;justify-content:center;margin-top:12px;align-items:center;font-size:13px;color:var(--dim)}
+  .lang button{appearance:none;border:1px solid #4a3a28;background:#1e160d;color:var(--ink);border-radius:999px;padding:6px 14px;font:800 14px inherit;cursor:pointer}
+  .lang button.on{background:var(--y);color:#1c1406;border-color:var(--y)}
   #dlg.narr #dchip{display:none}#dlg.narr #dtxt{font-style:italic;color:#fde68a}
   #dcont{position:absolute;right:16px;bottom:8px;font-size:12px;color:var(--dim);animation:blink 1.2s infinite}
   @keyframes blink{50%{opacity:.3}}
@@ -110,7 +114,7 @@
 <body>
 <canvas id="view" tabindex="0"></canvas>
 <div id="bars"><i class="t"></i><i class="b"></i></div>
-<div id="dlg"><div class="row"><div id="dchip">R</div><div style="flex:1"><div id="dwho"></div><div id="dtxt"></div></div></div><div id="dcont">Space / click ▸</div></div>
+<div id="dlg"><div class="row"><div id="dchip">R</div><div style="flex:1"><div id="dwho"></div><div id="dtxt"></div><div id="dsub"></div></div></div><div id="dcont">Space / click ▸</div></div>
 <div id="credits"><div class="in"><h1>KARKALA</h1><p>Chapter 1 complete</p><h3>STORY &amp; DESIGN</h3><p>Sharath Poojari</p><h3>BUILT WITH</h3><p>three.js · Web Audio · OpenStreetMap</p><h3>THE MAP</h3><p>Map data © OpenStreetMap contributors</p><h3>NAMMA KARKALA</h3><p>Ajja's scooter, Pramod's bus, Ajji's mallige,</p><p>and one very patient cow.</p><h3>THANK YOU FOR PLAYING</h3><p>ಧನ್ಯವಾದಗಳು</p></div></div>
 
 <div class="hud">
@@ -126,7 +130,7 @@
 <div class="ov" id="pause">
   <div class="logo" style="font-size:44px"><span class="b">PAUSED</span></div>
   <div id="progress" style="color:var(--dim);font-weight:700"></div>
-  <button class="btn" id="resume">Resume</button><button class="btn alt" id="mute">Sound: on</button><button class="btn alt" id="music">Music: on</button><button class="btn alt" id="voices">Voices: on</button><button class="btn alt" id="replay">Watch the trailer</button><button class="btn alt" id="reset">Start over</button>
+  <button class="btn" id="resume">Resume</button><button class="btn alt" id="mute">Sound: on</button><button class="btn alt" id="music">Music: on</button><button class="btn alt" id="voices">Voices: on</button><button class="btn alt" id="lang">Voice: ಕನ್ನಡ</button><button class="btn alt" id="replay">Watch the trailer</button><button class="btn alt" id="reset">Start over</button>
   <div class="keys">
     <kbd>W A S D</kbd><span>walk / drive · <kbd>Shift</kbd> run</span><kbd>Mouse</kbd><span>look around (click the game first)</span>
     <kbd>F</kbd><span>get on / off any vehicle</span><kbd>H</kbd><span>horn (compulsory)</span><kbd>Space</kbd><span>jump · handbrake</span>
@@ -143,6 +147,7 @@
     <button class="btn" id="play" disabled>Play</button>
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px"><button class="btn alt" id="trailer" disabled style="min-width:0;padding:10px 18px;font-size:15px">▶ Watch the trailer</button><button class="btn alt" id="trailerSave" disabled style="min-width:0;padding:10px 18px;font-size:15px">⬇ Save trailer as video</button></div>
     <div id="loading"><div class="track"><div id="bar"></div></div><div id="loadmsg">Loading…</div></div>
+    <div class="lang"><span>Voice &amp; text</span><button data-l="kn">ಕನ್ನಡ</button><button data-l="tcy">ತುಳು</button><button data-l="en">English</button></div>
     <div id="tip"></div>
     <div class="keys">
       <kbd>W A S D</kbd><span>walk / drive · <kbd>Shift</kbd> run</span>

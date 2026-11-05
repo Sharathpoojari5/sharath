@@ -5,7 +5,8 @@ import { Vehicle, Ped, Cow, Player, wrap } from './actors.js';
 import * as M from './models.js';
 import { Audio } from './audio.js';
 import { Cinematic } from './cine.js';
-import { Voice } from './voice.js';
+import { Voice, LANG_NAME } from './voice.js';
+import { LINES } from './story.js';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -14,12 +15,12 @@ const pick = (a) => a[Math.floor(Math.random() * a.length)];
 const $ = (id) => document.getElementById(id);
 const SAVE_KEY = 'namma-karkala-v1';
 const WANTED = ['', 'GOSSIP', 'FINE', 'JEEP CHASE', 'CHECKPOST', 'FRONT PAGE'];
-const OUCH = ['Ey! Kannu kaanalva?', 'Yen maaraya!', 'Swalpa nodi hogi!', 'Ayyo, nanna kaalu!', 'Daane maaraya?!', 'Police ge call maadtini!'];
-const HIJACK = ['Nanna gaadi! Ille nillu!', 'Ey! Kallaa! Kallaa!', 'Amma! Gaadi hoytu!'];
+const Q_OUCH = ['Q01', 'Q02', 'Q03', 'Q04', 'Q05', 'Q06'];
+const Q_HIJACK = ['Q07', 'Q08', 'Q09'];
 const SPK = { RAJU: ['Raju', '#38bdf8'], AMMA: ['Amma · on the phone', '#f472b6'], AJJI: ['Ajji', '#fb923c'], ARCHAKARU: ['Archakaru', '#fbbf24'], PRAMOD: ['Pramod', '#4ade80'],
   OWNER: ['Hotel owner', '#f87171'], CANTEEN: ['Canteen Anna', '#a78bfa'], SHWETHA: ['Shwetha', '#f0abfc'], THIEF: ['Thief', '#cbd5e1'], NARRATOR: ['', '#fde047'] };
-const S = (w, t) => ({ w, t });
-const COWHIT = ['You hit a cow. In Karkala. Everyone saw.', 'The cow is fine. Your reputation is not.'];
+const S = (id) => ({ id });
+const Q_COW = ['Q10', 'Q11'];
 
 export class Game {
   constructor(map, onProgress) {
@@ -50,7 +51,7 @@ export class Game {
     this.camYaw = st ? Math.atan2(-st.n[0], -st.n[1]) : 0; this.camPitch = 0.28; this.camDist = 5.5; this.lastMouse = -99;
     this.marker = M.markerMesh('#facc15'); this.marker.visible = false; S.add(this.marker);
     this.startMarker = M.markerMesh('#f97316'); this.startMarker.visible = false; S.add(this.startMarker);
-    this.cine = new Cinematic(this); this.npcs = {}; this.dlg = null; this.inputLock = false; Voice.init();
+    this.cine = new Cinematic(this); this.npcs = {}; this.dlg = null; this.inputLock = false; Voice.init(this.audio);
     this.setupParked(); this.setupMissions(); this.setupNpcs();
     this.bindInput(); this.hudInit();
     this.clock = new THREE.Clock(); const loop = () => { requestAnimationFrame(loop); this.frame(); }; loop();
@@ -140,6 +141,8 @@ export class Game {
     $('resume').onclick = () => this.togglePause();
     $('music').onclick = () => { this.audio.setMusic(!this.audio.musicOn); $('music').textContent = this.audio.musicOn ? 'Music: on' : 'Music: off'; };
     $('voices').onclick = () => { Voice.enabled = !Voice.enabled; if (!Voice.enabled) Voice.stop(); $('voices').textContent = Voice.enabled ? 'Voices: on' : 'Voices: off'; };
+    $('lang').onclick = () => { Voice.nextLang(); $('lang').textContent = 'Voice: ' + LANG_NAME[Voice.lang]; };
+    $('lang').textContent = 'Voice: ' + LANG_NAME[Voice.lang];
     $('replay').onclick = () => { this.togglePause(); this.playTrailer(); };
     $('mute').onclick = () => { this.audio.setMuted(this.audio.on); $('mute').textContent = this.audio.on ? 'Sound: on' : 'Sound: off'; };
     $('reset').onclick = () => { if (confirm('Delete your Karkala progress and start again?')) { localStorage.removeItem(SAVE_KEY); location.reload(); } };
@@ -190,7 +193,7 @@ export class Game {
     if (best.driver === 'ai' || best.driver === 'police' || best.driver === 'thief') {
       if (best.driver === 'thief') return;
       const ped = new Ped(this, best.x - Math.cos(best.h) * 2, best.z + Math.sin(best.h) * 2); ped.state = 'flee'; this.peds.push(ped);
-      this.say(pick(HIJACK), 2.5, 'AJJI'); this.offence(best.driver === 'police' ? 2.2 : 1.1);
+      this.sayQ(pick(Q_HIJACK), 2.5); this.offence(best.driver === 'police' ? 2.2 : 1.1);
       if (best.police) this.police = this.police.filter(v => v !== best);
     }
     best.driver = 'player'; best.parked = false; best.removeDriverModel(); this.car = best; this.camDist = best.def.cam;
@@ -248,7 +251,7 @@ export class Game {
     for (const q of this.peds) if (q.state === 'walk' && Math.hypot(q.x - src.x, q.z - src.z) < 14) { q.dodge = 1.2; q.h += Math.PI / 2 * (Math.random() < 0.5 ? 1 : -1); }
     if (src === this.car || src === this.player) for (const c of this.cows) if (Math.hypot(c.x - src.x, c.z - src.z) < 16 && Math.random() < 0.15) this.say('The cow heard you. The cow does not care.', 2.2);
   }
-  shout(ped) { if (Math.hypot(ped.x - this.player.x, ped.z - this.player.z) < 40) this.say(pick(OUCH), 2.2, 'OWNER'); }
+  shout(ped) { if (Math.hypot(ped.x - this.player.x, ped.z - this.player.z) < 40) this.sayQ(pick(Q_OUCH), 2.2); }
   offence(n) { this.heat = Math.min(5.99, this.heat + n); this.lastOffence = this.now; }
   onCrash(me, other) {
     if (other.driver === 'police') this.offence(1.2); else if (other.driver === 'ai' && Math.abs(me.v) > 9) this.offence(0.35);
@@ -303,62 +306,62 @@ export class Game {
     const npcPos = (id) => () => { const n = this.npcs[id]; return n ? [n.x, n.z] : [150, 38]; };
     this.MISSIONS = [
       { id: 'm1', title: 'Welcome Home', reward: 300, start: () => bus(), auto: true, steps: [
-        { t: 'say', lines: [S('NARRATOR', 'Karkala bus stand. Four thirty in the evening.'),
-          S('RAJU', 'Four years in Bengaluru. Three of them stuck at Silk Board. My laptop is on twelve percent and my soul is on two.'),
-          S('RAJU', 'Karkala. The hill is still there. The cows are still there. Nobody has asked me for my sprint update.'),
-          S('AMMA', 'Raju! Did you reach? Did you eat? Ajja\'s scooter is parked near Gandhi Maidan. He wanted you to have it.'),
-          S('RAJU', 'Amma, it is twenty-five years old.'),
-          S('AMMA', 'And still better than your Bengaluru auto driver. Take it to the temple first. Pooja, then pizza.')] },
+        { t: 'say', lines: [S('L01'),
+          S('L02'),
+          S('L03'),
+          S('L04'),
+          S('L05'),
+          S('L06')] },
         { t: 'goto', at: () => this.ajja ? [this.ajja.x, this.ajja.z] : R('Gandhi Maidan')(), r: 4, need: 'foot', text: 'Walk to Ajja\'s old red scooter near <b>Gandhi Maidan</b>' },
         { t: 'enter', tag: 'ajja', text: 'Press <b>F</b> to get on the scooter' },
-        { t: 'say', lines: [S('RAJU', 'It still smells of Ajja\'s attar and petrol. Okay. One kick, and we go.')] },
+        { t: 'say', lines: [S('L07')] },
         { t: 'stop', at: temple, r: 9, hold: 2.5, text: 'Ride to <b>Sri Venkataramana Temple</b> and stop at the gate' },
-        { t: 'say', lines: [S('ARCHAKARU', 'Raju? Gopalayya\'s grandson? Come, come. Lemon under the front wheel, kumkuma on the headlight. Slowly, magu.'),
-          S('ARCHAKARU', 'Your Ajja rode this scooter to this gate every Thursday for thirty years. Not once did he go above twenty.'),
-          S('RAJU', 'A blessed 1998 scooter, a full tank, and a town that has not changed. We are unstoppable.')] }] },
+        { t: 'say', lines: [S('L08'),
+          S('L09'),
+          S('L10')] }] },
       { id: 'm2', title: 'Goli Baje Express', reward: 500, start: npcPos('owner'), steps: [
-        { t: 'say', lines: [S('OWNER', 'You! Gopalayya\'s grandson! You have a scooter? Forty goli baje for the college canteen. Hot hot. Wrap them well.'),
-          S('RAJU', 'Anna, I am a software engineer.'),
-          S('OWNER', 'Today you are a delivery boy. Two minutes is hot. Three minutes is a cold bonda. Go!')] },
+        { t: 'say', lines: [S('L11'),
+          S('L12'),
+          S('L13')] },
         { t: 'enter', two: true, text: 'Get on a <b>two-wheeler</b> (your scooter works)' },
         { t: 'timer', sec: 120 },
         { t: 'stop', at: R('Sri Bhuvanendra College'), r: 10, hold: 1, text: 'Deliver the hot goli baje to <b>Bhuvanendra College</b>' },
-        { t: 'say', lines: [S('CANTEEN', 'Still hot! Who are you? Hotel Raj Mahal sent a new boy?'),
-          S('RAJU', 'Just a boy with a scooter. And a degree.'),
-          S('CANTEEN', 'Keep your degree. Keep these two goli baje as well. Students will survive one more lecture.')] }] },
+        { t: 'say', lines: [S('L14'),
+          S('L15'),
+          S('L16')] }] },
       { id: 'm3', title: 'Conductor Saab', reward: 800, start: npcPos('pramod'), steps: [
-        { t: 'say', lines: [S('PRAMOD', 'Machaa! You are back! Listen, I have fever and the bus has a schedule. Take SRI DURGA on the town round. Stop at every stop. Right?'),
-          S('RAJU', 'I have never driven a bus.'),
-          S('PRAMOD', 'Nobody drives a bus. You just hold the horn and trust the Lord. And honk. A bus that does not honk is not a bus.')] },
+        { t: 'say', lines: [S('L17'),
+          S('L18'),
+          S('L19')] },
         { t: 'enter', tag: 'pramod', text: 'Get into the red bus <b>SRI DURGA</b> at the bus stand' },
-        { t: 'say', lines: [S('RAJU', 'Gears like a washing machine. Okay, Karkala, please stay out of my way.')] },
+        { t: 'say', lines: [S('L20')] },
         { t: 'stop', at: R('Gandhi Maidan'), r: 12, hold: 2, text: 'Stop 1 of 3: <b>Gandhi Maidan</b>', pax: true },
         { t: 'stop', at: temple, r: 12, hold: 2, text: 'Stop 2 of 3: <b>Venkataramana Temple</b>', pax: true },
         { t: 'stop', at: R('Karkala Government Hospital'), r: 12, hold: 2, text: 'Stop 3 of 3: <b>Government Hospital</b>', pax: true },
         { t: 'stop', at: () => bus(), r: 14, hold: 2, text: 'Back to the <b>bus stand</b>' },
-        { t: 'say', lines: [S('PRAMOD', 'Full bus, no scratches? You are a natural, machaa. Quit software. Join the transport business.'),
-          S('RAJU', 'Pramod, I think I only lost two mirrors and my dignity.')] }] },
+        { t: 'say', lines: [S('L21'),
+          S('L22')] }] },
       { id: 'm4', title: 'The Mallige Thief', reward: 700, start: npcPos('ajji'), steps: [
-        { t: 'say', lines: [S('AJJI', 'Ayyo! That boy in the red cap took my whole mallige basket! Twenty moLa, fresh from Udupi! Catch him, Raju!'),
-          S('RAJU', 'Ajji, how do you know my name?'),
-          S('AJJI', 'I sold your mother mallige for forty years. Go! He is on the black motorbike!')] },
+        { t: 'say', lines: [S('L23'),
+          S('L24'),
+          S('L25')] },
         { t: 'chase', sec: 110, text: 'Catch the <b>thief on the black bike</b>. Stay close to him!' },
-        { t: 'say', lines: [S('THIEF', 'Sorry sorry! It was for my girlfriend. She said no flowers, no coffee.'),
-          S('RAJU', 'Then buy her flowers. With money.'),
-          S('AJJI', 'Raju, here is ₹700 for the petrol. And tell your amma I said the mallige is on the house.')] }] },
+        { t: 'say', lines: [S('L26'),
+          S('L27'),
+          S('L28')] }] },
       { id: 'm5', title: 'Kere Evening', reward: 400, start: npcPos('shwetha'), steps: [
-        { t: 'say', lines: [S('SHWETHA', 'Raju anna! Remember me? Pai uncle\'s daughter. My Insta needs a photo of the basadi in Aanekere. Golden hour. Please?'),
-          S('RAJU', 'You need a photographer?'),
-          S('SHWETHA', 'No. I need someone with a phone, patience, and no opinions about filters.')] },
+        { t: 'say', lines: [S('L29'),
+          S('L30'),
+          S('L31')] },
         { t: 'goto', at: () => { const k = w.kereBasadi || [112, 360]; const rd = w.nearestRoad(k[0], k[1], 200); return rd ? [rd.x, rd.z] : k; }, r: 9, text: 'Go to <b>Aanekere</b>, by the lake' },
-        { t: 'say', lines: [S('RAJU', 'A temple floating in the middle of a lake, and the sun going down behind it. Bengaluru has a lake too. It is on fire.')] },
+        { t: 'say', lines: [S('L32')] },
         { t: 'photo', text: 'Press <b>O</b> for photo mode, frame the basadi in the lake, then press <b>Enter</b>' },
-        { t: 'say', lines: [S('SHWETHA', 'Four hundred likes in ten minutes! You are hired. Next: Bahubali Betta. Everyone goes there, and nobody goes alone.'),
-          S('RAJU', 'I think I should go alone.')] }] },
+        { t: 'say', lines: [S('L33'),
+          S('L34')] }] },
       { id: 'm6', title: 'Bahubali Calling', reward: 1000, start: () => w.hillFoot || R('Bahubali Hill')(), steps: [
-        { t: 'say', lines: [S('NARRATOR', 'Bahubali Betta. Forty-two feet of granite, standing in silence for five hundred years.'),
-          S('RAJU', 'Ajja brought me here when I was six. I counted the steps. I lost count at two hundred.'),
-          S('RAJU', 'Every step, he said, is one less worry.')] },
+        { t: 'say', lines: [S('L35'),
+          S('L36'),
+          S('L37')] },
         { t: 'goto', at: () => w.hillTop || [w.hill.x, w.hill.z], r: 7, need: 'foot', text: 'Climb the steps up <b>Bahubali Betta</b> on foot' },
         { t: 'photo', text: 'Press <b>O</b> and take a photo with Bahubali, then press <b>Enter</b>' },
         { t: 'ending' }] },
@@ -576,24 +579,24 @@ export class Game {
   nextLine() {
     const d = this.dlg; d.i++; Voice.stop();
     if (d.i >= d.lines.length) return this.endTalk();
-    const L = d.lines[d.i], [name, col] = SPK[L.w] || ['', '#fff']; d.L = L; d.shown = 0; d.timer = 0; d.voiceDone = false; d.voiceOk = false; d.full = false; d.sp = this.speaker(L.w);
-    if (L.w === 'AMMA' && (d.i === 0 || d.lines[d.i - 1].w !== 'AMMA')) this.audio.ring();
+    const raw = d.lines[d.i], rec = LINES[raw.id], L = { id: raw.id, w: rec.w, t: Voice.text(raw.id), en: rec.en }, [name, col] = SPK[L.w] || ['', '#fff'];
+    d.L = L; d.shown = 0; d.timer = 0; d.voiceDone = false; d.full = false; d.sp = this.speaker(L.w);
+    if (L.w === 'AMMA' && (d.i === 0 || LINES[d.lines[d.i - 1].id].w !== 'AMMA')) this.audio.ring();
     if (d.sp && d.sp.mesh && d.sp.id) { d.sp.h = Math.atan2(this.player.x - d.sp.x, this.player.z - d.sp.z); }
     $('dwho').textContent = name; $('dwho').style.color = col; $('dchip').style.background = col; $('dchip').textContent = (name || '·')[0]; $('dtxt').textContent = '';
+    $('dsub').textContent = Voice.lang === 'en' ? '' : L.en; $('dsub').style.display = Voice.lang === 'en' ? 'none' : 'block';
     $('dlg').classList.toggle('narr', L.w === 'NARRATOR'); $('dlg').style.display = 'block'; $('dlg').classList.remove('in'); void $('dlg').offsetWidth; $('dlg').classList.add('in');
-    Voice.speak(L.t, L.w, (ok) => { d.voiceDone = true; d.voiceOk = ok; });
+    d.voiceStarted = Voice.speak(L.id, L.w, () => { d.voiceDone = true; });
     d.mode = (d.i % 2) ? 1 : -1;
   }
   updateDialogue(dt) {
     const d = this.dlg; if (!d) return; d.timer += dt;
     const L = d.L, n = L.t.length;
     if (!d.full) {
-      const target = Math.min(n, Math.floor(d.timer * 42)); if (target > d.shown) { for (let k = d.shown; k < target; k += 3) this.audio.blip(L.w, L.t[k] || 'a'); d.shown = target; $('dtxt').textContent = L.t.slice(0, d.shown); }
+      const target = Math.min(n, Math.floor(d.timer * (d.voiceStarted ? 30 : 42)));
+      if (target > d.shown) { if (!d.voiceStarted) for (let k = d.shown; k < target; k += 3) this.audio.blip(L.w, L.t[k] || 'a'); d.shown = target; $('dtxt').textContent = L.t.slice(0, d.shown); }
       if (d.shown >= n) { d.full = true; d.doneAt = d.timer; }
-    } else {
-      const read = 1.3 + n * 0.042;
-      if ((d.voiceDone && d.voiceOk && d.timer - d.doneAt > 0.6) || (!Voice.ok && d.timer - d.doneAt > read * 0.55) || (Voice.ok && !d.voiceOk && d.voiceDone && d.timer - d.doneAt > read * 0.55)) this.nextLine();
-    }
+    } else if (d.voiceStarted ? (d.voiceDone && d.timer - d.doneAt > 0.5) : (d.timer - d.doneAt > 0.7 + n * 0.024)) this.nextLine();
   }
   advanceTalk() { const d = this.dlg; if (!d) return; if (!d.full) { d.full = true; d.shown = d.L.t.length; d.doneAt = d.timer; $('dtxt').textContent = d.L.t; } else this.nextLine(); }
   skipTalk() { if (this.dlg) { this.dlg.i = this.dlg.lines.length; this.nextLine(); } }
@@ -615,11 +618,11 @@ export class Game {
       let t = 0; const tick = (dt) => { t += dt; const a = f + 0.4 - Math.min(1, t / 40) * 0.8; this.cinCam = { p: [h.x + Math.sin(a) * 22, h.H + 7.5 - Math.min(1, t / 40) * 1.5, h.z + Math.cos(a) * 22], l: [h.x, h.H + 8.5, h.z], fov: 50 }; };
       this.endTick = tick; await new Promise(r => setTimeout(r, 1500));
       document.body.classList.remove('cine'); document.body.classList.add('talk');
-      await this.talk([S('NARRATOR', 'Sunrise on Bahubali Betta.'), S('RAJU', 'Five hundred years of standing still. And I thought I was good at patience.'),
-        S('AMMA', 'Raju! Where are you? It is six in the morning. Are you on that hill again?'), S('RAJU', 'Amma... I am staying.'),
-        S('AMMA', 'Staying? In Karkala? Your boss in Bengaluru will cry.'), S('RAJU', 'He can cry on a video call. I will work from here. From the temple steps, if I must.'),
-        S('AMMA', 'Then come home for breakfast. And bring bread. And mallige from Ajji.'), S('RAJU', 'Bread and mallige. Coming, Amma.'),
-        S('NARRATOR', 'The traffic will still be late. The rain will still be punctual. And Karkala will still be home.')]);
+      await this.talk([S('L38'), S('L39'),
+        S('L40'), S('L41'),
+        S('L42'), S('L43'),
+        S('L44'), S('L45'),
+        S('L46')]);
       this.endTick = null; this.cinCam = { p: [h.x + Math.sin(f) * 30, h.H + 6, h.z + Math.cos(f) * 30], l: [h.x, h.H + 9, h.z], fov: 50 };
       $('credits').classList.add('roll'); this.audio.music.set('ending'); await new Promise(r => setTimeout(r, 24000)); $('credits').classList.remove('roll');
       this.endMode = false; this.cinCam = null; this.endTick = null; this.inputLock = false; document.body.classList.remove('cine', 'talk');
@@ -692,7 +695,7 @@ export class Game {
       else if (Math.abs(v.v) > 0.05) v.physics(dt, { thr: 0, steer: 0, hand: true });
       v.sync();
       // a moving vehicle hitting the player on foot
-      if (!cin && !this.car && Math.abs(v.v) > 6 && p.down <= 0) { const d = Math.hypot(v.x - p.x, v.z - p.z); if (d < v.def.L / 2 + 0.4 && this.rayHit(v, p.x, p.z, 0.4)) { p.down = 1.8; p.hp -= Math.abs(v.v) * 3; p.lastHurt = this.now; this.audio.thud(v.v); v.v *= 0.3; this.say(pick(['Ayyo!', 'Kanninda nodi, maaraya!']), 2); } }
+      if (!cin && !this.car && Math.abs(v.v) > 6 && p.down <= 0) { const d = Math.hypot(v.x - p.x, v.z - p.z); if (d < v.def.L / 2 + 0.4 && this.rayHit(v, p.x, p.z, 0.4)) { p.down = 1.8; p.hp -= Math.abs(v.v) * 3; p.lastHurt = this.now; this.audio.thud(v.v); v.v *= 0.3; this.sayQ(pick(['Q03', 'Q04']), 2); } }
     }
     if (!cin) this.updatePolice(dt);
     for (const v of this.police) v.sync();
@@ -702,7 +705,7 @@ export class Game {
     }
     for (const c of this.cows) {
       c.update(dt);
-      if (!cin && this.car && c.hit <= 0 && Math.abs(this.car.v) > 4 && this.rayHit(this.car, c.x, c.z, 0.9)) { c.hit = 3; c.h = this.car.h; this.audio.thud(9); this.offence(2); this.say(pick(COWHIT), 3); this.car.v *= 0.2; }
+      if (!cin && this.car && c.hit <= 0 && Math.abs(this.car.v) > 4 && this.rayHit(this.car, c.x, c.z, 0.9)) { c.hit = 3; c.h = this.car.h; this.audio.thud(9); this.offence(2); this.sayQ(pick(Q_COW), 3); this.car.v *= 0.2; }
     }
     if (!cin) { if (this.mission) this.missionUpdate(dt); else if (this.job) this.jobUpdate(dt); else this.missionUpdate(dt); }
     this.updateSky(dt); this.world.update(dt);
@@ -743,6 +746,8 @@ export class Game {
   hudInit() { this.miniC = $('mini'); this.miniX = this.miniC.getContext('2d'); this.shownMoney = this.save.money; this.areaT = 0; }
   hudShow(on) { document.body.classList.toggle('playing', on); }
   objective(html) { $('obj').innerHTML = html; $('obj').style.display = html ? 'block' : 'none'; }
+  /** A short voiced street line from the script (Kannada / Tulu / English). */
+  sayQ(id, sec = 2.5) { const r = LINES[id]; if (!r) return; this.say(Voice.text(id), sec); if (!this.cine.active && !this.dlg) Voice.speak(id, r.w); }
   say(text, sec = 3, who) { if (who && Voice.enabled && !this.cine.active) Voice.speak(text.replace(/^[^:]+: /, ''), who); const el = $('say'); el.textContent = text; el.style.opacity = 1; clearTimeout(this._sayT); this._sayT = setTimeout(() => el.style.opacity = 0, sec * 1000); }
   hint(text, sec = 1.5) { const el = $('hint'); el.textContent = text; el.style.opacity = 1; clearTimeout(this._hintT); this._hintT = setTimeout(() => el.style.opacity = 0, sec * 1000); }
   toast(title, text) { const el = $('toast'); el.innerHTML = `<b>${title}</b><span>${text}</span>`; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
