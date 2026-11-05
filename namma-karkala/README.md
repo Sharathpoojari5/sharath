@@ -27,12 +27,13 @@ Best on a laptop with a keyboard (Chrome, Edge, Safari or Firefox).
 | **The street** | Pedestrians who shout at you in Kannada, cows that block the road, honking traffic. |
 | **Wanted meter** | Gossip → Fine → Jeep chase → Checkpost → Front page. Police jeeps chase you from 2 stars. |
 | **World** | Day/night cycle (1 real second = 1 game minute), Karkala's frequent rain, wet roads, night lights. |
+| **Music & radio** | Ten original tracks composed in code (no samples, no licences, nothing to download): chenda/dollu/tassa percussion, nadaswaram, harmonium, tabla, supersaw drops, Tulunadu-flavoured ragas. A score follows the game (theme by day, *Kere Sandhye* at night and in rain, *Tiger Drop* in a chase, *Bahubali Betta* at the end). Get into any vehicle with a cab and the radio comes on: **Radio Karkala 91.1** (Tulu folk fusion), **Pili Beats FM** (tiger-dance bass), **Sandalwood Retro** (golden Kannada), **Kere FM** (lake-side chill). `R` changes station. Song lyrics show on screen in Kannada, Tulu or English. |
 | **Extras** | Photo mode (O, Enter saves a PNG), big map (M), cheats, progress saved in the browser. |
 
 ## Controls
 
 `WASD` walk/drive · `Shift` run · mouse look · `F` get on/off · `H` horn · `Space` jump/handbrake ·
-`J` side job · `M` map · `O` photo · `C` camera distance · `Esc` pause.
+`R` radio station · `J` side job · `M` map · `O` photo · `C` camera distance · `Esc` pause.
 
 ## Cheats (type while playing)
 
@@ -51,7 +52,11 @@ Best on a laptop with a keyboard (Chrome, Edge, Safari or Firefox).
 | `js/infra.js` | road shoulders, kerbs, electric poles and wires, bus shelters, banners, petrol bunk |
 | `js/actors.js` | player, vehicles and traffic AI, pedestrians, cows |
 | `js/models.js` | procedural low-poly models (vehicles, people, statue, temples, bus stand) |
-| `js/audio.js` | all sound, synthesised (no audio files) |
+| `js/audio.js` | all sound effects and ambience, synthesised (no audio files) |
+| `js/studio.js` | the music engine: instruments (chenda, tassa, nadaswaram, harmonium, tabla, bass, supersaw, choir…) and a section-based sequencer |
+| `js/songs.js` | the ten songs, their lyrics, the four radio stations, and which song scores which game state |
+| `js/radio.js` | in-vehicle radio: stations, station-switch, DJ idents, lyric display |
+| `js/music.js` | small helper for temple bells and birdsong |
 | `data/karkala.json` | processed map (roads, lakes, landmarks) |
 | `tools/build_map.py` | rebuilds `data/karkala.json` from an OpenStreetMap `map.json` export |
 

@@ -41,6 +41,12 @@
   #hint{position:fixed;left:50%;top:62%;transform:translateX(-50%);font-weight:800;font-size:16px;background:#0009;padding:6px 14px;border-radius:20px;opacity:0;transition:opacity .25s}
   #ctx{position:fixed;left:240px;bottom:28px;font-size:14px;font-weight:700;color:var(--dim);text-shadow:0 2px 6px #000}
   #timer{position:fixed;left:50%;top:18px;transform:translateX(-50%);font-size:34px;font-weight:900;color:var(--y);text-shadow:0 2px 10px #000;display:none;font-variant-numeric:tabular-nums}
+  #radio{position:fixed;right:24px;bottom:96px;width:260px;background:#000c;border-left:4px solid var(--rc,#fbbf24);padding:8px 12px;border-radius:6px;opacity:0;transform:translateY(8px);transition:.3s;pointer-events:none;text-shadow:0 1px 4px #000}
+  #radio.show{opacity:1;transform:none}
+  #radio small{font-size:10px;letter-spacing:.14em;color:var(--dim);font-weight:800}
+  #rstn{font-weight:900;color:var(--rc,#fbbf24);font-size:15px} #rsong{font-size:12px;opacity:.9;margin-bottom:4px}
+  #rbars{display:flex;gap:2px;align-items:flex-end;height:26px} #rbars i{display:block;width:5px;height:4px;background:var(--rc,#fbbf24);border-radius:1px}
+  #rlyr{font-size:13px;font-style:italic;min-height:17px;margin-top:4px;color:#fff}
   #speed{position:fixed;right:24px;bottom:22px;text-align:right;display:none;text-shadow:0 2px 8px #000}
   #kmh{font-size:52px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
   #speed small{font-size:13px;color:var(--dim);font-weight:800}
@@ -122,6 +128,7 @@
   <div id="tr"><div id="money">₹500</div><div id="clock">4:30 PM</div><div id="wx">☀ Clear</div><div id="wanted"><div id="stars"></div><div id="wlabel"></div></div></div>
   <div id="timer">0:00</div>
   <div id="say"></div><div id="hint"></div><div id="obj"></div><div id="ctx"></div>
+  <div id="radio"><small>📻 RADIO · R = NEXT</small><div id="rstn"></div><div id="rsong"></div><div id="rbars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div id="rlyr"></div></div>
   <div id="speed"><div id="kmh">0</div><small>KM/H</small><div id="vname"></div></div>
   <div id="toast"></div><div id="big"></div>
 </div>

@@ -7,6 +7,7 @@ import { Audio } from './audio.js';
 import { Cinematic } from './cine.js';
 import { Voice, LANG_NAME } from './voice.js';
 import { LINES } from './story.js';
+import { Radio } from './radio.js';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -51,7 +52,7 @@ export class Game {
     this.camYaw = st ? Math.atan2(-st.n[0], -st.n[1]) : 0; this.camPitch = 0.28; this.camDist = 5.5; this.lastMouse = -99;
     this.marker = M.markerMesh('#facc15'); this.marker.visible = false; S.add(this.marker);
     this.startMarker = M.markerMesh('#f97316'); this.startMarker.visible = false; S.add(this.startMarker);
-    this.cine = new Cinematic(this); this.npcs = {}; this.dlg = null; this.inputLock = false; Voice.init(this.audio);
+    this.cine = new Cinematic(this); this.radio = new Radio(this); this.npcs = {}; this.dlg = null; this.inputLock = false; Voice.init(this.audio);
     this.setupParked(); this.setupMissions(); this.setupNpcs();
     this.bindInput(); this.hudInit();
     this.clock = new THREE.Clock(); const loop = () => { requestAnimationFrame(loop); this.frame(); }; loop();
@@ -123,6 +124,7 @@ export class Game {
       if (this.paused) return;
       if (k === 'f' || k === 'e') this.interact();
       if (k === 'h') { const kind = this.car ? this.car.kind : 'scooter'; this.audio.horn(kind); this.honked(this.car || this.player); }
+      if (k === 'r') this.radio.next();
       if (k === 'm') this.toggleMap();
       if (k === 'o') this.togglePhoto();
       if (k === 'enter' && this.photo) this.savePhoto();
@@ -182,7 +184,7 @@ export class Game {
     {
       const lx = -Math.cos(c.h) * (c.def.W / 2 + 0.9), lz = Math.sin(c.h) * (c.def.W / 2 + 0.9);
       let x = c.x + lx, z = c.z + lz; if (this.world.blocked(x, z, 0.4)) { x = c.x - lx; z = c.z - lz; }
-      p.x = x; p.z = z; p.y = this.world.groundH(x, z); p.mesh.visible = true; c.driver = null; c.parked = true; c.removeDriverModel(); this.car = null; this.camDist = 5.5; this.audio.engine(null); this.sinking = 0; c.sink = 0;
+      p.x = x; p.z = z; p.y = this.world.groundH(x, z); p.mesh.visible = true; c.driver = null; c.parked = true; c.removeDriverModel(); this.car = null; this.radio.stop(); this.camDist = 5.5; this.audio.engine(null); this.sinking = 0; c.sink = 0;
     }
   }
   enterNearest() {
@@ -198,7 +200,7 @@ export class Game {
     }
     best.driver = 'player'; best.parked = false; best.removeDriverModel(); this.car = best; this.camDist = best.def.cam;
     p.mesh.visible = false; if (best.def.two) best.addDriverModel(true);
-    this.camYaw = best.h;
+    this.camYaw = best.h; this.radio.start(best.kind);
   }
 
   /* ====================================================================== traffic, people, cows, police */
@@ -671,8 +673,8 @@ export class Game {
     if (this.dlg) this.updateDialogue(dt);
     this.updateCamera(dt); this.renderer.render(this.scene, this.cam);
     if (this.cine.active) { this.cine.captureFrame(this.renderer.domElement); this.cine.drawOverlay(); }
-    if (live && !this.paused && !this.photo && !this.cine.active) this.hudUpdate(dt);
-    if (this.audio.ctx && live) { const p = this.carOrPlayer(), t = this.world.temple; this.audio.update(dt, { day: this.dayAmt ?? 1, rain: this.raining, templeDist: t ? Math.hypot(t[0] - p.x, t[1] - p.z) : 999, traffic: this.vehicles.reduce((a, v) => a + (v.driver === 'ai' && Math.hypot(v.x - p.x, v.z - p.z) < 80 ? 1 : 0), 0), chase: this.level >= 2, scene: this.cine.active ? this.cine.list[this.cine.shot]?.music : this.endMode ? 'ending' : null }); }
+    if (live && !this.paused && !this.photo && !this.cine.active) { this.radio.update(dt); this.hudUpdate(dt); this.radioHud(dt); }
+    if (this.audio.ctx && live) { const p = this.carOrPlayer(), t = this.world.temple; this.audio.update(dt, { day: this.dayAmt ?? 1, rain: this.raining, templeDist: t ? Math.hypot(t[0] - p.x, t[1] - p.z) : 999, traffic: this.vehicles.reduce((a, v) => a + (v.driver === 'ai' && Math.hypot(v.x - p.x, v.z - p.z) < 80 ? 1 : 0), 0), chase: this.level >= 2, song: this.radio.active && this.radio.song ? this.radio.song.id : null, intensity: this.car ? Math.min(1, Math.abs(this.car.v) / 22 + (this.level >= 2 ? 0.4 : 0)) : 0.25, scene: this.cine.active ? this.cine.list[this.cine.shot]?.music : this.endMode ? 'ending' : null }); }
   }
   /** Debug/testing: advance the simulation without rendering. */
   step(n = 1, dt = 1 / 30) { this.dtLast = dt; for (let i = 0; i < n; i++) { this.now += dt; this.update(dt); } this.updateCamera(dt); }
@@ -769,6 +771,17 @@ export class Game {
   hint(text, sec = 1.5) { const el = $('hint'); el.textContent = text; el.style.opacity = 1; clearTimeout(this._hintT); this._hintT = setTimeout(() => el.style.opacity = 0, sec * 1000); }
   toast(title, text) { const el = $('toast'); el.innerHTML = `<b>${title}</b><span>${text}</span>`; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
   big(title, sub, color) { const el = $('big'); el.innerHTML = `<div style="color:${color}">${title}</div><span>${sub}</span>`; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
+  radioHud(dt) {
+    const el = $('radio'), r = this.radio, show = !!this.car && r.has(this.car.kind) && (r.active || r.flash > 0);
+    el.classList.toggle('show', show); if (!show) return;
+    const st = r.station, song = r.song;
+    if (!r.active) { $('rstn').textContent = 'Radio off'; $('rsong').textContent = 'Press R for a station'; $('rlyr').textContent = ''; el.style.setProperty('--rc', '#888'); }
+    else {
+      el.style.setProperty('--rc', st.color); $('rstn').textContent = st.name; $('rsong').textContent = `${song.title} — ${song.artist}`;
+      const lyr = r.lyricId ? Voice.text(r.lyricId) : ''; if ($('rlyr').textContent !== lyr) $('rlyr').textContent = lyr;
+      const an = this.audio.studio && this.audio.studio.analyser; if (an) { this._fq = this._fq || new Uint8Array(an.frequencyBinCount); an.getByteFrequencyData(this._fq); const bars = $('rbars').children; for (let b = 0; b < bars.length; b++) bars[b].style.height = (4 + (this._fq[2 + b * 3] || 0) / 255 * 22) + 'px'; }
+    }
+  }
   hudUpdate(dt) {
     const s = this.save; this.shownMoney += (s.money - this.shownMoney) * Math.min(1, dt * 6);
     $('money').textContent = '₹' + Math.round(this.shownMoney).toLocaleString('en-IN');

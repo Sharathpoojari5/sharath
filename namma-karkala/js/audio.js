@@ -1,5 +1,7 @@
 // All sound is synthesised with Web Audio, so there are no audio files to license or download.
 import { Music } from './music.js';
+import { Studio } from './studio.js';
+import { SONGS, SCORE } from './songs.js';
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 export class Audio {
   constructor() { this.ctx = null; this.on = true; }
@@ -7,8 +9,9 @@ export class Audio {
     if (this.ctx) return; const C = window.AudioContext || window.webkitAudioContext; if (!C) return;
     const c = this.ctx = new C(); this.master = c.createGain(); this.master.gain.value = 0.7; this.master.connect(c.destination);
     // engine: two detuned oscillators through a low-pass
-    this.musicGain = c.createGain(); this.musicGain.gain.value = 1.5; this.musicGain.connect(this.master);
-    this.music = new Music(c, this.musicGain); this.musicOn = true;
+    this.musicGain = c.createGain(); this.musicGain.gain.value = 1.0; this.musicGain.connect(this.master);
+    this.music = new Music(c, this.musicGain); this.musicOn = true;        // small helper: bells and birdsong
+    this.studio = new Studio(c, this.musicGain, 7); this.curSong = null;
     this.voiceGain = c.createGain(); this.voiceGain.gain.value = 1.7; this.voiceGain.connect(this.master);
     this.recDest = c.createMediaStreamDestination(); this.master.connect(this.recDest);
     // ambience: crickets (night), distant traffic hum, wind
@@ -33,8 +36,10 @@ export class Audio {
   /** Called every frame: music state + ambience. info = {day:0..1, rain:0..1, templeDist, traffic, chase, mission, scene} */
   update(dt, info) {
     if (!this.ctx) return; const t = this.ctx.currentTime;
-    let st = info.scene || (info.chase ? 'chase' : info.rain > 0.5 ? 'rain' : info.day < 0.25 ? 'night' : info.day < 0.55 ? 'evening' : 'day');
-    this.music.set(this.musicOn ? st : 'silent'); this.music.tick();
+    const st = info.scene || (info.chase ? 'chase' : info.rain > 0.5 ? 'rain' : info.day < 0.25 ? 'night' : info.day < 0.55 ? 'evening' : 'day');
+    let want = info.scene ? SCORE[info.scene] : (info.song || SCORE[st]); if (!this.musicOn) want = null;
+    if (want !== this.curSong) { this.curSong = want; if (want) this.studio.play(SONGS[want], 1.6); else this.studio.stop(0.8); }
+    this.studio.intensity = Math.max(0, Math.min(1, info.intensity || 0)); this.studio.tick();
     const day = info.day, quiet = info.scene ? 0.3 : 1;
     this.cric.g.gain.setTargetAtTime(clamp01(1 - day * 1.6) * (1 - info.rain) * 0.035 * quiet, t, 0.6);
     this.hum.gain.setTargetAtTime(Math.min(0.1, (info.traffic || 0) * 0.012) * quiet, t, 0.6);
@@ -45,7 +50,7 @@ export class Audio {
       if (info.templeDist < 140 && !info.scene && Math.random() < 0.6) { const v = 0.1 * (1 - info.templeDist / 140); this.music.bell(t + 0.05, 560 + Math.random() * 90, v); this.bellT = 0; }
     }
   }
-  duck(on) { if (this.ctx) this.musicGain.gain.setTargetAtTime(on ? 0.45 : 1.5, this.ctx.currentTime, 0.2); }
+  duck(on) { if (this.ctx) this.musicGain.gain.setTargetAtTime(on ? 0.4 : 1.0, this.ctx.currentTime, 0.2); }
   setMusic(on) { this.musicOn = on; }
   /** Short syllable-like blips used as a fallback "voice" while text is typed. */
   blip(who, ch) {

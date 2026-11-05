@@ -27,7 +27,7 @@ except ImportError:
 BASE_DESC = 'The recording is very clear, close up, with no background noise or reverb.'
 PITCH = {  # semitone shift applied to single-voice engines (MMS) so characters differ
     'RAJU': 0, 'AMMA': 4, 'AJJI': 6, 'ARCHAKARU': -3, 'PRAMOD': 1, 'OWNER': -2, 'CANTEEN': -4,
-    'SHWETHA': 5, 'THIEF': 3, 'PEDESTRIAN': 1, 'NARRATOR': -2,
+    'SHWETHA': 5, 'THIEF': 3, 'PEDESTRIAN': 1, 'NARRATOR': -2, 'SINGER': 1, 'DJ': 2,
 }
 
 

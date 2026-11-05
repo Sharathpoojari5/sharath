@@ -9,7 +9,7 @@ const PROFILE = {
   RAJU: { pitch: 1.0, rate: 1.0, female: false }, AMMA: { pitch: 1.35, rate: 1.0, female: true }, AJJI: { pitch: 1.5, rate: 0.9, female: true },
   ARCHAKARU: { pitch: 0.75, rate: 0.88, female: false }, PRAMOD: { pitch: 1.15, rate: 1.12, female: false }, OWNER: { pitch: 0.85, rate: 1.0, female: false },
   CANTEEN: { pitch: 0.8, rate: 1.0, female: false }, SHWETHA: { pitch: 1.45, rate: 1.08, female: true }, THIEF: { pitch: 1.3, rate: 1.3, female: false },
-  NARRATOR: { pitch: 0.85, rate: 0.95, female: false }, PEDESTRIAN: { pitch: 1.1, rate: 1.1, female: false },
+  NARRATOR: { pitch: 0.85, rate: 0.95, female: false }, PEDESTRIAN: { pitch: 1.1, rate: 1.1, female: false }, SINGER: { pitch: 1.0, rate: 1.1, female: false }, DJ: { pitch: 1.1, rate: 1.15, female: false },
 };
 const FEMALE = /lekha|veena|heera|zira|samantha|karen|moira|tessa|susan|hazel|female|priya|kalpana|sangeeta|raveena|aditi|swara|neerja|vani|soumya/i;
 

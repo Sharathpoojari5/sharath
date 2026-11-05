@@ -11,7 +11,9 @@
   "SHWETHA": "young woman, bright and chatty, fast, bubbly",
   "THIEF": "young man, panicked and out of breath, fast, apologetic",
   "PEDESTRIAN": "adult voice, annoyed and loud, short exclamation",
-  "NARRATOR": "calm documentary narrator, mature male voice, clear, warm, medium pace, dry humour"
+  "NARRATOR": "calm documentary narrator, mature male voice, clear, warm, medium pace, dry humour",
+  "SINGER": "energetic male folk singer-chanter, rhythmic and punchy, shouting hype lines over a beat, coastal Karnataka accent",
+  "DJ": "energetic radio host, friendly and fast, big smile in the voice, coastal Karnataka accent"
  },
  "lines": {
   "L01": {
@@ -409,6 +411,126 @@
    "en": "Goli baje at five. Always.",
    "kn": "ಐದು ಗಂಟೆಗೆ ಗೋಳಿಬಜೆ. ಯಾವಾಗಲೂ.",
    "tcy": "ಐದ್ ಗಂಟೆಗ್ ಗೋಳಿಬಜೆ. ಏತ್‌ಲಾ."
+  },
+  "S01": {
+   "w": "SINGER",
+   "en": "Hear the chenda, come to Karkala!",
+   "kn": "ಚಂಡೆ ಸದ್ದು ಕೇಳು, ಕಾರ್ಕಳಕ್ಕೆ ಬಾ!",
+   "tcy": "ಚೆಂಡೆದ ಸದ್ದು ಕೇನು, ಕಾರ್ಕಳಕ್ಕ್ ಬಲೆ!"
+  },
+  "S02": {
+   "w": "SINGER",
+   "en": "Bahubali watches, the hill stands tall",
+   "kn": "ಬಾಹುಬಲಿ ನೋಡ್ತಾನೆ, ಬೆಟ್ಟ ಎತ್ತರ ನಿಂತಿದೆ",
+   "tcy": "ಬಾಹುಬಲಿ ತೂವೆ, ಬೆಟ್ಟ ಎತ್ತರ ನಿಂತುಂಡು"
+  },
+  "S03": {
+   "w": "SINGER",
+   "en": "Goli baje hot, tea is steaming",
+   "kn": "ಗೋಳಿಬಜೆ ಬಿಸಿ, ಚಹಾ ಹಬೆ ಹಬೆ",
+   "tcy": "ಗೋಳಿಬಜೆ ಬಿಸಿ, ಚಾ ಹಬೆ ಹಬೆ"
+  },
+  "S04": {
+   "w": "SINGER",
+   "en": "Dance, dance, Karkala is dancing!",
+   "kn": "ಕುಣಿ ಕುಣಿ, ಕಾರ್ಕಳ ಕುಣೀತಿದೆ!",
+   "tcy": "ಕುಣಿಲೆ ಕುಣಿಲೆ, ಕಾರ್ಕಳ ಕುಣಿಪುಂಡು!"
+  },
+  "S05": {
+   "w": "SINGER",
+   "en": "The buffaloes are running, mud is flying",
+   "kn": "ಕೋಣಗಳು ಓಡ್ತಿವೆ, ಕೆಸರು ಹಾರ್ತಿದೆ",
+   "tcy": "ಕೋಣೊಲು ಓಡೊಂದುಲ್ಲ, ಕೆಸರ್ ಪಾರೊಂದುಂಡು"
+  },
+  "S06": {
+   "w": "SINGER",
+   "en": "Faster, faster, who will win?",
+   "kn": "ಇನ್ನೂ ವೇಗ, ಯಾರು ಗೆಲ್ಲುತ್ತಾರೆ?",
+   "tcy": "ಇನ್ನೂ ಜೋರ್, ಏರ್ ಗೆಲ್ಲುವೆರ್?"
+  },
+  "S07": {
+   "w": "SINGER",
+   "en": "Oy oy oy, the whole village shouts",
+   "kn": "ಓಯ್ ಓಯ್ ಓಯ್, ಊರೆಲ್ಲ ಕೂಗ್ತಿದೆ",
+   "tcy": "ಓಯ್ ಓಯ್ ಓಯ್, ಊರುಲೆಲ್ಲಾ ಕೂಗೊಂದುಂಡು"
+  },
+  "S08": {
+   "w": "SINGER",
+   "en": "Tiger on the street, run if you can",
+   "kn": "ಹುಲಿ ಬೀದಿಯಲ್ಲಿ, ಓಡಿ ನೋಡು",
+   "tcy": "ಪಿಲಿ ಬೀದಿಡ್, ಓಡ್ ತೂಲೆ"
+  },
+  "S09": {
+   "w": "SINGER",
+   "en": "Roar, roar, paint on skin",
+   "kn": "ಗರ್ಜನೆ ಗರ್ಜನೆ, ಮೈಗೆ ಬಣ್ಣ",
+   "tcy": "ಗರ್ಜನೆ ಗರ್ಜನೆ, ಮೈಕ್ ಬಣ್ಣ"
+  },
+  "S10": {
+   "w": "SINGER",
+   "en": "Pili, Pili, Pili!",
+   "kn": "ಪಿಲಿ, ಪಿಲಿ, ಪಿಲಿ!",
+   "tcy": "ಪಿಲಿ, ಪಿಲಿ, ಪಿಲಿ!"
+  },
+  "S11": {
+   "w": "SINGER",
+   "en": "Jasmine in her hair, a letter in my pocket",
+   "kn": "ಮುಡಿಯಲ್ಲಿ ಮಲ್ಲಿಗೆ, ಜೇಬಲ್ಲಿ ಪತ್ರ",
+   "tcy": "ತಲೆಟ್ ಮಲ್ಲಿಗೆ, ಜೇಬುಡು ಪತ್ರ"
+  },
+  "S12": {
+   "w": "SINGER",
+   "en": "The bus is late, my heart is not",
+   "kn": "ಬಸ್ ತಡ, ಮನಸ್ಸು ತಡ ಇಲ್ಲ",
+   "tcy": "ಬಸ್ ತಡ, ಮನಸ್ಸ್ ತಡ ಇಜ್ಜಿ"
+  },
+  "S13": {
+   "w": "SINGER",
+   "en": "Meet me by the lake at dusk",
+   "kn": "ಸಂಜೆ ಕೆರೆ ಹತ್ರ ಸಿಗು",
+   "tcy": "ಸಂಜೆ ಕೆರೆದ ಕರ್ಯ ಸಿಕ್ಕ್"
+  },
+  "S14": {
+   "w": "SINGER",
+   "en": "The lake holds the evening sky",
+   "kn": "ಕೆರೆ ಸಂಜೆಯ ಆಕಾಶವನ್ನು ಹಿಡಿದಿದೆ",
+   "tcy": "ಕೆರೆ ಸಂಜೆದ ಆಕಾಶೊನು ಪಿರ್ದುಂಡು"
+  },
+  "S15": {
+   "w": "SINGER",
+   "en": "Slow rain, slow road, I am home",
+   "kn": "ನಿಧಾನ ಮಳೆ, ನಿಧಾನ ದಾರಿ, ನಾನು ಮನೆಗೆ",
+   "tcy": "ಮೆತ್ತಗ್ ಮಳೆ, ಮೆತ್ತಗ್ ದಾರಿ, ಯಾನ್ ಇಲ್ಲ್‌ಗ್"
+  },
+  "S16": {
+   "w": "SINGER",
+   "en": "Namma Karkala, our own town",
+   "kn": "ನಮ್ಮ ಕಾರ್ಕಳ, ನಮ್ಮ ಊರು",
+   "tcy": "ಎಂಕುಲು ಕಾರ್ಕಳ, ಎಂಕುಲೆ ಊರು"
+  },
+  "R01": {
+   "w": "DJ",
+   "en": "Radio Karkala, ninety-one point one. Our town, our beat.",
+   "kn": "ರೇಡಿಯೋ ಕಾರ್ಕಳ, ತೊಂಬತ್ತೊಂದು ಪಾಯಿಂಟ್ ಒಂದು. ನಮ್ಮ ಊರು, ನಮ್ಮ ಬೀಟ್.",
+   "tcy": "ರೇಡಿಯೋ ಕಾರ್ಕಳ, ತೊಂಬತ್ತೊಂದು ಪಾಯಿಂಟ್ ಒಂಜಿ. ಎಂಕುಲೆ ಊರು, ಎಂಕುಲೆ ಬೀಟ್."
+  },
+  "R02": {
+   "w": "DJ",
+   "en": "Pili Beats FM. Hold on tight.",
+   "kn": "ಪಿಲಿ ಬೀಟ್ಸ್ ಎಫ್‌ಎಂ. ಗಟ್ಟಿಯಾಗಿ ಹಿಡ್ಕೊಳ್ಳಿ.",
+   "tcy": "ಪಿಲಿ ಬೀಟ್ಸ್ ಎಫ್‌ಎಂ. ಗಟ್ಟಿ ಪಿರ್ದ್‌ಕೊರ್ಲೆ."
+  },
+  "R03": {
+   "w": "DJ",
+   "en": "Sandalwood Retro. The golden hits.",
+   "kn": "ಸ್ಯಾಂಡಲ್‌ವುಡ್ ರೆಟ್ರೋ. ಗೋಲ್ಡನ್ ಹಿಟ್ಸ್.",
+   "tcy": "ಸ್ಯಾಂಡಲ್‌ವುಡ್ ರೆಟ್ರೋ. ಗೋಲ್ಡನ್ ಹಿಟ್ಸ್."
+  },
+  "R04": {
+   "w": "DJ",
+   "en": "Kere FM. Slow down, you are almost home.",
+   "kn": "ಕೆರೆ ಎಫ್‌ಎಂ. ನಿಧಾನ ಮಾಡಿ, ಮನೆ ಹತ್ರ ಬಂತು.",
+   "tcy": "ಕೆರೆ ಎಫ್‌ಎಂ. ಮೆತ್ತಗ್ ಆಲೆ, ಇಲ್ಲ್ ಕರ್ಯ ಬತ್ತ್‌ಂಡ್."
   }
  }
 }
