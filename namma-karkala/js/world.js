@@ -128,6 +128,21 @@ export class World {
     return out;
   }
 
+  nearestNode(x, z) {
+    for (const R of [60, 160, 420]) { const c = this.nodesNear(x, z, R); if (c.length) return c.reduce((a, n) => (Math.hypot(n.x - x, n.z - z) < Math.hypot(a.x - x, a.z - z) ? n : a)); }
+    return null;
+  }
+  /** A* over the road graph. Returns the list of nodes from a to b (inclusive) or null. */
+  path(a, b, cap = 1500) {
+    const g = new Map([[a, 0]]), prev = new Map(), open = [a], f = new Map([[a, Math.hypot(a.x - b.x, a.z - b.z)]]), closed = new Set(); let it = 0;
+    while (open.length && it++ < cap) {
+      let bi = 0; for (let i = 1; i < open.length; i++) if (f.get(open[i]) < f.get(open[bi])) bi = i;
+      const n = open.splice(bi, 1)[0]; if (n === b) { const out = [n]; let c = n; while (prev.has(c)) { c = prev.get(c); out.push(c); } return out.reverse(); }
+      closed.add(n);
+      for (const e of n.adj) { const m = e.n; if (closed.has(m)) continue; const ng = g.get(n) + Math.hypot(m.x - n.x, m.z - n.z); if (!g.has(m) || ng < g.get(m)) { g.set(m, ng); prev.set(m, n); f.set(m, ng + Math.hypot(m.x - b.x, m.z - b.z)); if (!open.includes(m)) open.push(m); } }
+    }
+    return null;
+  }
   placeName(x, z) {
     const rd = this.nearestRoad(x, z, 14);
     let best = null, bd = 1e9;

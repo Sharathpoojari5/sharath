@@ -93,36 +93,44 @@ export class Vehicle {
   aiNext() {
     const opts = this.b.adj.filter(e => e.n !== this.a && (!this.def.big || e.w >= 7));
     const list = opts.length ? opts : this.b.adj;
-    const e = pickW(list.map(e => [e, e.w >= 9 ? 3 : e.w >= 7 ? 1.6 : 1]));
+    let e = null;
+    if (this.route) { const i = this.route.indexOf(this.b); if (i >= 0 && i + 1 < this.route.length) e = this.b.adj.find(x => x.n === this.route[i + 1]) || null; }
+    if (!e) e = pickW(list.map(e => [e, e.w >= 9 ? 3 : e.w >= 7 ? 1.6 : 1]));
     this.a = this.b; this.b = e.n; this.edgeW = e.w;
   }
   aiTarget() {
     const ux = this.b.x - this.a.x, uz = this.b.z - this.a.z, L = Math.hypot(ux, uz) || 1, lo = this.edgeW / 4 + 0.2;
     return [this.b.x + (uz / L) * lo, this.b.z + (-ux / L) * lo, L];
   }
-  ai(dt) {
+  ai(dt, speedOverride) {
     if (!this.a) return this.physics(dt, { thr: 0, steer: 0, hand: true });
     let [tx, tz] = this.aiTarget();
     if (Math.hypot(tx - this.x, tz - this.z) < 3.5 + Math.abs(this.v) * 0.25) { this.aiNext(); [tx, tz] = this.aiTarget(); }
     const want = Math.atan2(tx - this.x, tz - this.z), diff = wrap(want - this.h);
-    const base = this.def.big ? 10 : this.edgeW >= 9 ? 12.5 : this.edgeW >= 7 ? 9.5 : 7;
-    let target = Math.min(base, this.def.maxV * 0.8) * (1 - 0.65 * clamp(Math.abs(diff) / 1.2, 0, 1));
+    if (this.revT > 0) { this.revT -= dt; return this.physics(dt, { thr: -1, steer: this.escape || 1, hand: false }); }
+    const cap = this.edgeW >= 9 ? 20 : this.edgeW >= 7 ? 13 : 9;
+    const base = speedOverride ? Math.min(speedOverride, cap) : (this.def.big ? 10 : this.edgeW >= 9 ? 12.5 : this.edgeW >= 7 ? 9.5 : 7);
+    let target = Math.min(base, this.def.maxV * (speedOverride ? 0.95 : 0.8)) * (1 - 0.65 * clamp(Math.abs(diff) / 1.2, 0, 1));
     const block = this.g.obstacleAhead(this, 5 + Math.abs(this.v) * 1.3);
+    if (!block && Math.abs(this.v) < 0.6 && speedOverride) { this.aiStuck = (this.aiStuck || 0) + dt; if (this.aiStuck > 1.4) { this.aiStuck = 0; this.revT = 1.0; this.escape = wrap(want - this.h) > 0 ? -1 : 1; } } else this.aiStuck = Math.max(0, (this.aiStuck || 0) - dt);
     if (block) { target = block < 4 ? -1 : Math.min(target, (block - 4) * 0.8); if (this.g.now - this.honkT > 4 && block < 8) { this.honkT = this.g.now + Math.random() * 3; this.g.honked(this); } }
     const thr = target < 0 ? -1 : clamp((target - this.v) * 0.6, -1, 1);
     return this.physics(dt, { thr, steer: clamp(-diff * 2.2, -1, 1), hand: target < 0 && this.v > 0 });
   }
-  /** Seek a point (police, thief escape) with whiskers to avoid buildings. */
+  /** Seek a point (police, thief escape) with whiskers at several distances, and reverse-and-turn recovery when jammed. */
   seek(dt, tx, tz, speed, flee = false) {
     let want = Math.atan2(tx - this.x, tz - this.z); if (flee) want = wrap(want + Math.PI);
-    const w = this.g.world, look = 6 + Math.abs(this.v) * 0.6;
-    const probe = (a) => w.blocked(this.x + Math.sin(a) * look, this.z + Math.cos(a) * look, this.r + 0.4);
-    if (probe(want)) { for (const k of [0.5, -0.5, 1.0, -1.0, 1.6, -1.6]) if (!probe(want + k)) { want += k; break; } }
+    const w = this.g.world, look = 7 + Math.abs(this.v) * 0.6;
+    const probe = (a) => { for (const d of [2.4, 4.2, 6.5, look]) if (w.blocked(this.x + Math.sin(a) * d, this.z + Math.cos(a) * d, this.r + 0.25)) return true; return false; };
+    if (this.revT > 0) {                                        // reversing out of a jam, steering away
+      this.revT -= dt; return this.physics(dt, { thr: -1, steer: this.escape || 1, hand: false });
+    }
+    let blocked = false;
+    if (probe(want)) { blocked = true; for (const k of [0.45, -0.45, 0.9, -0.9, 1.4, -1.4]) if (!probe(want + k)) { want += k; blocked = false; break; } }
     const diff = wrap(want - this.h);
-    if (this.stuck > 1.2) { this.stuck -= dt * 2.2; return this.physics(dt, { thr: -1, steer: clamp(diff * 2, -1, 1), hand: false }); }
-    if (Math.abs(this.v) < 1 && this.wantMove) this.stuck += dt; else this.stuck = Math.max(0, this.stuck - dt);
-    this.wantMove = true;
-    const target = speed * (1 - 0.5 * clamp(Math.abs(diff) / 1.4, 0, 1));
+    if (Math.abs(this.v) < 0.8) this.stuck = (this.stuck || 0) + dt; else this.stuck = Math.max(0, (this.stuck || 0) - dt * 2);
+    if (this.stuck > 0.9) { this.stuck = 0; this.revT = 0.9; this.escape = diff > 0 ? -1 : 1; return this.physics(dt, { thr: -1, steer: this.escape, hand: false }); }
+    const target = speed * (1 - 0.5 * clamp(Math.abs(diff) / 1.4, 0, 1)) * (blocked ? 0.35 : 1);
     return this.physics(dt, { thr: clamp((target - this.v) * 0.5, -1, 1), steer: clamp(-diff * 2.4, -1, 1), hand: Math.abs(diff) > 1.4 && this.v > 8 });
   }
 }

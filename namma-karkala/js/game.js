@@ -268,8 +268,25 @@ export class Game {
     let close = 1e9;
     for (const v of this.police) {
       const d = Math.hypot(v.x - p.x, v.z - p.z); close = Math.min(close, d);
-      if (lvl >= 2) { v.seek(dt, p.x, p.z, 16 + lvl * 2.2); v.siren = true; }
-      else { v.siren = false; if (!v.a) { const n = this.world.nodesNear(v.x, v.z, 80)[0]; if (n) v.aiInit(n, n.adj[0].n); } if (v.a) v.ai(dt); else v.physics(dt, { thr: 0, steer: 0, hand: true }); }
+      if (lvl >= 2) {
+        v.siren = true;
+        if (d > 45) {                                              // chase along the roads, like traffic but faster
+          if (!v.a || !v.b) { const A = this.world.nearestNode(v.x, v.z); if (A) v.aiInit(A, A.adj[0].n); }
+          if (v.a && (!v.pathT || this.now - v.pathT > 2)) { v.pathT = this.now; const B = this.world.nearestNode(p.x, p.z); v.route = B ? this.world.path(v.b, B) : null; }
+          if (v.a) v.ai(dt, 15 + lvl * 2.5); else v.seek(dt, p.x, p.z, 16 + lvl * 2.2);
+        } else { v.a = v.b = null; v.route = null; v.seek(dt, p.x, p.z, 16 + lvl * 2.2); }   // close: go straight at the player
+      }
+      if (lvl >= 2) {                                              // safety net: a jeep that makes no progress respawns closer, on a road
+        v.chkT = (v.chkT || 0) + dt;
+        if (v.chkT > 3) {
+          v.chkT = 0; v.fails = d > 22 && d > (v.lastD ?? 1e9) - 4 ? (v.fails || 0) + 1 : 0; v.lastD = d;
+          if (v.fails >= 2) {
+            const c = this.world.nodesNear(p.x, p.z, 130).filter(n => Math.hypot(n.x - p.x, n.z - p.z) > 55 && n.adj.length);
+            if (c.length) { const n = pick(c); v.x = n.x; v.z = n.z; v.h = Math.atan2(p.x - n.x, p.z - n.z); v.v = 0; v.a = v.b = null; v.route = null; v.fails = 0; v.lastD = 1e9; v.stuck = 0; v.revT = 0; }
+          }
+        }
+      }
+      if (lvl < 2) { v.siren = false; if (!v.a) { const n = this.world.nodesNear(v.x, v.z, 80)[0]; if (n) v.aiInit(n, n.adj[0].n); } if (v.a) v.ai(dt); else v.physics(dt, { thr: 0, steer: 0, hand: true }); }
     }
     this.audio.siren(lvl >= 2 && close < 220);
     // decay: out of sight for a while
