@@ -42,6 +42,7 @@ export const MAT = {
   solid: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0.05 }),
   shiny: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.35, metalness: 0.25 }),
   glow: new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false }),
+  gold: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.26, metalness: 0.92 }),
 };
 
 function mesh(geo, mat = MAT.solid, shadow = true) {
@@ -124,8 +125,16 @@ export const VEHICLES = {
   cycle: { L: 1.75, W: 0.6, H: 1.1, maxV: 7.5, acc: 2.6, steer: 2.6, two: true, open: true, seat: [0, 0.55, -0.15], cam: 5, label: 'Bicycle', wr: 0.33 },
   scooter: { L: 1.8, W: 0.75, H: 1.2, maxV: 17, acc: 7, steer: 2.5, two: true, open: true, seat: [0, 0.55, -0.15], cam: 5.5, label: 'Scooter', wr: 0.27 },
   bike: { L: 2.1, W: 0.8, H: 1.2, maxV: 24, acc: 8.5, steer: 2.3, two: true, open: true, seat: [0, 0.62, -0.2], cam: 6, label: 'Motorbike', wr: 0.32 },
+  scooty: { L: 1.75, W: 0.72, H: 1.2, maxV: 19, acc: 7.5, steer: 2.6, two: true, open: true, seat: [0, 0.55, -0.15], cam: 5.5, label: 'Scooty', wr: 0.25 },
+  moped: { L: 1.7, W: 0.6, H: 1.1, maxV: 12, acc: 4.5, steer: 2.7, two: true, open: true, seat: [0, 0.55, -0.15], cam: 5.2, label: 'Moped', wr: 0.24 },
+  sportbike: { L: 2.0, W: 0.75, H: 1.15, maxV: 31, acc: 10, steer: 2.2, two: true, open: true, seat: [0, 0.6, -0.15], cam: 6, label: 'Sports bike', wr: 0.3 },
   auto: { L: 2.7, W: 1.4, H: 1.85, maxV: 13, acc: 4.2, steer: 2.0, open: true, seat: [0, 0.45, 0.35], cam: 7, label: 'Auto rickshaw', wr: 0.25 },
   car: { L: 3.8, W: 1.65, H: 1.45, maxV: 27, acc: 7, steer: 1.8, seat: [-0.35, 0.3, 0.1], cam: 8, label: 'Car', wr: 0.31 },
+  hatch: { L: 3.6, W: 1.6, H: 1.5, maxV: 25, acc: 7, steer: 1.9, seat: [-0.35, 0.3, 0.1], cam: 8, label: 'Hatchback', wr: 0.29 },
+  sedan: { L: 4.3, W: 1.7, H: 1.42, maxV: 29, acc: 7.2, steer: 1.8, seat: [-0.35, 0.3, 0.1], cam: 8.5, label: 'Sedan', wr: 0.31 },
+  taxi: { L: 4.2, W: 1.7, H: 1.5, maxV: 22, acc: 5.5, steer: 1.8, seat: [-0.35, 0.3, 0.1], cam: 8.5, label: 'Taxi (Ambassador)', wr: 0.32 },
+  pickup: { L: 4.9, W: 1.8, H: 1.85, maxV: 21, acc: 5, steer: 1.6, seat: [-0.4, 0.5, 0.9], cam: 9, label: 'Pickup', wr: 0.35 },
+  minitruck: { L: 3.9, W: 1.55, H: 2.05, maxV: 17, acc: 4.2, steer: 1.7, seat: [-0.35, 0.5, 0.9], cam: 8.5, label: 'Mini truck', wr: 0.28 },
   omni: { L: 3.5, W: 1.45, H: 1.85, maxV: 21, acc: 5.2, steer: 1.9, seat: [-0.35, 0.4, 0.9], cam: 8, label: 'Omni van', wr: 0.28 },
   suv: { L: 4.6, W: 1.85, H: 1.85, maxV: 27, acc: 6.8, steer: 1.7, seat: [-0.4, 0.45, 0.3], cam: 9, label: 'SUV', wr: 0.38 },
   jeep: { L: 4.1, W: 1.85, H: 1.95, maxV: 26, acc: 7.5, steer: 1.8, seat: [-0.4, 0.45, 0], cam: 8.5, label: 'Police jeep', wr: 0.38 },
@@ -174,7 +183,7 @@ export function vehicle(kind, o = {}) {
   const L = d.L, W = d.W, H = d.H, wr = d.wr;
   const wheel = (x, z, r = wr, w = 0.22, spokes = false) => { const m = new THREE.Mesh(wheelGeo(r, w, spokes), RIM); m.position.set(x, r, z); m.castShadow = true; g.add(m); wheels.push(m); };
   const lights = (y, hw, z, rz, col = '#fff7cc', sz = [0.3, 0.16]) => { glow.push(P(box(sz[0], sz[1], 0.04), col, [hw, y, z]), P(box(sz[0], sz[1], 0.04), col, [-hw, y, z])); glow.push(P(box(0.26, 0.12, 0.04), '#ff2020', [hw, y, rz]), P(box(0.26, 0.12, 0.04), '#ff2020', [-hw, y, rz])); };
-  let yellowPlate = ['auto', 'tempo', 'lorry', 'tanker', 'bus', 'ksrtc', 'schoolbus', 'tractor'].includes(kind) || (kind === 'car' && Math.random() < 0.25);
+  let yellowPlate = ['auto', 'tempo', 'lorry', 'tanker', 'bus', 'ksrtc', 'schoolbus', 'tractor', 'taxi', 'pickup', 'minitruck'].includes(kind) || (kind === 'car' && Math.random() < 0.25);
   if (kind === 'cycle') {
     const c = o.color || pick(['#111827', '#b91c1c', '#1d4ed8', '#15803d']);
     wheel(0, 0.62, 0.33, 0.05, true); wheel(0, -0.62, 0.33, 0.05, true);
@@ -182,10 +191,10 @@ export function vehicle(kind, o = {}) {
       P(box(0.05, 0.05, 0.7), c, [0, 0.36, -0.3]), P(box(0.22, 0.06, 0.28), '#111', [0, 0.95, -0.3]), P(box(0.56, 0.04, 0.04), '#444', [0, 1.02, 0.58]), P(box(0.06, 0.06, 0.06), '#9ca3af', [0, 0.36, 0]),
       P(box(0.35, 0.03, 0.3), '#9ca3af', [0, 0.72, -0.72]));
     yellowPlate = null;
-  } else if (kind === 'scooter' || kind === 'bike') {
-    const c = o.color || (kind === 'bike' ? pick(['#111827', '#7f1d1d', '#1e3a8a', '#4b5563']) : pick(['#b91c1c', '#1d4ed8', '#f8fafc', '#4d7c0f', '#6b7280', '#facc15', '#0e7490', '#111827']));
+  } else if (['scooter', 'scooty', 'moped', 'bike', 'sportbike'].includes(kind)) {
+    const sc = kind === 'scooter' || kind === 'scooty' || kind === 'moped', c = o.color || (kind === 'sportbike' ? pick(['#dc2626', '#1d4ed8', '#f8fafc', '#facc15', '#111827']) : kind === 'bike' ? pick(['#111827', '#7f1d1d', '#1e3a8a', '#4b5563']) : pick(['#b91c1c', '#1d4ed8', '#f8fafc', '#4d7c0f', '#6b7280', '#facc15', '#0e7490', '#111827']));
     wheel(0, L / 2 - 0.3, wr, 0.12); wheel(0, -L / 2 + 0.3, wr, 0.12);
-    if (kind === 'scooter') {
+    if (sc) {
       parts.push(P(taper(0.48, 0.95, 0.4, 0.75, 0.42, -0.05), c, [0, 0.62, -0.3]), P(taper(0.46, 0.2, 0.4, 0.16, 0.75), c, [0, 0.72, 0.52], [0.18, 0, 0]),
         P(box(0.4, 0.06, 0.55), '#374151', [0, 0.34, 0.15]), P(box(0.38, 0.11, 0.72), '#1f2937', [0, 0.88, -0.28]), P(box(0.62, 0.06, 0.06), '#374151', [0, 1.14, 0.58]),
         P(box(0.08, 0.42, 0.08), '#374151', [0, 0.95, 0.6]), P(box(0.34, 0.18, 0.2), c, [0, 1.12, 0.6]), P(box(0.05, 0.22, 0.05), '#111', [0.3, 1.26, 0.56]), P(box(0.05, 0.22, 0.05), '#111', [-0.3, 1.26, 0.56]),
@@ -196,6 +205,15 @@ export function vehicle(kind, o = {}) {
         P(cyl(0.06, 0.07, 0.9, 8), '#d1d5db', [0.2, 0.36, -0.32], [Math.PI / 2 - 0.1, 0, 0]), P(cyl(0.12, 0.12, 0.08, 12), '#d1d5db', [0, 1.0, 0.74], [Math.PI / 2, 0, 0]),
         P(box(0.32, 0.06, 0.55), c, [0, 0.62, -0.75]), P(box(0.3, 0.06, 0.35), c, [0, 0.68, 0.82]));
     }
+    // shared detail: mudguards, mirrors, grab rail / pillion seat, exhaust, kickstand, indicators, chain guard
+    parts.push(P(taper(0.2, 0.55, 0.16, 0.5, 0.08), c, [0, wr * 2 + 0.06, L / 2 - 0.3], [0.1, 0, 0]), P(taper(0.2, 0.5, 0.16, 0.46, 0.08), c, [0, wr * 2 + 0.04, -L / 2 + 0.28], [-0.1, 0, 0]),
+      P(box(0.02, 0.15, 0.02), '#111', [0.3, 1.2, 0.55], [0, 0, -0.3]), P(box(0.02, 0.15, 0.02), '#111', [-0.3, 1.2, 0.55], [0, 0, 0.3]), P(box(0.1, 0.06, 0.02), '#1f2937', [0.34, 1.29, 0.55]), P(box(0.1, 0.06, 0.02), '#1f2937', [-0.34, 1.29, 0.55]),
+      P(box(0.04, 0.2, 0.04), '#6b7280', [0.1, 0.12, 0.1], [0.3, 0, 0]));
+    if (sc) parts.push(P(box(0.34, 0.04, 0.04), '#9ca3af', [0, 0.96, -0.72]), P(cyl(0.05, 0.06, 0.4, 8), '#9ca3af', [0.18, 0.34, -0.55], [Math.PI / 2, 0, 0]), P(box(0.5, 0.03, 0.34), '#1f2937', [0, 0.28, 0.1]));
+    if (kind === 'bike') parts.push(P(box(0.3, 0.26, 0.4), '#9ca3af', [0, 0.46, -0.05]), P(box(0.04, 0.32, 0.5), '#e5e7eb', [0.2, 0.32, -0.48], [0, 0, 0]), P(cyl(0.04, 0.04, 0.5, 8), '#d1d5db', [-0.2, 0.34, -0.5], [Math.PI / 2, 0, 0]));
+    if (kind === 'moped') parts.push(P(cyl(0.12, 0.12, 0.3, 10), c, [0, 0.9, 0.12], [0, 0, Math.PI / 2]), P(box(0.06, 0.5, 0.06), '#6b7280', [0, 0.6, 0.0], [0.5, 0, 0]));
+    if (kind === 'sportbike') { parts.push(P(taper(0.46, 0.95, 0.28, 0.6, 0.55), c, [0, 0.95, 0.35], [-0.12, 0, 0]), P(taper(0.34, 0.55, 0.2, 0.3, 0.2), c, [0, 1.0, -0.62], [0.18, 0, 0]), P(box(0.42, 0.04, 0.04), '#111', [0, 1.16, 0.5]), P(cyl(0.07, 0.06, 0.8, 10), '#9ca3af', [0.2, 0.42, -0.45], [Math.PI / 2 - 0.12, 0, 0]), P(box(0.3, 0.16, 0.3), '#374151', [0, 0.5, 0.0])); glass.push(P(box(0.32, 0.26, 0.03), '#000', [0, 1.28, 0.72], [-0.7, 0, 0])); }
+    glow.push(P(box(0.07, 0.05, 0.04), '#fb923c', [0.34, 1.22, 0.58]), P(box(0.07, 0.05, 0.04), '#fb923c', [-0.34, 1.22, 0.58]), P(box(0.07, 0.05, 0.04), '#fb923c', [0.14, 0.82, -L / 2 + 0.06]), P(box(0.07, 0.05, 0.04), '#fb923c', [-0.14, 0.82, -L / 2 + 0.06]));
     glow.push(P(box(0.16, 0.12, 0.04), '#fff7cc', [0, kind === 'bike' ? 1.0 : 1.12, L / 2 - (kind === 'bike' ? 0.22 : 0.18)]), P(box(0.14, 0.08, 0.04), '#ff2020', [0, 0.86, -L / 2 + 0.05]));
     plateMesh(g, plate(false), 0, 0.62, -L / 2 + 0.02, Math.PI, 0.28);
   } else if (kind === 'auto') {
@@ -209,12 +227,24 @@ export function vehicle(kind, o = {}) {
     glass.push(P(box(1.18, 0.62, 0.04), '#000', [0, 1.42, 1.0], [-0.15, 0, 0]));
     glow.push(P(cyl(0.11, 0.11, 0.05, 10), '#fff7cc', [0, 1.0, 1.27], [Math.PI / 2, 0, 0]), P(box(0.14, 0.1, 0.04), '#ff2020', [0.5, 0.55, -1.22]), P(box(0.14, 0.1, 0.04), '#ff2020', [-0.5, 0.55, -1.22]));
     plateMesh(g, plate(true), 0, 0.5, -1.24, Math.PI, 0.4);
-  } else if (['car', 'omni', 'suv', 'jeep', 'ambulance'].includes(kind)) {
-    const c = kind === 'jeep' ? '#f1f5f9' : kind === 'ambulance' ? '#f8fafc' : (o.color || pick(CAR_COLS));
+  } else if (['car', 'hatch', 'sedan', 'taxi', 'omni', 'suv', 'jeep', 'ambulance'].includes(kind)) {
+    const c = kind === 'jeep' ? '#f1f5f9' : kind === 'ambulance' ? '#f8fafc' : kind === 'taxi' ? '#111827' : (o.color || pick(CAR_COLS));
     const hx = W / 2 - 0.08, fz = L / 2 - (kind === 'omni' ? 0.55 : 0.8);
     wheel(hx, fz); wheel(-hx, fz); wheel(hx, -fz); wheel(-hx, -fz);
     const y0 = wr + 0.05;
-    if (kind === 'car') {
+    if (kind === 'hatch' || kind === 'sedan' || kind === 'taxi') {
+      const hb = kind === 'hatch';
+      parts.push(P(taper(W, L, W - 0.05, L - 0.15, 0.55), c, [0, y0 + 0.3, 0]),
+        hb ? P(taper(W - 0.08, L * 0.62, W - 0.3, L * 0.46, 0.56, -0.2), c, [0, y0 + 0.85, -0.3]) : P(taper(W - 0.08, L * 0.5, W - 0.32, L * 0.32, 0.52, 0.0), c, [0, y0 + 0.85, 0.05]),
+        P(box(W - 0.1, 0.1, hb ? 0.1 : L * 0.2), c, [0, y0 + 0.62, -L / 2 + (hb ? 0.2 : 0.42)]),
+        P(box(W + 0.04, 0.12, 0.2), '#374151', [0, y0 + 0.12, L / 2]), P(box(W + 0.04, 0.12, 0.2), '#374151', [0, y0 + 0.12, -L / 2]), P(box(W - 0.5, 0.14, 0.04), '#111', [0, y0 + 0.4, L / 2 + 0.01]),
+        P(box(0.12, 0.08, 0.1), '#111', [W / 2 + 0.04, y0 + 0.78, 0.5]), P(box(0.12, 0.08, 0.1), '#111', [-W / 2 - 0.04, y0 + 0.78, 0.5]),
+        P(box(0.012, 0.36, 0.03), '#0b0b0b', [W / 2 + 0.005, y0 + 0.5, 0.3]), P(box(0.012, 0.36, 0.03), '#0b0b0b', [-W / 2 - 0.005, y0 + 0.5, 0.3]), P(box(0.012, 0.36, 0.03), '#0b0b0b', [W / 2 + 0.005, y0 + 0.5, -0.65]), P(box(0.012, 0.36, 0.03), '#0b0b0b', [-W / 2 - 0.005, y0 + 0.5, -0.65]),
+        P(box(0.02, 0.4, 0.02), '#111', [-0.5, y0 + 1.38, -0.2], [0.3, 0, 0]));
+      if (kind === 'taxi') parts.push(P(box(W + 0.01, 0.1, L * 0.92), '#facc15', [0, y0 + 0.55, 0]), P(box(W - 0.4, 0.05, L * 0.3), '#facc15', [0, y0 + 1.12, 0.05]), P(box(0.5, 0.13, 0.2), '#facc15', [0, y0 + 1.2, 0.05]));
+      glass.push(hb ? P(taper(W - 0.06, L * 0.6, W - 0.32, L * 0.44, 0.42, -0.2), '#000', [0, y0 + 0.9, -0.3]) : P(taper(W - 0.06, L * 0.48, W - 0.34, L * 0.3, 0.4, 0.0), '#000', [0, y0 + 0.9, 0.05]));
+      lights(y0 + 0.42, W / 2 - 0.3, L / 2 + 0.01, -L / 2 - 0.01);
+    } else if (kind === 'car') {
       parts.push(P(taper(W, L, W - 0.05, L - 0.15, 0.55), c, [0, y0 + 0.3, 0]), P(taper(W - 0.08, L * 0.56, W - 0.32, L * 0.36, 0.55, -0.12), c, [0, y0 + 0.85, -0.25]),
         P(box(W + 0.04, 0.12, 0.2), '#374151', [0, y0 + 0.12, L / 2]), P(box(W + 0.04, 0.12, 0.2), '#374151', [0, y0 + 0.12, -L / 2]), P(box(0.12, 0.08, 0.1), '#111', [W / 2 + 0.04, y0 + 0.75, 0.55]), P(box(0.12, 0.08, 0.1), '#111', [-W / 2 - 0.04, y0 + 0.75, 0.55]));
       glass.push(P(taper(W - 0.06, L * 0.55, W - 0.34, L * 0.35, 0.42, -0.12), '#000', [0, y0 + 0.9, -0.25]));
@@ -235,6 +265,18 @@ export function vehicle(kind, o = {}) {
       lights(y0 + 0.5, W / 2 - 0.3, L / 2 + 0.01, -L / 2 - 0.01);
     }
     plateMesh(g, plate(yellowPlate), 0, y0 + 0.2, L / 2 + 0.12, 0); plateMesh(g, plate(yellowPlate), 0, y0 + 0.2, -L / 2 - 0.12, Math.PI);
+  } else if (kind === 'pickup' || kind === 'minitruck') {
+    const c = o.color || pick(kind === 'pickup' ? ['#f8fafc', '#e5e7eb', '#9ca3af', '#b91c1c', '#1d4ed8'] : ['#f8fafc', '#facc15', '#2563eb', '#16a34a']);
+    const y0 = wr + 0.05, hx = W / 2 - 0.08, fz = L / 2 - (kind === 'pickup' ? 0.85 : 0.7), cabL = kind === 'pickup' ? 1.9 : 1.3, cz = L / 2 - cabL / 2 - 0.05;
+    wheel(hx, fz); wheel(-hx, fz); wheel(hx, -fz + 0.2); wheel(-hx, -fz + 0.2);
+    parts.push(P(box(W, 0.25, L), '#374151', [0, y0 + 0.2, 0]), P(taper(W, cabL, W - 0.06, cabL - 0.3, kind === 'pickup' ? 1.0 : 1.35, -0.1), c, [0, y0 + 0.82, cz]), P(box(W + 0.04, 0.16, 0.22), '#374151', [0, y0 + 0.14, L / 2]),
+      P(box(0.12, 0.08, 0.1), '#111', [W / 2 + 0.04, y0 + 1.0, cz + 0.4]), P(box(0.12, 0.08, 0.1), '#111', [-W / 2 - 0.04, y0 + 1.0, cz + 0.4]), P(box(W - 0.5, 0.16, 0.04), '#111', [0, y0 + 0.4, L / 2 + 0.01]));
+    const bedL = L - cabL - 0.15, bz = -L / 2 + bedL / 2 + 0.05, sideH = kind === 'pickup' ? 0.55 : 0.4;
+    parts.push(P(box(W, 0.1, bedL), '#4b5563', [0, y0 + 0.4, bz]), P(box(0.08, sideH, bedL), c, [W / 2 - 0.04, y0 + 0.4 + sideH / 2, bz]), P(box(0.08, sideH, bedL), c, [-W / 2 + 0.04, y0 + 0.4 + sideH / 2, bz]), P(box(W, sideH, 0.08), c, [0, y0 + 0.4 + sideH / 2, -L / 2 + 0.04]), P(box(W, sideH, 0.08), c, [0, y0 + 0.4 + sideH / 2, bz + bedL / 2 - 0.04]));
+    for (let i = 0; i < 5; i++) parts.push(kind === 'pickup' ? P(cyl(0.2, 0.22, 0.45, 8), pick(['#1d4ed8', '#e5e7eb', '#16a34a']), [-0.45 + (i % 2) * 0.9, y0 + 0.7, bz - 0.5 + (i >> 1) * 0.6]) : P(box(0.5, 0.4, 0.5), pick(['#a16207', '#d6d3d1', '#fb923c', '#65a30d']), [-0.35 + (i % 2) * 0.7, y0 + 0.65, bz - 0.4 + (i >> 1) * 0.55]));
+    glass.push(P(box(W - 0.15, 0.5, 0.05), '#000', [0, y0 + 1.15 + (kind === 'minitruck' ? 0.1 : 0), L / 2 - 0.35 - (kind === 'pickup' ? 0.4 : 0.1)], [-0.3, 0, 0]), P(box(W - 0.02, 0.38, cabL * 0.35), '#000', [0, y0 + 1.15 + (kind === 'minitruck' ? 0.1 : 0), cz - 0.1]));
+    lights(y0 + 0.5, W / 2 - 0.3, L / 2 + 0.01, -L / 2 - 0.01);
+    plateMesh(g, plate(true), 0, y0 + 0.2, L / 2 + 0.12, 0); plateMesh(g, plate(true), 0, y0 + 0.2, -L / 2 - 0.12, Math.PI);
   } else if (kind === 'tempo') {
     const c = o.color || pick(['#f8fafc', '#facc15', '#0ea5e9']);
     wheel(0.75, 1.3); wheel(-0.75, 1.3); wheel(0.75, -1.3); wheel(-0.75, -1.3);
@@ -289,7 +331,7 @@ export function vehicle(kind, o = {}) {
     g.userData.busName = name;
     plateMesh(g, plate(true), 0, 0.55, L / 2 + 0.13, 0, 0.55); plateMesh(g, plate(true), 0, 0.55, -L / 2 - 0.13, Math.PI, 0.55);
   }
-  const body = new THREE.Mesh(merge(parts), ['car', 'jeep', 'suv', 'omni', 'ambulance'].includes(kind) ? MAT.shiny : MAT.solid); body.castShadow = true; g.add(body);
+  const body = new THREE.Mesh(merge(parts), ['car', 'hatch', 'sedan', 'taxi', 'jeep', 'suv', 'omni', 'ambulance', 'pickup', 'minitruck', 'scooter', 'scooty', 'moped', 'bike', 'sportbike'].includes(kind) ? MAT.shiny : MAT.solid); body.castShadow = true; g.add(body);
   if (glass.length) { const gm = new THREE.Mesh(merge(glass), GLASS); g.add(gm); }
   if (glow.length) g.add(new THREE.Mesh(merge(glow), MAT.glow));
   let flashMesh = null; if (flash.length) { flashMesh = new THREE.Mesh(merge(flash), MAT.glow); g.add(flashMesh); }

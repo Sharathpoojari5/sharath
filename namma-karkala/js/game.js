@@ -111,7 +111,7 @@ export class Game {
       const n = pick(nodes), e = pick(n.adj), dx = e.n.x - n.x, dz = e.n.z - n.z, L = Math.hypot(dx, dz) || 1, t = rnd(0.3, 0.7), s = Math.random() < 0.5 ? 1 : -1;
       const x = n.x + dx * t + (-dz / L) * (e.w / 2 + 1) * s, z = n.z + dz * t + (dx / L) * (e.w / 2 + 1) * s;
       if (w.blocked(x, z, 1)) continue;
-      const v = new Vehicle(this, pick(['scooter', 'scooter', 'bike', 'car', 'auto', 'cycle', 'omni', 'suv']), x, z, Math.atan2(dx, dz)); v.parked = true; this.vehicles.push(v);
+      const v = new Vehicle(this, pick(['scooter', 'scooty', 'moped', 'bike', 'sportbike', 'car', 'hatch', 'sedan', 'taxi', 'auto', 'cycle', 'omni', 'suv', 'pickup', 'minitruck']), x, z, Math.atan2(dx, dz)); v.parked = true; this.vehicles.push(v);
     }
   }
 
@@ -178,7 +178,7 @@ export class Game {
       paisa: ['+₹10,000 (not real, sadly)', () => { this.addMoney(10000, true); }], policeilla: ['Police forgot about you', () => { this.heat = 0; }],
       golibaje: ['Full health. Goli baje fixes everything.', () => { this.player.hp = 100; }], bahubali: ['Bahubali jump', () => { this.cheats.moon = !this.cheats.moon; }],
       busbeku: ['A bus appears', () => this.spawnNear('bus')], autobeku: ['Pom pom! An auto', () => this.spawnNear('auto')], bullet: ['A motorbike', () => this.spawnNear('bike')],
-      lorry: ['HORN OK PLEASE', () => this.spawnNear('lorry')], tractor: ['A tractor', () => this.spawnNear('tractor')], ambulance: ['108 is here', () => this.spawnNear('ambulance')], cycle: ['A bicycle', () => this.spawnNear('cycle')], ksrtc: ['A state bus', () => this.spawnNear('ksrtc')],
+      lorry: ['HORN OK PLEASE', () => this.spawnNear('lorry')], tractor: ['A tractor', () => this.spawnNear('tractor')], ambulance: ['108 is here', () => this.spawnNear('ambulance')], cycle: ['A bicycle', () => this.spawnNear('cycle')], ksrtc: ['A state bus', () => this.spawnNear('ksrtc')], scooty: ['A scooty', () => this.spawnNear('scooty')], taxi: ['An Ambassador taxi', () => this.spawnNear('taxi')], pickup: ['A pickup', () => this.spawnNear('pickup')], sedan: ['A sedan', () => this.spawnNear('sedan')], hatch: ['A hatchback', () => this.spawnNear('hatch')], moped: ['A moped', () => this.spawnNear('moped')], sportbike: ['A sports bike', () => this.spawnNear('sportbike')], minitruck: ['A mini truck', () => this.spawnNear('minitruck')],
       jorr: ['Super sprint', () => { this.cheats.fast = !this.cheats.fast; }],
     };
     for (const [code, [msg, fn]] of Object.entries(C)) if (this.cbuf.endsWith(code)) { fn(); this.toast('CHEAT', msg); this.cbuf = ''; this.save.cheated = true; this.audio.coin(); }
@@ -228,19 +228,19 @@ export class Game {
       if (d > (o.parked ? 650 : 470)) { o.dispose(); list.splice(i, 1); if (o.driver === 'police' && this.police) this.police = this.police.filter(v => v !== o); }
     }
     const traffic = this.vehicles.filter(v => v.driver === 'ai').length;
-    if (traffic < 34) {
+    if (traffic < 56) {
       const near = w.nodesNear(p.x, p.z, 380).filter(n => Math.hypot(n.x - p.x, n.z - p.z) > 110 && n.adj.length);
-      for (let k = 0; k < 4 && near.length; k++) {
+      for (let k = 0; k < 6 && near.length; k++) {
         const n = pick(near), e = pick(n.adj); if (e.w < 6 && Math.random() < 0.6) continue;
-        const kind = e.w >= 9 ? pick(['scooter', 'scooter', 'scooter', 'bike', 'bike', 'auto', 'auto', 'car', 'car', 'suv', 'omni', 'bus', 'bus', 'ksrtc', 'schoolbus', 'tempo', 'lorry', 'tanker', 'tractor', 'cycle', 'ambulance'])
-          : pick(['scooter', 'scooter', 'bike', 'cycle', 'auto', 'car', 'omni', 'tractor']);
+        const kind = e.w >= 9 ? pick(['scooter', 'scooty', 'scooty', 'moped', 'bike', 'bike', 'sportbike', 'auto', 'auto', 'auto', 'car', 'hatch', 'hatch', 'sedan', 'taxi', 'suv', 'omni', 'pickup', 'minitruck', 'bus', 'bus', 'ksrtc', 'schoolbus', 'tempo', 'lorry', 'tanker', 'tractor', 'cycle', 'ambulance'])
+          : pick(['scooter', 'scooty', 'moped', 'bike', 'cycle', 'auto', 'car', 'hatch', 'taxi', 'omni', 'minitruck', 'tractor']);
         const h = Math.atan2(e.n.x - n.x, e.n.z - n.z), L = Math.hypot(e.n.x - n.x, e.n.z - n.z) || 1, lo = e.w / 4 + 0.2;
         const x = n.x + ((e.n.z - n.z) / L) * lo, z = n.z - ((e.n.x - n.x) / L) * lo;
         if (this.vehicles.some(v => Math.hypot(v.x - x, v.z - z) < 12)) continue;
         const v = new Vehicle(this, kind, x, z, h, { driver: 'ai' }); v.aiInit(n, e.n); this.vehicles.push(v);
       }
     }
-    if (this.peds.filter(q => !q.idle).length < 42) {
+    if (this.peds.filter(q => !q.idle).length < 56) {
       const near = w.nodesNear(p.x, p.z, 220).filter(n => Math.hypot(n.x - p.x, n.z - p.z) > 50);
       for (let k = 0; k < 4 && near.length; k++) {
         const n = pick(near), e = pick(n.adj), L = Math.hypot(e.n.x - n.x, e.n.z - n.z) || 1, s = Math.random() < 0.5 ? 1 : -1, o = e.w / 2 + 1.4;
@@ -564,7 +564,7 @@ export class Game {
     const sky = this.sky; this.scene.remove(sky); this.envScene.add(sky); const p = sky.position.clone(); sky.position.set(0, 0, 0);
     const rt = this.pmrem.fromScene(this.envScene, 0, 1, 1000); this.envScene.remove(sky); this.scene.add(sky); sky.position.copy(p);
     if (this.envRT) this.envRT.dispose(); this.envRT = rt;
-    for (const [m, k] of [[M.MAT.shiny, 0.9], [M.GLASS, 1.2], [this.world.waterMat, 0.35]]) { m.envMap = rt.texture; m.envMapIntensity = k; m.needsUpdate = !m.userData.envSet; m.userData.envSet = true; }
+    for (const [m, k] of [[M.MAT.shiny, 0.9], [M.MAT.gold, 1.5], [M.GLASS, 1.2], [this.world.waterMat, 0.35]]) { m.envMap = rt.texture; m.envMapIntensity = k; m.needsUpdate = !m.userData.envSet; m.userData.envSet = true; }
   }
   /* ====================================================================== story NPCs */
   setupNpcs() {

@@ -70,7 +70,7 @@ export class Audio {
     if (!this.ctx) return; const t = this.ctx.currentTime;
     if (!kind) { this.eng.g.gain.setTargetAtTime(0, t, 0.1); return; }
     if (kind === 'cycle') { this.eng.g.gain.setTargetAtTime(0, t, 0.1); return; }
-    const base = { scooter: 70, bike: 48, auto: 55, car: 40, omni: 46, suv: 36, jeep: 38, ambulance: 38, tempo: 42, lorry: 28, tanker: 28, tractor: 24, bus: 30, ksrtc: 30, schoolbus: 32 }[kind] || 45;
+    const base = { scooter: 70, scooty: 72, moped: 80, sportbike: 44, hatch: 42, sedan: 38, taxi: 36, pickup: 34, minitruck: 40, bike: 48, auto: 55, car: 40, omni: 46, suv: 36, jeep: 38, ambulance: 38, tempo: 42, lorry: 28, tanker: 28, tractor: 24, bus: 30, ksrtc: 30, schoolbus: 32 }[kind] || 45;
     const f = base + Math.abs(speed) * (kind === 'bus' ? 3 : 5.5) + thr * 15;
     this.eng.o1.frequency.setTargetAtTime(f, t, 0.05); this.eng.o2.frequency.setTargetAtTime(f * 0.501, t, 0.05);
     this.eng.f.frequency.setTargetAtTime(300 + f * 6, t, 0.08); this.eng.g.gain.setTargetAtTime(kind === 'auto' || kind === 'tractor' ? 0.11 : 0.07 + Math.min(0.06, Math.abs(speed) * 0.003), t, 0.08);
@@ -85,7 +85,7 @@ export class Audio {
     else if (kind === 'cycle') { for (let i = 0; i < 4; i++) this.tone(2400, 0.08, 'sine', vol * 0.6, i * 0.09); }       // tring tring
     else if (kind === 'lorry' || kind === 'tanker') { this.tone(155, 0.9, 'sawtooth', vol); this.tone(185, 0.9, 'sawtooth', vol * 0.8); this.tone(233, 0.9, 'sawtooth', vol * 0.6); }
     else if (kind === 'bus' || kind === 'ksrtc' || kind === 'schoolbus') { this.tone(196, 0.7, 'sawtooth', vol); this.tone(247, 0.7, 'sawtooth', vol * 0.7); this.tone(294, 0.7, 'sawtooth', vol * 0.5); }
-    else if (kind === 'scooter' || kind === 'bike') { this.tone(620, 0.3, 'square', vol * 0.8); }
+    else if (kind === 'scooter' || kind === 'scooty' || kind === 'moped' || kind === 'bike' || kind === 'sportbike') { this.tone(620, 0.3, 'square', vol * 0.8); }
     else { this.tone(392, 0.45, 'square', vol); this.tone(494, 0.45, 'square', vol * 0.7); }
   }
   noiseHit(vol = 0.5, freq = 400, dur = 0.25) {

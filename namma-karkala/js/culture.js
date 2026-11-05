@@ -37,17 +37,29 @@ function drummer(kind = 'tasa') {
 }
 function yakshaDancer(face, dress, trim) {
   const g = M.person({ kind: 'saree', saree: dress, skin: face });
-  const p = [
-    P(box(0.5, 0.32, 0.3), trim, [0, 1.3, 0]), P(box(0.34, 0.05, 0.31), dress, [0, 1.12, 0]),
-    P(cyl(0.32, 0.32, 0.05, 14), trim, [-0.4, 1.46, 0], [0, 0, 1.15]), P(cyl(0.32, 0.32, 0.05, 14), trim, [0.4, 1.46, 0], [0, 0, -1.15]),
-    P(cyl(0.07, 0.07, 0.1, 8), trim, [-0.3, 1.2, 0]), P(cyl(0.07, 0.07, 0.1, 8), trim, [0.3, 1.2, 0]),
-    P(cyl(0.22, 0.24, 0.1, 12), '#facc15', [0, 1.9, 0]), P(cyl(0.2, 0.22, 0.18, 12), '#dc2626', [0, 2.03, 0]), P(cyl(0.16, 0.2, 0.18, 12), '#facc15', [0, 2.2, 0]), P(cone(0.14, 0.4, 10), '#dc2626', [0, 2.5, 0]), P(sph(0.06), '#facc15', [0, 2.75, 0]),
-    P(cyl(0.46, 0.46, 0.04, 22), '#f8fafc', [0, 2.0, -0.17], [Math.PI / 2, 0, 0]), P(cyl(0.5, 0.5, 0.03, 22), '#dc2626', [0, 2.0, -0.19], [Math.PI / 2, 0, 0]), P(cyl(0.4, 0.4, 0.03, 22), '#facc15', [0, 2.0, -0.2], [Math.PI / 2, 0, 0]),
-    P(box(0.26, 0.04, 0.02), '#fff', [0, 1.73, 0.126]), P(box(0.2, 0.025, 0.02), '#111', [0, 1.58, 0.126]), P(box(0.03, 0.05, 0.02), '#dc2626', [0, 1.81, 0.126]), P(box(0.1, 0.1, 0.1), '#f8fafc', [0, 1.5, 0.1]),
-  ];
-  g.add(mk(merge(p)));
-  const skirt = mk(merge([P(cyl(0.3, 0.64, 0.95, 18), dress, [0, 0.52, 0]), P(cyl(0.66, 0.66, 0.07, 18), '#facc15', [0, 0.1, 0]), P(cyl(0.58, 0.58, 0.05, 18), '#f8fafc', [0, 0.24, 0]), P(cyl(0.45, 0.45, 0.05, 18), trim, [0, 0.45, 0])]));
-  g.add(skirt); g.skirt = skirt;
+  const gd = [], cl = [], GOLD = '#d9a520', TAUR = Math.PI * 2;
+  // chest plate, shoulder discs (kattu), armbands, belt: gold with beads
+  gd.push(P(box(0.5, 0.3, 0.3), GOLD, [0, 1.3, 0.01]), P(sph(0.07, 8, 6), '#dc2626', [0, 1.32, 0.17]), P(cyl(0.31, 0.31, 0.05, 16), GOLD, [-0.4, 1.46, 0], [0, 0, 1.15]), P(cyl(0.31, 0.31, 0.05, 16), GOLD, [0.4, 1.46, 0], [0, 0, -1.15]),
+    P(cyl(0.2, 0.2, 0.06, 14), '#dc2626', [-0.4, 1.46, 0.02], [0, 0, 1.15]), P(cyl(0.2, 0.2, 0.06, 14), '#dc2626', [0.4, 1.46, 0.02], [0, 0, -1.15]),
+    P(cyl(0.07, 0.07, 0.1, 10), GOLD, [-0.3, 1.2, 0]), P(cyl(0.07, 0.07, 0.1, 10), GOLD, [0.3, 1.2, 0]), P(cyl(0.2, 0.2, 0.06, 14), GOLD, [0, 0.95, 0], [0, 0, 0], [1.1, 1, 0.8]));
+  for (let i = 0; i < 12; i++) { const a = i / 12 * TAUR; gd.push(P(sph(0.028, 6, 4), '#f8fafc', [Math.sin(a) * 0.17, 1.42 + Math.cos(a * 2) * 0.01, 0.15 + Math.cos(a) * 0.04])); }
+  // crown (kireeta): tiers, lotus petals, side flaps, tall finial, and the big halo (mundasu)
+  gd.push(P(cyl(0.22, 0.24, 0.1, 14), GOLD, [0, 1.9, 0]), P(cyl(0.2, 0.22, 0.16, 14), GOLD, [0, 2.04, 0]), P(cyl(0.16, 0.2, 0.18, 14), GOLD, [0, 2.2, 0]), P(cone(0.14, 0.5, 12), GOLD, [0, 2.54, 0]), P(sph(0.06, 8, 6), '#dc2626', [0, 2.82, 0]));
+  for (let i = 0; i < 8; i++) { const a = i / 8 * TAUR; gd.push(P(cone(0.045, 0.16, 5), GOLD, [Math.sin(a) * 0.2, 1.99, Math.cos(a) * 0.2], [Math.cos(a) * 0.5, 0, -Math.sin(a) * 0.5])); }
+  cl.push(P(cyl(0.2, 0.22, 0.12, 14), '#dc2626', [0, 2.0, 0]), P(box(0.05, 0.4, 0.2), '#dc2626', [-0.25, 1.82, 0.02]), P(box(0.05, 0.4, 0.2), '#dc2626', [0.25, 1.82, 0.02]));
+  gd.push(P(cyl(0.5, 0.5, 0.025, 28), GOLD, [0, 2.02, -0.2], [Math.PI / 2, 0, 0]));
+  cl.push(P(cyl(0.46, 0.46, 0.03, 28), '#f8fafc', [0, 2.02, -0.185], [Math.PI / 2, 0, 0]), P(cyl(0.34, 0.34, 0.03, 24), '#dc2626', [0, 2.02, -0.17], [Math.PI / 2, 0, 0]));
+  for (let i = 0; i < 16; i++) { const a = i / 16 * TAUR; gd.push(P(sph(0.035, 6, 4), '#f8fafc', [Math.sin(a) * 0.43, 2.02 + Math.cos(a) * 0.43, -0.22])); }
+  // painted face: white chutti line, black-lined eyes, bold brows, red lips, moustache, tilaka
+  cl.push(P(box(0.26, 0.035, 0.02), '#f8fafc', [0, 1.6, 0.118]), P(box(0.2, 0.028, 0.02), '#f8fafc', [0, 1.77, 0.12]),
+    P(box(0.075, 0.03, 0.012), '#111', [-0.05, 1.715, 0.124], [0, 0, 0.12]), P(box(0.075, 0.03, 0.012), '#111', [0.05, 1.715, 0.124], [0, 0, -0.12]),
+    P(box(0.09, 0.022, 0.014), '#111', [-0.05, 1.757, 0.122], [0, 0, 0.3]), P(box(0.09, 0.022, 0.014), '#111', [0.05, 1.757, 0.122], [0, 0, -0.3]),
+    P(box(0.075, 0.02, 0.014), '#be123c', [0, 1.628, 0.126]), P(box(0.12, 0.018, 0.014), '#111', [0, 1.65, 0.128]), P(box(0.025, 0.05, 0.014), '#dc2626', [0, 1.81, 0.122]), P(sph(0.1, 8, 6), '#f8fafc', [0, 1.55, 0.05], [0, 0, 0], [0.9, 0.5, 0.7]));
+  g.add(mk(merge(cl))); g.add(mk(merge(gd), MAT.gold));
+  const sk = new THREE.Group();
+  sk.add(mk(merge([P(cyl(0.3, 0.64, 0.95, 20), dress, [0, 0.52, 0]), P(cyl(0.58, 0.58, 0.05, 20), '#f8fafc', [0, 0.24, 0]), P(cyl(0.45, 0.45, 0.05, 20), trim, [0, 0.45, 0])])));
+  const trimM = [P(cyl(0.66, 0.66, 0.07, 20), GOLD, [0, 0.1, 0]), P(cyl(0.6, 0.6, 0.03, 20), GOLD, [0, 0.33, 0])]; for (let i = 0; i < 20; i++) { const a = i / 20 * TAUR; trimM.push(P(sph(0.03, 5, 4), '#dc2626', [Math.sin(a) * 0.66, 0.1, Math.cos(a) * 0.66])); }
+  sk.add(mk(merge(trimM), MAT.gold)); g.add(sk); g.skirt = sk;
   return g;
 }
 function seated(skin, shirt) { const g = M.person({ kind: pick(['shirt', 'lungi', 'saree']), skin: skin || pick(['#8d5a3b', '#a8703f', '#6e4428', '#b9814f']), shirt: shirt || pick(['#f8fafc', '#2563eb', '#dc2626', '#16a34a', '#f59e0b', '#7c3aed', '#0891b2']) }); g.scale.set(1, 0.68, 1); return g; }
@@ -160,8 +172,9 @@ function buildBhajane(site) {
   st.push(P(box(8, 0.05, 6), '#be185d', [0, 0.03, 0]), P(box(7.4, 0.06, 5.4), '#f59e0b', [0, 0.05, 0]), P(box(6.4, 0.07, 4.4), '#16a34a', [0, 0.07, 0]));    // layered mats
   for (let i = 0; i < 20; i++) { const a = i / 20 * TAU; st.push(P(box(0.3, 0.09, 0.3), pick(['#dc2626', '#facc15', '#f8fafc', '#2563eb']), [Math.sin(a) * 1.5, 0.12, Math.cos(a) * 1.5])); }   // rangoli round the lamp
   // brass nilavilakku
-  st.push(P(cyl(0.3, 0.38, 0.12, 12), '#d4a017', [0, 0.18, 0]), P(cyl(0.07, 0.1, 0.9, 8), '#d4a017', [0, 0.7, 0]));
-  for (let k = 0; k < 4; k++) st.push(P(cyl(0.34 - k * 0.03, 0.22, 0.07, 10), '#d4a017', [0, 0.35 + k * 0.2, 0]), P(sph(0.07, 6, 4), '#fff1b8', [0.3 - k * 0.02, 0.43 + k * 0.2, 0]), P(sph(0.07, 6, 4), '#fff1b8', [-0.3 + k * 0.02, 0.43 + k * 0.2, 0]));
+  const brass = [P(cyl(0.3, 0.38, 0.12, 12), '#d4a017', [0, 0.18, 0]), P(cyl(0.07, 0.1, 0.9, 8), '#d4a017', [0, 0.7, 0])];
+  for (let k = 0; k < 4; k++) { brass.push(P(cyl(0.34 - k * 0.03, 0.22, 0.07, 10), '#d4a017', [0, 0.35 + k * 0.2, 0])); st.push(P(sph(0.07, 6, 4), '#fff1b8', [0.3 - k * 0.02, 0.43 + k * 0.2, 0]), P(sph(0.07, 6, 4), '#fff1b8', [-0.3 + k * 0.02, 0.43 + k * 0.2, 0])); }
+  site.brass = brass;
   st.push(P(sph(0.12, 6, 5), '#fff7c2', [0, 1.28, 0], [0, 0, 0], [1, 1.6, 1]));
   // pandal: four poles, cloth roof, marigold garlands, a framed picture of the Devi
   for (const [x, z] of [[-3.8, -2.8], [3.8, -2.8], [-3.8, 2.8], [3.8, 2.8]]) st.push(P(cyl(0.07, 0.07, 3.6, 6), '#78350f', [x, 1.8, z]));
@@ -169,7 +182,7 @@ function buildBhajane(site) {
   st.push(...garland(-3.8, 3.8, 3.5, 2.85, 18), ...garland(-3.8, 3.8, 3.5, -2.85, 18), ...garland(-3.4, 3.4, 2.9, -2.78, 16, ['#facc15', '#f97316', '#dc2626']));
   st.push(P(box(1.9, 2.3, 0.12), '#78350f', [0, 1.55, -2.7]), P(box(0.8, 0.5, 0.5), '#facc15', [-1.3, 0.28, -2.4]), P(box(0.8, 0.5, 0.5), '#facc15', [1.3, 0.28, -2.4]));
   for (let i = 0; i < 12; i++) st.push(lamp(-3.6 + i * 0.65, 3.4, 2.9));
-  put(g, st);
+  put(g, st); g.add(mk(merge(site.brass), MAT.gold));
   const pic = banner(['ಶ್ರೀ ದುರ್ಗಾ ಪರಮೇಶ್ವರಿ'], 1.6, 2.0, '#be123c', '#fde047', '#facc15'); pic.position.set(0, 1.55, -2.63); g.add(pic);
   const bn = banner(['ಭಜನಾ ಸಪ್ತಾಹ', 'ಎಲ್ಲರಿಗೂ ಸ್ವಾಗತ'], 5, 1.2, '#7c2d12', '#fde047', '#facc15'); bn.position.set(0, 4.2, 2.95); g.add(bn);
   site.sit = [];
