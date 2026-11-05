@@ -143,13 +143,13 @@ def main():
     ap.add_argument('--rebuild-manifest', action='store_true', help='only rebuild voice/manifest.json from the mp3 files on disk')
     a = ap.parse_args()
 
+    if a.rebuild_manifest:
+        m = {lang: sorted(f[:-4] for f in os.listdir(os.path.join(a.out, lang)) if f.endswith('.mp3')) for lang in ('kn', 'tcy', 'en') if os.path.isdir(os.path.join(a.out, lang))}
+        json.dump(m, open(os.path.join(a.out, 'manifest.json'), 'w'), indent=1); print('manifest:', {k: len(v) for k, v in m.items()}); return
     lines, speakers = load_script(a.script)
     ids = a.only or [k for k in lines if not any(k.startswith(p) for p in a.skip_prefix)]
     if a.shard:
         i, n = map(int, a.shard.split('/')); ids = ids[i::n]
-    if a.rebuild_manifest:
-        m = {lang: sorted(f[:-4] for f in os.listdir(os.path.join(a.out, lang)) if f.endswith('.mp3')) for lang in ('kn', 'tcy', 'en') if os.path.isdir(os.path.join(a.out, lang))}
-        json.dump(m, open(os.path.join(a.out, 'manifest.json'), 'w'), indent=1); print('manifest:', {k: len(v) for k, v in m.items()}); return
     manifest_path = os.path.join(a.out, 'manifest.json')
     manifest = json.load(open(manifest_path)) if os.path.exists(manifest_path) else {}
 
