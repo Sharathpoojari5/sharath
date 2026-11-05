@@ -13,7 +13,15 @@
   "PEDESTRIAN": "adult voice, annoyed and loud, short exclamation",
   "NARRATOR": "calm documentary narrator, mature male voice, clear, warm, medium pace, dry humour",
   "SINGER": "energetic male folk singer-chanter, rhythmic and punchy, shouting hype lines over a beat, coastal Karnataka accent",
-  "DJ": "energetic radio host, friendly and fast, big smile in the voice, coastal Karnataka accent"
+  "DJ": "energetic radio host, friendly and fast, big smile in the voice, coastal Karnataka accent",
+  "UNCLE": "middle-aged Kannada-Tulu man, friendly and chatty",
+  "AUNTY": "middle-aged woman, warm, bargaining",
+  "STUDENT": "young college student, casual and quick",
+  "FISHERMAN": "older man, slow and calm",
+  "BOY": "excited young boy",
+  "CONSTABLE": "police constable, relaxed",
+  "VENDOR": "cheerful food-stall owner, loud, shouting for customers",
+  "DRIVER": "angry driver, loud and fast, shouting"
  },
  "lines": {
   "L01": {
@@ -412,102 +420,6 @@
    "kn": "ಐದು ಗಂಟೆಗೆ ಗೋಳಿಬಜೆ. ಯಾವಾಗಲೂ.",
    "tcy": "ಐದ್ ಗಂಟೆಗ್ ಗೋಳಿಬಜೆ. ಏತ್‌ಲಾ."
   },
-  "S01": {
-   "w": "SINGER",
-   "en": "Hear the chenda, come to Karkala!",
-   "kn": "ಚಂಡೆ ಸದ್ದು ಕೇಳು, ಕಾರ್ಕಳಕ್ಕೆ ಬಾ!",
-   "tcy": "ಚೆಂಡೆದ ಸದ್ದು ಕೇನು, ಕಾರ್ಕಳಕ್ಕ್ ಬಲೆ!"
-  },
-  "S02": {
-   "w": "SINGER",
-   "en": "Bahubali watches, the hill stands tall",
-   "kn": "ಬಾಹುಬಲಿ ನೋಡ್ತಾನೆ, ಬೆಟ್ಟ ಎತ್ತರ ನಿಂತಿದೆ",
-   "tcy": "ಬಾಹುಬಲಿ ತೂವೆ, ಬೆಟ್ಟ ಎತ್ತರ ನಿಂತುಂಡು"
-  },
-  "S03": {
-   "w": "SINGER",
-   "en": "Goli baje hot, tea is steaming",
-   "kn": "ಗೋಳಿಬಜೆ ಬಿಸಿ, ಚಹಾ ಹಬೆ ಹಬೆ",
-   "tcy": "ಗೋಳಿಬಜೆ ಬಿಸಿ, ಚಾ ಹಬೆ ಹಬೆ"
-  },
-  "S04": {
-   "w": "SINGER",
-   "en": "Dance, dance, Karkala is dancing!",
-   "kn": "ಕುಣಿ ಕುಣಿ, ಕಾರ್ಕಳ ಕುಣೀತಿದೆ!",
-   "tcy": "ಕುಣಿಲೆ ಕುಣಿಲೆ, ಕಾರ್ಕಳ ಕುಣಿಪುಂಡು!"
-  },
-  "S05": {
-   "w": "SINGER",
-   "en": "The buffaloes are running, mud is flying",
-   "kn": "ಕೋಣಗಳು ಓಡ್ತಿವೆ, ಕೆಸರು ಹಾರ್ತಿದೆ",
-   "tcy": "ಕೋಣೊಲು ಓಡೊಂದುಲ್ಲ, ಕೆಸರ್ ಪಾರೊಂದುಂಡು"
-  },
-  "S06": {
-   "w": "SINGER",
-   "en": "Faster, faster, who will win?",
-   "kn": "ಇನ್ನೂ ವೇಗ, ಯಾರು ಗೆಲ್ಲುತ್ತಾರೆ?",
-   "tcy": "ಇನ್ನೂ ಜೋರ್, ಏರ್ ಗೆಲ್ಲುವೆರ್?"
-  },
-  "S07": {
-   "w": "SINGER",
-   "en": "Oy oy oy, the whole village shouts",
-   "kn": "ಓಯ್ ಓಯ್ ಓಯ್, ಊರೆಲ್ಲ ಕೂಗ್ತಿದೆ",
-   "tcy": "ಓಯ್ ಓಯ್ ಓಯ್, ಊರುಲೆಲ್ಲಾ ಕೂಗೊಂದುಂಡು"
-  },
-  "S08": {
-   "w": "SINGER",
-   "en": "Tiger on the street, run if you can",
-   "kn": "ಹುಲಿ ಬೀದಿಯಲ್ಲಿ, ಓಡಿ ನೋಡು",
-   "tcy": "ಪಿಲಿ ಬೀದಿಡ್, ಓಡ್ ತೂಲೆ"
-  },
-  "S09": {
-   "w": "SINGER",
-   "en": "Roar, roar, paint on skin",
-   "kn": "ಗರ್ಜನೆ ಗರ್ಜನೆ, ಮೈಗೆ ಬಣ್ಣ",
-   "tcy": "ಗರ್ಜನೆ ಗರ್ಜನೆ, ಮೈಕ್ ಬಣ್ಣ"
-  },
-  "S10": {
-   "w": "SINGER",
-   "en": "Pili, Pili, Pili!",
-   "kn": "ಪಿಲಿ, ಪಿಲಿ, ಪಿಲಿ!",
-   "tcy": "ಪಿಲಿ, ಪಿಲಿ, ಪಿಲಿ!"
-  },
-  "S11": {
-   "w": "SINGER",
-   "en": "Jasmine in her hair, a letter in my pocket",
-   "kn": "ಮುಡಿಯಲ್ಲಿ ಮಲ್ಲಿಗೆ, ಜೇಬಲ್ಲಿ ಪತ್ರ",
-   "tcy": "ತಲೆಟ್ ಮಲ್ಲಿಗೆ, ಜೇಬುಡು ಪತ್ರ"
-  },
-  "S12": {
-   "w": "SINGER",
-   "en": "The bus is late, my heart is not",
-   "kn": "ಬಸ್ ತಡ, ಮನಸ್ಸು ತಡ ಇಲ್ಲ",
-   "tcy": "ಬಸ್ ತಡ, ಮನಸ್ಸ್ ತಡ ಇಜ್ಜಿ"
-  },
-  "S13": {
-   "w": "SINGER",
-   "en": "Meet me by the lake at dusk",
-   "kn": "ಸಂಜೆ ಕೆರೆ ಹತ್ರ ಸಿಗು",
-   "tcy": "ಸಂಜೆ ಕೆರೆದ ಕರ್ಯ ಸಿಕ್ಕ್"
-  },
-  "S14": {
-   "w": "SINGER",
-   "en": "The lake holds the evening sky",
-   "kn": "ಕೆರೆ ಸಂಜೆಯ ಆಕಾಶವನ್ನು ಹಿಡಿದಿದೆ",
-   "tcy": "ಕೆರೆ ಸಂಜೆದ ಆಕಾಶೊನು ಪಿರ್ದುಂಡು"
-  },
-  "S15": {
-   "w": "SINGER",
-   "en": "Slow rain, slow road, I am home",
-   "kn": "ನಿಧಾನ ಮಳೆ, ನಿಧಾನ ದಾರಿ, ನಾನು ಮನೆಗೆ",
-   "tcy": "ಮೆತ್ತಗ್ ಮಳೆ, ಮೆತ್ತಗ್ ದಾರಿ, ಯಾನ್ ಇಲ್ಲ್‌ಗ್"
-  },
-  "S16": {
-   "w": "SINGER",
-   "en": "Namma Karkala, our own town",
-   "kn": "ನಮ್ಮ ಕಾರ್ಕಳ, ನಮ್ಮ ಊರು",
-   "tcy": "ಎಂಕುಲು ಕಾರ್ಕಳ, ಎಂಕುಲೆ ಊರು"
-  },
   "R01": {
    "w": "DJ",
    "en": "Radio Karkala, ninety-one point one. Our town, our beat.",
@@ -531,6 +443,745 @@
    "en": "Kere FM. Slow down, you are almost home.",
    "kn": "ಕೆರೆ ಎಫ್‌ಎಂ. ನಿಧಾನ ಮಾಡಿ, ಮನೆ ಹತ್ರ ಬಂತು.",
    "tcy": "ಕೆರೆ ಎಫ್‌ಎಂ. ಮೆತ್ತಗ್ ಆಲೆ, ಇಲ್ಲ್ ಕರ್ಯ ಬತ್ತ್‌ಂಡ್."
+  },
+  "S01": {
+   "w": "SINGER",
+   "en": "Chenda calls from the temple street",
+   "kn": "ದೇವಸ್ಥಾನದ ಬೀದಿಯಲ್ಲಿ ಚಂಡೆ ಕರೆಯುತ್ತಿದೆ",
+   "tcy": "ದೇಗುಲದ ಬೀದಿಡ್ ಚೆಂಡೆ ಕರೆಪುಂಡು"
+  },
+  "S02": {
+   "w": "SINGER",
+   "en": "The hill of Bahubali watches over us",
+   "kn": "ಬಾಹುಬಲಿ ಬೆಟ್ಟ ನಮ್ಮನ್ನು ಕಾಯುತ್ತಿದೆ",
+   "tcy": "ಬಾಹುಬಲಿ ಬೆಟ್ಟ ಎಂಕುಲೆನ್ ತೂವೊಂದುಂಡು"
+  },
+  "S03": {
+   "w": "SINGER",
+   "en": "Hey Tulunad, hey Karkala",
+   "kn": "ಹೇ ತುಳುನಾಡು, ಹೇ ಕಾರ್ಕಳ",
+   "tcy": "ಏ ತುಳುನಾಡ್, ಏ ಕಾರ್ಕಳ"
+  },
+  "S04": {
+   "w": "SINGER",
+   "en": "Come and dance with us tonight",
+   "kn": "ಇಂದು ರಾತ್ರಿ ನಮ್ಮ ಜೊತೆ ಕುಣಿ",
+   "tcy": "ಇನಿ ರಾತ್ರಿ ಎಂಕುಲೆ ಒಟ್ಟುಗು ಕುಣಿಲೆ"
+  },
+  "S05": {
+   "w": "SINGER",
+   "en": "The mud field shines, the buffaloes are ready",
+   "kn": "ಕೆಸರು ಗದ್ದೆ ಹೊಳೆಯುತ್ತಿದೆ, ಕೋಣಗಳು ಸಿದ್ಧ",
+   "tcy": "ಕೆಸರ್ದ ಗದ್ದೆ ಮೆರೆಪುಂಡು, ಕೋಣೊಲು ತಯಾರ್"
+  },
+  "S06": {
+   "w": "SINGER",
+   "en": "The runner holds the rope tight",
+   "kn": "ಓಟಗಾರ ಹಗ್ಗ ಬಿಗಿಯಾಗಿ ಹಿಡಿದಿದ್ದಾನೆ",
+   "tcy": "ಓಡುವಾಯೆ ದಾರ ಗಟ್ಟಿ ಪಿದಾಯೆ"
+  },
+  "S07": {
+   "w": "SINGER",
+   "en": "Hoy! Run, run, Kambala!",
+   "kn": "ಹೋಯ್! ಓಡು ಓಡು ಕಂಬಳ!",
+   "tcy": "ಹೋಯ್! ಓಡ್ಲೆ ಓಡ್ಲೆ ಕಂಬುಲ!"
+  },
+  "S08": {
+   "w": "SINGER",
+   "en": "Splash, splash, the whole village roars",
+   "kn": "ಸ್ಪ್ಲಾಷ್ ಸ್ಪ್ಲಾಷ್, ಊರೆಲ್ಲ ಕೂಗುತ್ತಿದೆ",
+   "tcy": "ಪುರ್ಲ್ ಪುರ್ಲ್, ಊರುಲೆಲ್ಲಾ ಕೂಗುಂಡು"
+  },
+  "S09": {
+   "w": "SINGER",
+   "en": "Yellow and black, paint on the skin",
+   "kn": "ಹಳದಿ ಕಪ್ಪು, ಮೈಮೇಲೆ ಬಣ್ಣ",
+   "tcy": "ಪುರ್ಪು ಕಪ್ಪು, ಮೈಟ್ ಬಣ್ಣ"
+  },
+  "S10": {
+   "w": "SINGER",
+   "en": "The tasa beats and the tiger wakes",
+   "kn": "ತಾಸೆ ಬಡಿಯುತ್ತಿದೆ, ಹುಲಿ ಎದ್ದಿದೆ",
+   "tcy": "ತಾಸೆ ಪೊಡಿಪುಂಡು, ಪಿಲಿ ಎದ್ದ್‌ಂಡ್"
+  },
+  "S11": {
+   "w": "SINGER",
+   "en": "Pili, Pili, roar for Tulunad",
+   "kn": "ಪಿಲಿ ಪಿಲಿ, ತುಳುನಾಡಿಗಾಗಿ ಗರ್ಜಿಸು",
+   "tcy": "ಪಿಲಿ ಪಿಲಿ, ತುಳುನಾಡುಗು ಗರ್ಜಿಸಲೆ"
+  },
+  "S12": {
+   "w": "SINGER",
+   "en": "Jump, tiger, jump",
+   "kn": "ಹಾರು ಹುಲಿ ಹಾರು",
+   "tcy": "ಪಾರ್ಲೆ ಪಿಲಿ ಪಾರ್ಲೆ"
+  },
+  "S13": {
+   "w": "SINGER",
+   "en": "Night on the street and the bass runs low",
+   "kn": "ರಾತ್ರಿ ಬೀದಿಯಲ್ಲಿ, ಬೇಸ್ ಕೆಳಗೆ",
+   "tcy": "ರಾತ್ರಿ ಬೀದಿಡ್, ಬೇಸ್ ತಿರ್ತ್"
+  },
+  "S14": {
+   "w": "SINGER",
+   "en": "Hold your breath and wait",
+   "kn": "ಉಸಿರು ಹಿಡಿದು ಕಾಯಿ",
+   "tcy": "ಉಸಿರ್ ಪಿದಾದ್ ಕಾತೊಲೆ"
+  },
+  "S15": {
+   "w": "SINGER",
+   "en": "Drop it, tiger, drop it now",
+   "kn": "ಡ್ರಾಪ್ ಮಾಡು ಹುಲಿ, ಈಗಲೇ",
+   "tcy": "ಡ್ರಾಪ್ ಮಲ್ಪು ಪಿಲಿ, ಈಗಲೇ"
+  },
+  "S16": {
+   "w": "SINGER",
+   "en": "Pili, Pili, Pili",
+   "kn": "ಪಿಲಿ ಪಿಲಿ ಪಿಲಿ",
+   "tcy": "ಪಿಲಿ ಪಿಲಿ ಪಿಲಿ"
+  },
+  "S17": {
+   "w": "SINGER",
+   "en": "Jasmine in her hair, a letter in my pocket",
+   "kn": "ಮುಡಿಯಲ್ಲಿ ಮಲ್ಲಿಗೆ, ಜೇಬಲ್ಲಿ ಪತ್ರ",
+   "tcy": "ತಲೆಟ್ ಮಲ್ಲಿಗೆ, ಜೇಬುಡು ಪತ್ರ"
+  },
+  "S18": {
+   "w": "SINGER",
+   "en": "The bus is late, my heart is not",
+   "kn": "ಬಸ್ ತಡ, ಮನಸ್ಸು ತಡ ಇಲ್ಲ",
+   "tcy": "ಬಸ್ ತಡ, ಮನಸ್ಸ್ ತಡ ಇಜ್ಜಿ"
+  },
+  "S19": {
+   "w": "SINGER",
+   "en": "Come to me, my mallige",
+   "kn": "ಬಾ ನನ್ನ ಮಲ್ಲಿಗೆ",
+   "tcy": "ಬಲೆ ಎನ್ನ ಮಲ್ಲಿಗೆ"
+  },
+  "S20": {
+   "w": "SINGER",
+   "en": "The evening is waiting by the lake",
+   "kn": "ಸಂಜೆ ಕೆರೆಯ ಹತ್ರ ಕಾಯುತ್ತಿದೆ",
+   "tcy": "ಸಂಜೆ ಕೆರೆದ ಕರ್ಯ ಕಾತೊಂದುಂಡು"
+  },
+  "S21": {
+   "w": "SINGER",
+   "en": "Please stop the bus, my stop has come",
+   "kn": "ಬಸ್ ನಿಲ್ಲಿಸಿ, ನನ್ನ ಸ್ಟಾಪ್ ಬಂತು",
+   "tcy": "ಬಸ್ ನಿಲ್ಲಾಲೆ, ಎನ್ನ ಸ್ಟಾಪ್ ಬತ್ತ್‌ಂಡ್"
+  },
+  "S22": {
+   "w": "SINGER",
+   "en": "A window seat and the wind in my hair",
+   "kn": "ಕಿಟಕಿ ಸೀಟು, ಗಾಳಿ ಕೂದಲಲ್ಲಿ",
+   "tcy": "ಕಿಟಿಕಿ ಸೀಟ್, ಗಾಳಿ ತಲೆಟ್"
+  },
+  "S23": {
+   "w": "SINGER",
+   "en": "Ride on, ride on, my dream",
+   "kn": "ಸಾಗು ಸಾಗು, ನನ್ನ ಕನಸು",
+   "tcy": "ಪೋಲೆ ಪೋಲೆ, ಎನ್ನ ಕನಸ್"
+  },
+  "S24": {
+   "w": "SINGER",
+   "en": "Karkala is calling me home",
+   "kn": "ಕಾರ್ಕಳ ಮನೆಗೆ ಕರೆಯುತ್ತಿದೆ",
+   "tcy": "ಕಾರ್ಕಳ ಇಲ್ಲ್‌ಗ್ ಕರೆಪುಂಡು"
+  },
+  "S25": {
+   "w": "SINGER",
+   "en": "The lake holds the evening sky",
+   "kn": "ಕೆರೆ ಸಂಜೆಯ ಆಕಾಶವನ್ನು ಹಿಡಿದಿದೆ",
+   "tcy": "ಕೆರೆ ಸಂಜೆದ ಆಕಾಶೊನು ಪಿರ್ದುಂಡು"
+  },
+  "S26": {
+   "w": "SINGER",
+   "en": "Slow rain, slow road, I am home",
+   "kn": "ನಿಧಾನ ಮಳೆ, ನಿಧಾನ ದಾರಿ, ನಾನು ಮನೆಗೆ",
+   "tcy": "ಮೆತ್ತಗ್ ಮಳೆ, ಮೆತ್ತಗ್ ದಾರಿ, ಯಾನ್ ಇಲ್ಲ್‌ಗ್"
+  },
+  "S27": {
+   "w": "SINGER",
+   "en": "Meet me by the lake at dusk",
+   "kn": "ಸಂಜೆ ಕೆರೆ ಹತ್ರ ಸಿಗು",
+   "tcy": "ಸಂಜೆ ಕೆರೆದ ಕರ್ಯ ಸಿಕ್ಕ್"
+  },
+  "S28": {
+   "w": "SINGER",
+   "en": "Stay a little longer",
+   "kn": "ಇನ್ನೂ ಸ್ವಲ್ಪ ಇರು",
+   "tcy": "ಇನ್ನೂ ಸ್ವಲ್ಪ ಇರ್ಲೆ"
+  },
+  "S29": {
+   "w": "SINGER",
+   "en": "Rain on the roof, mist on the hill",
+   "kn": "ಛಾವಣಿ ಮೇಲೆ ಮಳೆ, ಬೆಟ್ಟದ ಮೇಲೆ ಮಂಜು",
+   "tcy": "ಮಾಡುದ ಮಿತ್ತ್ ಮಳೆ, ಬೆಟ್ಟದ ಮಿತ್ತ್ ಮಂಜು"
+  },
+  "S30": {
+   "w": "SINGER",
+   "en": "Frogs are singing in the paddy",
+   "kn": "ಗದ್ದೆಯಲ್ಲಿ ಕಪ್ಪೆಗಳು ಹಾಡುತ್ತಿವೆ",
+   "tcy": "ಗದ್ದೆಡ್ ಕಪ್ಪೆಲು ಪಾಡೊಂದುಲ್ಲ"
+  },
+  "S31": {
+   "w": "SINGER",
+   "en": "Come, rain, come",
+   "kn": "ಬಾ ಮಳೆ ಬಾ",
+   "tcy": "ಬಲೆ ಮಳೆ ಬಲೆ"
+  },
+  "S32": {
+   "w": "SINGER",
+   "en": "Wash the whole town clean",
+   "kn": "ಊರನ್ನು ಶುದ್ಧ ಮಾಡು",
+   "tcy": "ಊರುನು ಶುದ್ಧ ಮಲ್ಪುಲೆ"
+  },
+  "S33": {
+   "w": "SINGER",
+   "en": "Our hill, our lake, our road",
+   "kn": "ನಮ್ಮ ಬೆಟ್ಟ, ನಮ್ಮ ಕೆರೆ, ನಮ್ಮ ದಾರಿ",
+   "tcy": "ಎಂಕುಲೆ ಬೆಟ್ಟ, ಎಂಕುಲೆ ಕೆರೆ, ಎಂಕುಲೆ ದಾರಿ"
+  },
+  "S34": {
+   "w": "SINGER",
+   "en": "Every morning the temple bells begin",
+   "kn": "ಪ್ರತಿ ಬೆಳಿಗ್ಗೆ ದೇವಸ್ಥಾನದ ಗಂಟೆ ಮೊಳಗುತ್ತದೆ",
+   "tcy": "ಪ್ರತಿ ಮುಂಜಾನೆ ದೇಗುಲದ ಗಂಟೆ ಮೊಳಗುಂಡು"
+  },
+  "S35": {
+   "w": "SINGER",
+   "en": "Namma Karkala",
+   "kn": "ನಮ್ಮ ಕಾರ್ಕಳ",
+   "tcy": "ಎಂಕುಲೆ ಕಾರ್ಕಳ"
+  },
+  "S36": {
+   "w": "SINGER",
+   "en": "Our own town",
+   "kn": "ನಮ್ಮ ಊರು",
+   "tcy": "ಎಂಕುಲೆ ಊರು"
+  },
+  "S37": {
+   "w": "SINGER",
+   "en": "A stone that learned to be still",
+   "kn": "ಸ್ಥಿರವಾಗಲು ಕಲಿತ ಕಲ್ಲು",
+   "tcy": "ಸ್ಥಿರ ಆಪುನೆನ್ ಕಲ್ತ್ ಕಲ್ಲ್"
+  },
+  "S38": {
+   "w": "SINGER",
+   "en": "Forty-two feet of silence",
+   "kn": "ನಲವತ್ತೆರಡು ಅಡಿ ಮೌನ",
+   "tcy": "ನಲ್ವತ್ತೆರಡ್ ಅಡಿ ಮೌನ"
+  },
+  "S39": {
+   "w": "SINGER",
+   "en": "Om Bahubali",
+   "kn": "ಓಂ ಬಾಹುಬಲಿ",
+   "tcy": "ಓಂ ಬಾಹುಬಲಿ"
+  },
+  "S40": {
+   "w": "SINGER",
+   "en": "Peace upon the hill",
+   "kn": "ಬೆಟ್ಟದ ಮೇಲೆ ಶಾಂತಿ",
+   "tcy": "ಬೆಟ್ಟದ ಮಿತ್ತ್ ಶಾಂತಿ"
+  },
+  "S41": {
+   "w": "SINGER",
+   "en": "Govinda, Govinda, sing his name",
+   "kn": "ಗೋವಿಂದ ಗೋವಿಂದ, ಅವನ ನಾಮ ಹಾಡಿ",
+   "tcy": "ಗೋವಿಂದ ಗೋವಿಂದ, ಆಯನ ನಾಮ ಪಾಡ್ಲೆ"
+  },
+  "S42": {
+   "w": "SINGER",
+   "en": "The lamps are lit and hearts are light",
+   "kn": "ದೀಪ ಬೆಳಗಿದೆ, ಮನಸ್ಸು ಹಗುರ",
+   "tcy": "ದೀಪ ಬೊಲ್ಪಾಂಡ್, ಮನಸ್ ಹಗುರ"
+  },
+  "S43": {
+   "w": "SINGER",
+   "en": "Jai Jai Durga, Jai Jai Maa",
+   "kn": "ಜಯ ಜಯ ದುರ್ಗೆ, ಜಯ ಜಯ ಮಾ",
+   "tcy": "ಜಯ ಜಯ ದುರ್ಗೆ, ಜಯ ಜಯ ಮಾ"
+  },
+  "S44": {
+   "w": "SINGER",
+   "en": "Hari Om, Hari Om, Hari Om",
+   "kn": "ಹರಿ ಓಂ, ಹರಿ ಓಂ, ಹರಿ ಓಂ",
+   "tcy": "ಹರಿ ಓಂ, ಹರಿ ಓಂ, ಹರಿ ಓಂ"
+  },
+  "S45": {
+   "w": "SINGER",
+   "en": "Behold, the king has entered the stage",
+   "kn": "ನೋಡಿ, ರಾಜ ರಂಗಕ್ಕೆ ಪ್ರವೇಶಿಸಿದ",
+   "tcy": "ತೂಲೆ, ರಾಜೆ ರಂಗೊಗು ಬತ್ತೆರ್"
+  },
+  "S46": {
+   "w": "SINGER",
+   "en": "The chende thunders, the maddale answers",
+   "kn": "ಚೆಂಡೆ ಗುಡುಗುತ್ತಿದೆ, ಮದ್ದಳೆ ಉತ್ತರಿಸುತ್ತಿದೆ",
+   "tcy": "ಚೆಂಡೆ ಗುಡುಗುಂಡು, ಮದ್ದಳೆ ಉತ್ತರ ಕೊರ್ಪುಂಡು"
+  },
+  "S47": {
+   "w": "SINGER",
+   "en": "Thai tat thai, thai tat thai",
+   "kn": "ತೈ ತತ್ ತೈ, ತೈ ತತ್ ತೈ",
+   "tcy": "ತೈ ತತ್ ತೈ, ತೈ ತತ್ ತೈ"
+  },
+  "S48": {
+   "w": "SINGER",
+   "en": "The tale of heroes lives on",
+   "kn": "ವೀರರ ಕತೆ ಬದುಕಿದೆ",
+   "tcy": "ವೀರೆರ್ನ ಕತೆ ಬದ್ಕ್‌ಂಡ್"
+  },
+  "S49": {
+   "w": "SINGER",
+   "en": "Koti and Chennaya, brothers of the land",
+   "kn": "ಕೋಟಿ ಚೆನ್ನಯ, ನಾಡಿನ ಸಹೋದರರು",
+   "tcy": "ಕೋಟಿ ಚೆನ್ನಯೆರ್, ತುಳುನಾಡ್‌ದ ಅಣ್ಣ ತಮ್ಮೆರ್"
+  },
+  "S50": {
+   "w": "SINGER",
+   "en": "The daiva walks in the lamplight",
+   "kn": "ದೈವ ದೀಪದ ಬೆಳಕಿನಲ್ಲಿ ನಡೆಯುತ್ತದೆ",
+   "tcy": "ದೈವ ದೀಪದ ಬೊಲ್ಪುಡು ನಡಪುಂಡು"
+  },
+  "S51": {
+   "w": "SINGER",
+   "en": "Hey sirs, listen to the tale",
+   "kn": "ಏ ಸ್ವಾಮೀ, ಕತೆ ಕೇಳಿ",
+   "tcy": "ಏ ಸ್ವಾಮಿ, ಕತೆ ಕೇನಿ"
+  },
+  "S52": {
+   "w": "SINGER",
+   "en": "Truth is the sword of Tulunad",
+   "kn": "ಸತ್ಯವೇ ತುಳುನಾಡಿನ ಕತ್ತಿ",
+   "tcy": "ಸತ್ಯನೇ ತುಳುನಾಡ್‌ದ ಕತ್ತಿ"
+  },
+  "R05": {
+   "w": "DJ",
+   "en": "Tulu Paddana FM. Bhajane, Yakshagana and the old songs.",
+   "kn": "ತುಳು ಪಾಡ್ದನ ಎಫ್‌ಎಂ. ಭಜನೆ, ಯಕ್ಷಗಾನ, ಹಳೆಯ ಹಾಡುಗಳು.",
+   "tcy": "ತುಳು ಪಾಡ್ದನ ಎಫ್‌ಎಂ. ಭಜನೆ, ಯಕ್ಷಗಾನ, ಪೊರ್ಲುದ ಪಾತೆರ್ಲು."
+  },
+  "C01": {
+   "w": "UNCLE",
+   "en": "Bus late, bhai! Mangalore bus bandhilla?",
+   "kn": "ಬಸ್ ಲೇಟು ಗುರೂ! ಮಂಗಳೂರು ಬಸ್ ಬಂದಿಲ್ವಾ?",
+   "tcy": "ಬಸ್ ಲೇಟ್ ಮಾರ್ರೆ! ಕುಡ್ಲ ಬಸ್ ಬತ್ತಿಜ್ಜಾ?"
+  },
+  "C02": {
+   "w": "UNCLE",
+   "en": "Arre, comes when it comes. Chai kudi!",
+   "kn": "ಬಂದಾಗ ಬರ್ತದೆ ಬಿಡಿ. ಚಹಾ ಕುಡೀರಿ!",
+   "tcy": "ಬತ್ತಿನಗ ಬತ್ತೊಂಡು. ಚಾ ಕುಡ್ಪುಲೆ!"
+  },
+  "C03": {
+   "w": "UNCLE",
+   "en": "Karkala's fastest thing is the rain, no?",
+   "kn": "ಕಾರ್ಕಳದಲ್ಲಿ ವೇಗವಾಗಿರೋದು ಮಳೆ ಮಾತ್ರ ಅಲ್ವಾ?",
+   "tcy": "ಕಾರ್ಕಳೊಡು ಜೋರ್ ಇಪ್ಪುನೆ ಮಳೆ ಮಾತ್ರ ಅತ್ತಾ?"
+  },
+  "C04": {
+   "w": "AUNTY",
+   "en": "Mallige kitna? Forty a muzha, madam!",
+   "kn": "ಮಲ್ಲಿಗೆ ಎಷ್ಟು? ಮೊಳಕ್ಕೆ ನಲವತ್ತು!",
+   "tcy": "ಮಲ್ಲಿಗೆ ಎಷ್ಟ್? ಮೊಳೊಗು ನಲ್ವತ್ತ್!"
+  },
+  "C05": {
+   "w": "AUNTY",
+   "en": "Too costly! Last rate, thirty-five?",
+   "kn": "ತುಂಬಾ ದುಬಾರಿ! ಕೊನೆ ರೇಟು, ಮೂವತ್ತೈದು?",
+   "tcy": "ಬೋರ್ಚಿ ದುಬಾರಿ! ಕಡೆತ ರೇಟ್, ಮೂವತ್ತೈದ್?"
+  },
+  "C06": {
+   "w": "AUNTY",
+   "en": "Ok ok, for you only, madam.",
+   "kn": "ಸರಿ ಸರಿ, ನಿಮಗೇ ಮಾತ್ರ.",
+   "tcy": "ಸರಿ ಸರಿ, ಈರ್ಗೇ ಮಾತ್ರ."
+  },
+  "C07": {
+   "w": "STUDENT",
+   "en": "Bro, internals tomorrow, kuch nahi padha!",
+   "kn": "ಬ್ರೋ, ನಾಳೆ ಇಂಟರ್ನಲ್ಸ್, ಏನೂ ಓದಿಲ್ಲ!",
+   "tcy": "ಬ್ರೋ, ನಾಳೆ ಇಂಟರ್ನಲ್ಸ್, ಏನ್ಲ ಓದ್ಜಿ!"
+  },
+  "C08": {
+   "w": "STUDENT",
+   "en": "Chill maadi bro, canteen chalo, goli baje!",
+   "kn": "ಚಿಲ್ ಮಾಡಿ ಬ್ರೋ, ಕ್ಯಾಂಟೀನ್ ಹೋಗಿ ಗೋಳಿಬಜೆ ತಿನ್ನೋಣ!",
+   "tcy": "ಚಿಲ್ ಮಲ್ಪು ಬ್ರೋ, ಕ್ಯಾಂಟೀನ್ ಪೋಯಿ ಗೋಳಿಬಜೆ ತಿಂಪ!"
+  },
+  "C09": {
+   "w": "STUDENT",
+   "en": "Result aaye toh saath mein rona.",
+   "kn": "ರಿಸಲ್ಟ್ ಬಂದಾಗ ಒಟ್ಟಿಗೆ ಅಳೋಣ.",
+   "tcy": "ರಿಸಲ್ಟ್ ಬತ್ತಿನಗ ಒಟ್ಟುಗು ಅತ್ತ್‌ಪ."
+  },
+  "C10": {
+   "w": "FISHERMAN",
+   "en": "Aaj fish bite nahi kar raha, anna.",
+   "kn": "ಇವತ್ತು ಮೀನು ಸಿಕ್ತಿಲ್ಲ ಅಣ್ಣ.",
+   "tcy": "ಇನಿ ಮೀನ್ ಸಿಕ್ಕುದಿಜ್ಜಿ ಅಣ್ಣ."
+  },
+  "C11": {
+   "w": "FISHERMAN",
+   "en": "Wait, the big one comes at sunset.",
+   "kn": "ಕಾಯಿರಿ, ದೊಡ್ಡದು ಸಂಜೆ ಬರ್ತದೆ.",
+   "tcy": "ಕಾಪುಲೆ, ದೊಡ್ಡದು ಸಂಜೆಗ್ ಬತ್ತೊಂಡು."
+  },
+  "C12": {
+   "w": "FISHERMAN",
+   "en": "You said that yesterday also, no?",
+   "kn": "ನೀವು ನಿನ್ನೆನೂ ಇದನ್ನೇ ಹೇಳಿದ್ರಲ್ವಾ?",
+   "tcy": "ಈರ್ ನನೆ ಇಂದೆ ಪಂತೆರ್ ಅತ್ತಾ?"
+  },
+  "C13": {
+   "w": "UNCLE",
+   "en": "Prasada ide today, miss maadabedi!",
+   "kn": "ಇವತ್ತು ಪ್ರಸಾದ ಇದೆ, ಮಿಸ್ ಮಾಡ್ಬೇಡಿ!",
+   "tcy": "ಇನಿ ಪ್ರಸಾದ ಉಂಡು, ಮಿಸ್ ಮಲ್ಪೊಡ್ಜಿ!"
+  },
+  "C14": {
+   "w": "AUNTY",
+   "en": "Bhajane tonight also, everyone come.",
+   "kn": "ಇವತ್ತು ರಾತ್ರಿ ಭಜನೆ ಕೂಡ ಇದೆ, ಎಲ್ಲರೂ ಬನ್ನಿ.",
+   "tcy": "ಇನಿ ರಾತ್ರಿ ಭಜನೆ ಉಂಡು, ಎಲ್ಲೆರ್ಲಾ ಬಲ್ಲೆ."
+  },
+  "C15": {
+   "w": "BOY",
+   "en": "Six maar, bhai! Ball kereg hoyitu!",
+   "kn": "ಸಿಕ್ಸ್ ಹೊಡಿ ಬ್ರೋ! ಬಾಲ್ ಕೆರೆಗೆ ಹೋಯ್ತು!",
+   "tcy": "ಸಿಕ್ಸ್ ಪೊಡಿ ಬ್ರೋ! ಬಾಲ್ ಕೆರೆಗ್ ಪೋಯ್ಂಡ್!"
+  },
+  "C16": {
+   "w": "BOY",
+   "en": "Tu ja la, tumhara ball hai!",
+   "kn": "ನೀನೇ ಹೋಗಿ ತಾ, ನಿಂದೇ ಬಾಲ್!",
+   "tcy": "ನೀನೇ ಪೋದು ದೆತೊನ್ಪ, ನಿನ್ನೆ ಬಾಲ್!"
+  },
+  "C17": {
+   "w": "CONSTABLE",
+   "en": "Helmet illa, licence illa, aur kya?",
+   "kn": "ಹೆಲ್ಮೆಟ್ ಇಲ್ಲ, ಲೈಸೆನ್ಸ್ ಇಲ್ಲ, ಇನ್ನೇನು?",
+   "tcy": "ಹೆಲ್ಮೆಟ್ ಇಜ್ಜಿ, ಲೈಸೆನ್ಸ್ ಇಜ್ಜಿ, ಬೇತೆ ಎಂಚಿನ?"
+  },
+  "C18": {
+   "w": "CONSTABLE",
+   "en": "Chai peeke baat karte hain, sir.",
+   "kn": "ಚಹಾ ಕುಡಿದು ಮಾತಾಡೋಣ ಸಾರ್.",
+   "tcy": "ಚಾ ಕುಡ್ದ್ ಪಾತೆರ್ಪ ಸರ್."
+  },
+  "C19": {
+   "w": "UNCLE",
+   "en": "Server down hai, wait one hour!",
+   "kn": "ಸರ್ವರ್ ಡೌನ್, ಒಂದು ಗಂಟೆ ಕಾಯಿರಿ!",
+   "tcy": "ಸರ್ವರ್ ಡೌನ್, ಒಂಜಿ ಗಂಟೆ ಕಾಪುಲೆ!"
+  },
+  "C20": {
+   "w": "AUNTY",
+   "en": "Every month same story, bhai.",
+   "kn": "ಪ್ರತಿ ತಿಂಗಳೂ ಅದೇ ಕತೆ.",
+   "tcy": "ಪ್ರತಿ ತಿಂಗೊಲು ಅವೇ ಕತೆ."
+  },
+  "C21": {
+   "w": "UNCLE",
+   "en": "Anna, two idli, one vada, extra sambar!",
+   "kn": "ಅಣ್ಣ, ಎರಡು ಇಡ್ಲಿ, ಒಂದು ವಡೆ, ಜಾಸ್ತಿ ಸಾಂಬಾರ್!",
+   "tcy": "ಅಣ್ಣ, ಎರಡ್ ಇಡ್ಲಿ, ಒಂಜಿ ವಡೆ, ಜಾಸ್ತಿ ಸಾಂಬಾರ್!"
+  },
+  "C22": {
+   "w": "VENDOR",
+   "en": "Bisi bisi ide! Wait maadi, sir.",
+   "kn": "ಬಿಸಿ ಬಿಸಿ ಇದೆ! ಕಾಯಿರಿ ಸಾರ್.",
+   "tcy": "ಬಿಸಿ ಬಿಸಿ ಉಂಡು! ಕಾಪುಲೆ ಸರ್."
+  },
+  "C23": {
+   "w": "DRIVER",
+   "en": "Udupi, Manipal? Meter ke double!",
+   "kn": "ಉಡುಪಿ, ಮಣಿಪಾಲ? ಮೀಟರ್ ಡಬಲ್!",
+   "tcy": "ಉಡುಪಿ, ಮಣಿಪಾಲ? ಮೀಟರ್ ಡಬಲ್!"
+  },
+  "C24": {
+   "w": "DRIVER",
+   "en": "Arre, meter nahi chalega kya?",
+   "kn": "ಮೀಟರ್ ಹಾಕಲ್ವಾ ನೀವು?",
+   "tcy": "ಮೀಟರ್ ಪಾಡ್ಪುಜ್ಜಾ ಈರ್?"
+  },
+  "E01": {
+   "w": "DRIVER",
+   "en": "Wrong side! Yaake bandri? Nikk kann ijjaa?",
+   "kn": "ರಾಂಗ್ ಸೈಡ್! ಯಾಕ್ ಬಂದ್ರಿ? ಕಣ್ಣು ಕಾಣಲ್ವಾ?",
+   "tcy": "ರಾಂಗ್ ಸೈಡ್! ಎನ್ಕ ಬತ್ತೆರ್? ಕಣ್ಣ್ ಇಜ್ಜಾ?"
+  },
+  "E02": {
+   "w": "DRIVER",
+   "en": "Eh! Road ke beech mein kya kar raha hai?",
+   "kn": "ಏಯ್! ರೋಡ್ ಮಧ್ಯದಲ್ಲಿ ಏನ್ ಮಾಡ್ತಿದೀರಿ?",
+   "tcy": "ಏ ಮಾರ್ರೆ! ರೋಡ್ ನಡುಟು ಎಂಚಿನ ಮಲ್ಪುದುಲ್ಲೆರ್?"
+  },
+  "E03": {
+   "w": "DRIVER",
+   "en": "Can't you see? Side-ge po, bhai!",
+   "kn": "Can’t you see? ಸೈಡ್‌ಗೆ ಹೋಗ್ರೀ!",
+   "tcy": "Can't you see? ಸೈಡ್‌ಗ್ ಪೋಲೆ!"
+  },
+  "E04": {
+   "w": "DRIVER",
+   "en": "Aiyyo! Nikk kann ijjaa? Dekh ke chalao!",
+   "kn": "ಅಯ್ಯೋ! ಕಣ್ಣು ಕಾಣಲ್ವಾ? ನೋಡ್ಕೊಂಡು ಓಡ್ಸಿ!",
+   "tcy": "ಅಯ್ಯೋ! ನಿಕ್ಕ್ ಕಣ್ಣ್ ಇಜ್ಜಾ? ತೂದು ನಡಪುಲೆ!"
+  },
+  "E05": {
+   "w": "DRIVER",
+   "en": "Arre bhai! Licence kahan se laya?",
+   "kn": "ಅರೇ ಭಾಯ್! ಲೈಸೆನ್ಸ್ ಎಲ್ಲಿಂದ ತಂದ್ರಿ?",
+   "tcy": "ಅರೇ ಭಾಯ್! ಲೈಸೆನ್ಸ್ ಎಲ್ಲ್‌ಡ್ದ್ ದೆತೊನ್ಪೆರ್?"
+  },
+  "E06": {
+   "w": "DRIVER",
+   "en": "Hey hey! Gaadi pe control rakh, maga!",
+   "kn": "ಹೇ ಹೇ! ಗಾಡಿ ಕಂಟ್ರೋಲ್‌ನಲ್ಲಿ ಇಡ್ರಿ ಮಗಾ!",
+   "tcy": "ಹೇ ಹೇ! ಗಾಡಿ ಕಂಟ್ರೋಲ್‌ಡ್ ದೀಲೆ ಮಗ!"
+  },
+  "E07": {
+   "w": "DRIVER",
+   "en": "Hey hey hey! Slow chalao, bhai!",
+   "kn": "ಹೇ ಹೇ ಹೇ! ಸ್ವಲ್ಪ ನಿಧಾನ ಬಾಸ್!",
+   "tcy": "ಹೇ ಹೇ ಹೇ! ಮೆತ್ತಗ್ ಪೋಲೆ ಬಾಸ್!"
+  },
+  "E08": {
+   "w": "DRIVER",
+   "en": "Eh! Jaan pyari nahi kya? Nikk kann ijjaa?",
+   "kn": "ಏಯ್! ಜೀವ ಬೇಡ್ವಾ? ಕಣ್ಣು ಕಾಣಲ್ವಾ?",
+   "tcy": "ಏ! ಜೀವ ಬುಡ್ಜಾ? ಕಣ್ಣ್ ಇಜ್ಜಾ?"
+  },
+  "E09": {
+   "w": "DRIVER",
+   "en": "Arre gaadi hata! Move, move! ಬೇಗ ತೆಗೀರಿ!",
+   "kn": "ಅರೇ ಗಾಡಿ ತೆಗೀರಿ! Move, move! ಬೇಗ!",
+   "tcy": "ಅರೇ ಗಾಡಿ ತೆಗೆಲೆ! Move, move! ಬೇಗ!"
+  },
+  "E10": {
+   "w": "DRIVER",
+   "en": "Road tera baap ka hai kya? Nimmappa-nda?",
+   "kn": "ರೋಡ್ ನಿಮ್ಮಪ್ಪಂದಾ? Tera baap ka hai kya?",
+   "tcy": "ರೋಡ್ ನಿನ್ನ ಅಪ್ಪೆರ್ನದಾ? Baap ka hai kya?"
+  },
+  "E11": {
+   "w": "DRIVER",
+   "en": "Horn bajake kaan fat gaya! ಕಿವಿ ಹೋಯ್ತು!",
+   "kn": "ಹಾರ್ನ್ ಹೊಡೆದು ಕಿವಿ ಹೋಯ್ತು! Kaan fat gaya!",
+   "tcy": "ಹಾರ್ನ್ ಪೊಡ್ದ್ ಕಿವಿ ಪೋಯಿ! Kaan fat gaya!"
+  },
+  "E12": {
+   "w": "DRIVER",
+   "en": "Ok ok, we heard! Nikk kivi ijjaa?",
+   "kn": "ಸರಿ ಸರಿ, ಕೇಳಿಸ್ತು! We heard!",
+   "tcy": "ಸರಿ ಸರಿ, ಕೇನ್ಂಡ್! We heard!"
+  },
+  "E13": {
+   "w": "DRIVER",
+   "en": "Cow ke upar chadega kya? ಹಸು ಕಾಣಲ್ವಾ?",
+   "kn": "ಹಸು ಮೇಲೆ ಹತ್ತಿಸ್ತೀರಾ? Cow ke upar chadega kya?",
+   "tcy": "ಗೋವುದ ಮಿತ್ತ್ ಏರ್ಪುಯೆರಾ? Cow ke upar chadega kya?"
+  },
+  "V01": {
+   "w": "VENDOR",
+   "en": "Bisi bisi idli-vada! Banni banni!",
+   "kn": "ಬಿಸಿ ಬಿಸಿ ಇಡ್ಲಿ ವಡೆ! ಬನ್ನಿ ಬನ್ನಿ!",
+   "tcy": "ಬಿಸಿ ಬಿಸಿ ಇಡ್ಲಿ ವಡೆ! ಬಲ್ಲೆ ಬಲ್ಲೆ!"
+  },
+  "V02": {
+   "w": "VENDOR",
+   "en": "Goli baje, hot hot! Thirty rupees only!",
+   "kn": "ಗೋಳಿಬಜೆ ಬಿಸಿ ಬಿಸಿ! ಮೂವತ್ತೇ ರೂಪಾಯಿ!",
+   "tcy": "ಗೋಳಿಬಜೆ ಬಿಸಿ ಬಿಸಿ! ಮೂವತ್ತ್ ರೂಪಾಯಿ ಮಾತ್ರ!"
+  },
+  "V03": {
+   "w": "VENDOR",
+   "en": "Masala dosa ready! Chutney extra, bhai!",
+   "kn": "ಮಸಾಲೆ ದೋಸೆ ರೆಡಿ! ಚಟ್ನಿ ಎಕ್ಸ್ಟ್ರಾ!",
+   "tcy": "ಮಸಾಲೆ ದೋಸೆ ರೆಡಿ! ಚಟ್ನಿ ಎಕ್ಸ್ಟ್ರಾ!"
+  },
+  "V04": {
+   "w": "VENDOR",
+   "en": "Filter coffee, strong! Wake up, bhai!",
+   "kn": "ಫಿಲ್ಟರ್ ಕಾಫಿ, ಸ್ಟ್ರಾಂಗ್! ಎದ್ದೇಳಿ ಬ್ರೋ!",
+   "tcy": "ಫಿಲ್ಟರ್ ಕಾಫಿ, ಸ್ಟ್ರಾಂಗ್! ಎದ್ದ್ ಬಲ್ಲೆ!"
+  },
+  "V05": {
+   "w": "VENDOR",
+   "en": "Neer dosa, kori rotti: Karkala special!",
+   "kn": "ನೀರ್ ದೋಸೆ, ಕೋರಿ ರೊಟ್ಟಿ: ಕಾರ್ಕಳ ಸ್ಪೆಷಲ್!",
+   "tcy": "ನೀರ್ ದೋಸೆ, ಕೋರಿ ರೊಟ್ಟಿ: ಕಾರ್ಕಳ ಸ್ಪೆಷಲ್!"
+  },
+  "V06": {
+   "w": "VENDOR",
+   "en": "Mangalore buns, soft soft! Come come!",
+   "kn": "ಮಂಗಳೂರು ಬನ್ಸ್, ಮೆತ್ತಗೆ ಮೆತ್ತಗೆ! ಬನ್ನಿ!",
+   "tcy": "ಮಂಗಳೂರು ಬನ್ಸ್, ಮೆತ್ತಗ್ ಮೆತ್ತಗ್! ಬಲ್ಲೆ!"
   }
+ },
+ "chatter": {
+  "convos": [
+   {
+    "id": "bus",
+    "poi": "Karkala Bus Stand",
+    "who": [
+     "UNCLE",
+     "UNCLE"
+    ],
+    "lines": [
+     "C01",
+     "C02",
+     "C03"
+    ]
+   },
+   {
+    "id": "market",
+    "poi": "MARKET",
+    "who": [
+     "AUNTY",
+     "AUNTY"
+    ],
+    "lines": [
+     "C04",
+     "C05",
+     "C06"
+    ]
+   },
+   {
+    "id": "college",
+    "poi": "Sri Bhuvanendra College",
+    "who": [
+     "STUDENT",
+     "STUDENT"
+    ],
+    "lines": [
+     "C07",
+     "C08",
+     "C09"
+    ]
+   },
+   {
+    "id": "lake",
+    "poi": "Aanekere",
+    "who": [
+     "FISHERMAN",
+     "FISHERMAN"
+    ],
+    "lines": [
+     "C10",
+     "C11",
+     "C12"
+    ]
+   },
+   {
+    "id": "temple",
+    "poi": "Sri Venkataramana Temple",
+    "who": [
+     "UNCLE",
+     "AUNTY"
+    ],
+    "lines": [
+     "C13",
+     "C14"
+    ]
+   },
+   {
+    "id": "maidan",
+    "poi": "Swaraj Maidan",
+    "who": [
+     "BOY",
+     "BOY"
+    ],
+    "lines": [
+     "C15",
+     "C16"
+    ]
+   },
+   {
+    "id": "police",
+    "poi": "Police Station",
+    "who": [
+     "CONSTABLE",
+     "CONSTABLE"
+    ],
+    "lines": [
+     "C17",
+     "C18"
+    ]
+   },
+   {
+    "id": "bank",
+    "poi": "Canara Bank",
+    "who": [
+     "UNCLE",
+     "AUNTY"
+    ],
+    "lines": [
+     "C19",
+     "C20"
+    ]
+   },
+   {
+    "id": "tiffin",
+    "poi": "Hotel Gokul",
+    "who": [
+     "UNCLE",
+     "VENDOR"
+    ],
+    "lines": [
+     "C21",
+     "C22"
+    ]
+   },
+   {
+    "id": "auto",
+    "poi": "Karkala Bus Stand",
+    "who": [
+     "DRIVER",
+     "DRIVER"
+    ],
+    "lines": [
+     "C23",
+     "C24"
+    ]
+   }
+  ],
+  "rage": {
+   "wrong": [
+    "E01",
+    "E02",
+    "E03"
+   ],
+   "hit": [
+    "E04",
+    "E05",
+    "E06"
+   ],
+   "near": [
+    "E07",
+    "E08"
+   ],
+   "block": [
+    "E09",
+    "E10"
+   ],
+   "horn": [
+    "E11",
+    "E12"
+   ],
+   "cow": [
+    "E13"
+   ]
+  },
+  "calls": [
+   "V01",
+   "V02",
+   "V03",
+   "V04",
+   "V05",
+   "V06"
+  ]
  }
 }

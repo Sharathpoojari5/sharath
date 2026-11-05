@@ -2,6 +2,7 @@
 import { Music } from './music.js';
 import { Studio } from './studio.js';
 import { SONGS, SCORE } from './songs.js';
+import { Voice } from './voice.js';
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 export class Audio {
   constructor() { this.ctx = null; this.on = true; }
@@ -11,7 +12,7 @@ export class Audio {
     // engine: two detuned oscillators through a low-pass
     this.musicGain = c.createGain(); this.musicGain.gain.value = 1.0; this.musicGain.connect(this.master);
     this.music = new Music(c, this.musicGain); this.musicOn = true;        // small helper: bells and birdsong
-    this.studio = new Studio(c, this.musicGain, 7); this.curSong = null;
+    this.studio = new Studio(c, this.musicGain, 7); this.curSong = null; this.studio.lyricText = (id) => Voice.text(id);
     this.voiceGain = c.createGain(); this.voiceGain.gain.value = 1.7; this.voiceGain.connect(this.master);
     this.recDest = c.createMediaStreamDestination(); this.master.connect(this.recDest);
     // ambience: crickets (night), distant traffic hum, wind
@@ -30,6 +31,9 @@ export class Audio {
     this.sir = { o: c.createOscillator(), g: c.createGain(), lfo: c.createOscillator(), lg: c.createGain() };
     this.sir.o.type = 'square'; this.sir.o.frequency.value = 700; this.sir.lfo.frequency.value = 0.7; this.sir.lg.gain.value = 260;
     this.sir.lfo.connect(this.sir.lg); this.sir.lg.connect(this.sir.o.frequency); this.sir.o.connect(this.sir.g); this.sir.g.gain.value = 0; this.sir.g.connect(this.master); this.sir.o.start(); this.sir.lfo.start();
+    // crowd cheering at the Kambala track: band-passed noise with a slow swell
+    const cs = c.createBufferSource(); cs.buffer = nb; cs.loop = true; const cf = c.createBiquadFilter(); cf.type = 'bandpass'; cf.frequency.value = 1100; cf.Q.value = 0.7; this.cheerG = c.createGain(); this.cheerG.gain.value = 0;
+    const cl = c.createOscillator(), clg = c.createGain(); cl.frequency.value = 2.3; clg.gain.value = 500; cl.connect(clg); clg.connect(cf.frequency); cl.start(); cs.connect(cf); cf.connect(this.cheerG); this.cheerG.connect(this.master); cs.start();
     // birds/crickets ambience
     this.amb = c.createGain(); this.amb.gain.value = 0.0; this.amb.connect(this.master);
   }
@@ -39,6 +43,7 @@ export class Audio {
     const st = info.scene || (info.chase ? 'chase' : info.rain > 0.5 ? 'rain' : info.day < 0.25 ? 'night' : info.day < 0.55 ? 'evening' : 'day');
     let want = info.scene ? SCORE[info.scene] : (info.song || SCORE[st]); if (!this.musicOn) want = null;
     if (want !== this.curSong) { this.curSong = want; if (want) this.studio.play(SONGS[want], 1.6); else this.studio.stop(0.8); }
+    this.vol = info.vol ?? 1; this.musicGain.gain.setTargetAtTime((this.ducked ? 0.4 : 1) * this.vol, t, 0.3); this.cheerG.gain.setTargetAtTime((info.cheer || 0) * 0.16, t, 0.5);
     this.studio.intensity = Math.max(0, Math.min(1, info.intensity || 0)); this.studio.tick();
     const day = info.day, quiet = info.scene ? 0.3 : 1;
     this.cric.g.gain.setTargetAtTime(clamp01(1 - day * 1.6) * (1 - info.rain) * 0.035 * quiet, t, 0.6);
@@ -50,7 +55,7 @@ export class Audio {
       if (info.templeDist < 140 && !info.scene && Math.random() < 0.6) { const v = 0.1 * (1 - info.templeDist / 140); this.music.bell(t + 0.05, 560 + Math.random() * 90, v); this.bellT = 0; }
     }
   }
-  duck(on) { if (this.ctx) this.musicGain.gain.setTargetAtTime(on ? 0.4 : 1.0, this.ctx.currentTime, 0.2); }
+  duck(on) { this.ducked = on; if (this.ctx) this.musicGain.gain.setTargetAtTime((on ? 0.4 : 1.0) * (this.vol ?? 1), this.ctx.currentTime, 0.2); }
   setMusic(on) { this.musicOn = on; }
   /** Short syllable-like blips used as a fallback "voice" while text is typed. */
   blip(who, ch) {

@@ -8,6 +8,9 @@ import { Cinematic } from './cine.js';
 import { Voice, LANG_NAME } from './voice.js';
 import { LINES } from './story.js';
 import { Radio } from './radio.js';
+import { Culture } from './culture.js';
+import { Food } from './food.js';
+import { Chatter } from './chatter.js';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -53,7 +56,7 @@ export class Game {
     this.marker = M.markerMesh('#facc15'); this.marker.visible = false; S.add(this.marker);
     this.startMarker = M.markerMesh('#f97316'); this.startMarker.visible = false; S.add(this.startMarker);
     this.cine = new Cinematic(this); this.radio = new Radio(this); this.npcs = {}; this.dlg = null; this.inputLock = false; Voice.init(this.audio);
-    this.setupParked(); this.setupMissions(); this.setupNpcs();
+    this.setupParked(); this.setupMissions(); this.setupNpcs(); this.culture = new Culture(this); this.chatter = new Chatter(this); this.food = new Food(this);
     this.bindInput(); this.hudInit();
     this.clock = new THREE.Clock(); const loop = () => { requestAnimationFrame(loop); this.frame(); }; loop();
     addEventListener('resize', () => { R.setSize(innerWidth, innerHeight); this.cam.aspect = innerWidth / innerHeight; this.cam.updateProjectionMatrix(); });
@@ -115,6 +118,7 @@ export class Game {
       if (!this.started && !this.cine.active) return;
       const k = e.key.toLowerCase(); this.audio.resume();
       if (this.cine.active) { if (k === ' ' || k === 'escape' || k === 'enter') { e.preventDefault(); this.cine.stop(false); } return; }
+      if (this.food && this.food.open) { e.preventDefault(); this.food.key(k); return; }
       if (this.dlg) { if (k === ' ' || k === 'enter' || k === 'f' || k === 'e') { e.preventDefault(); this.advanceTalk(); } else if (k === 'escape') this.skipTalk(); return; }
       if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault();
       if (e.repeat) return;
@@ -123,7 +127,7 @@ export class Game {
       if (k === 'escape') { if (this.photo) this.togglePhoto(); else if ($('bigmap').classList.contains('show')) this.toggleMap(); else this.togglePause(); return; }
       if (this.paused) return;
       if (k === 'f' || k === 'e') this.interact();
-      if (k === 'h') { const kind = this.car ? this.car.kind : 'scooter'; this.audio.horn(kind); this.honked(this.car || this.player); }
+      if (k === 'h') { const kind = this.car ? this.car.kind : 'scooter'; this.audio.horn(kind); this.honked(this.car || this.player); if (this.car) this.chatter.horn(); }
       if (k === 'r') this.radio.next();
       if (k === 'm') this.toggleMap();
       if (k === 'o') this.togglePhoto();
@@ -176,6 +180,7 @@ export class Game {
   /* ====================================================================== vehicles in/out */
   interact() {
     const p = this.player;
+    if (this.food.interact()) return;
     if (this.car) { if (Math.abs(this.car.v) > 6) { this.hint('Slow down to get off', 1.5); return; } this.exitVehicle(); return; }
     this.enterNearest();
   }
@@ -253,10 +258,11 @@ export class Game {
     for (const q of this.peds) if (q.state === 'walk' && Math.hypot(q.x - src.x, q.z - src.z) < 14) { q.dodge = 1.2; q.h += Math.PI / 2 * (Math.random() < 0.5 ? 1 : -1); }
     if (src === this.car || src === this.player) for (const c of this.cows) if (Math.hypot(c.x - src.x, c.z - src.z) < 16 && Math.random() < 0.15) this.say('The cow heard you. The cow does not care.', 2.2);
   }
-  shout(ped) { if (Math.hypot(ped.x - this.player.x, ped.z - this.player.z) < 40) this.sayQ(pick(Q_OUCH), 2.2); }
+  shout(ped) { if (Math.hypot(ped.x - this.player.x, ped.z - this.player.z) < 40) { if (Math.random() < 0.65) this.chatter.rage('hit', ped); else this.sayQ(pick(Q_OUCH), 2.2); } }
   offence(n) { this.heat = Math.min(5.99, this.heat + n); this.lastOffence = this.now; }
   onCrash(me, other) {
     if (other.driver === 'police') this.offence(1.2); else if (other.driver === 'ai' && Math.abs(me.v) > 9) this.offence(0.35);
+    if (other.driver === 'ai' && me === this.car && Math.abs(me.v) > 4) this.chatter.rage('hit', other);
     this.audio.thud(Math.abs(me.v)); this.shake = 0.35;
   }
   get level() { return Math.min(5, Math.floor(this.heat)); }
@@ -674,7 +680,12 @@ export class Game {
     this.updateCamera(dt); this.renderer.render(this.scene, this.cam);
     if (this.cine.active) { this.cine.captureFrame(this.renderer.domElement); this.cine.drawOverlay(); }
     if (live && !this.paused && !this.photo && !this.cine.active) { this.radio.update(dt); this.hudUpdate(dt); this.radioHud(dt); }
-    if (this.audio.ctx && live) { const p = this.carOrPlayer(), t = this.world.temple; this.audio.update(dt, { day: this.dayAmt ?? 1, rain: this.raining, templeDist: t ? Math.hypot(t[0] - p.x, t[1] - p.z) : 999, traffic: this.vehicles.reduce((a, v) => a + (v.driver === 'ai' && Math.hypot(v.x - p.x, v.z - p.z) < 80 ? 1 : 0), 0), chase: this.level >= 2, song: this.radio.active && this.radio.song ? this.radio.song.id : null, intensity: this.car ? Math.min(1, Math.abs(this.car.v) / 22 + (this.level >= 2 ? 0.4 : 0)) : 0.25, scene: this.cine.active ? this.cine.list[this.cine.shot]?.music : this.endMode ? 'ending' : null }); }
+    if (this.audio.ctx && live) {
+      const rd = this.radio, pf = this.culture.near, lv = { song: rd.active && rd.song ? rd.song.id : null, vol: 1 };
+      rd.live = pf && !rd.active && !this.cine.active ? { song: pf.site.def.song, name: pf.site.def.name, color: pf.site.def.color } : null;
+      if (rd.live) { lv.song = rd.live.song; lv.vol = 0.3 + 0.7 * pf.vol; } else if (pf && lv.song) lv.vol = 1 - 0.55 * pf.vol;
+      const p = this.carOrPlayer(), t = this.world.temple;  this.audio.update(dt, { day: this.dayAmt ?? 1, rain: this.raining, templeDist: t ? Math.hypot(t[0] - p.x, t[1] - p.z) : 999, traffic: this.vehicles.reduce((a, v) => a + (v.driver === 'ai' && Math.hypot(v.x - p.x, v.z - p.z) < 80 ? 1 : 0), 0), chase: this.level >= 2, song: lv.song, vol: lv.vol, cheer: this.culture.cheer, intensity: this.car ? Math.min(1, Math.abs(this.car.v) / 22 + (this.level >= 2 ? 0.4 : 0)) : 0.25, scene: this.cine.active ? this.cine.list[this.cine.shot]?.music : this.endMode ? 'ending' : null });
+    }
   }
   /** Debug/testing: advance the simulation without rendering. */
   step(n = 1, dt = 1 / 30) { this.dtLast = dt; for (let i = 0; i < n; i++) { this.now += dt; this.update(dt); } this.updateCamera(dt); }
@@ -694,7 +705,7 @@ export class Game {
     const inp = this.input(), p = this.player, w = this.world;
     this.popT = (this.popT || 0) - dt; if (this.popT < 0) { this.popT = 0.4; this.populate(); }
     const cin = this.cine.active;
-    this.updateNpcs(dt);
+    this.updateNpcs(dt); this.culture.update(dt); this.food.update(dt); this.chatter.update(dt);
     // the player
     if (cin) { /* no player in the trailer */ } else if (this.car) {
       const c = this.car, steer = inp.x, thr = inp.y;
@@ -720,7 +731,7 @@ export class Game {
     for (const v of this.police) v.sync();
     for (const q of this.peds) {
       q.update(dt);
-      if (!cin && this.car && q.state !== 'down' && Math.abs(this.car.v) > 4 && this.rayHit(this.car, q.x, q.z, 0.35)) { q.knock(this.car.fx, this.car.fz, Math.abs(this.car.v)); this.audio.thud(this.car.v); this.offence(1); this.car.v *= 0.75; }
+      if (!cin && this.car && q.state !== 'down' && Math.abs(this.car.v) > 4 && this.rayHit(this.car, q.x, q.z, 0.35)) { q.knock(this.car.fx, this.car.fz, Math.abs(this.car.v)); this.audio.thud(this.car.v); this.offence(1); this.chatter.rage("hit", q); this.car.v *= 0.75; }
     }
     for (const c of this.cows) {
       c.update(dt);
@@ -772,10 +783,11 @@ export class Game {
   toast(title, text) { const el = $('toast'); el.innerHTML = `<b>${title}</b><span>${text}</span>`; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
   big(title, sub, color) { const el = $('big'); el.innerHTML = `<div style="color:${color}">${title}</div><span>${sub}</span>`; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
   radioHud(dt) {
-    const el = $('radio'), r = this.radio, show = !!this.car && r.has(this.car.kind) && (r.active || r.flash > 0);
+    const el = $('radio'), r = this.radio, show = (!!this.car && r.has(this.car.kind) && (r.active || r.flash > 0)) || (!!r.live && !r.active);
     el.classList.toggle('show', show); if (!show) return;
     const st = r.station, song = r.song;
-    if (!r.active) { $('rstn').textContent = 'Radio off'; $('rsong').textContent = 'Press R for a station'; $('rlyr').textContent = ''; el.style.setProperty('--rc', '#888'); }
+    if (!r.active && r.live) { el.style.setProperty('--rc', r.live.color); $('rstn').textContent = '● LIVE · ' + r.live.name; $('rsong').textContent = r.song ? `${r.song.title} — ${r.song.artist}` : ''; const lyr = r.lyricId ? Voice.text(r.lyricId) : ''; if ($('rlyr').textContent !== lyr) $('rlyr').textContent = lyr; const an = this.audio.studio && this.audio.studio.analyser; if (an) { this._fq = this._fq || new Uint8Array(an.frequencyBinCount); an.getByteFrequencyData(this._fq); const bars = $('rbars').children; for (let b = 0; b < bars.length; b++) bars[b].style.height = (4 + (this._fq[2 + b * 3] || 0) / 255 * 22) + 'px'; } }
+    else if (!r.active) { $('rstn').textContent = 'Radio off'; $('rsong').textContent = 'Press R for a station'; $('rlyr').textContent = ''; el.style.setProperty('--rc', '#888'); }
     else {
       el.style.setProperty('--rc', st.color); $('rstn').textContent = st.name; $('rsong').textContent = `${song.title} — ${song.artist}`;
       const lyr = r.lyricId ? Voice.text(r.lyricId) : ''; if ($('rlyr').textContent !== lyr) $('rlyr').textContent = lyr;

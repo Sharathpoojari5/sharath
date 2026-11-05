@@ -2,4 +2,5 @@
 // English (en), Kannada (kn) and Tulu (tcy) text. Edit voice/script.json to change wording.
 export let LINES = {};
 export let SPEAKERS = {};
-export function setScript(json) { LINES = json.lines || {}; SPEAKERS = json.speakers || {}; }
+export let CHATTER = {};
+export function setScript(json) { LINES = json.lines || {}; SPEAKERS = json.speakers || {}; CHATTER = json.chatter || {}; }

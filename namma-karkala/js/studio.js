@@ -6,6 +6,8 @@
 // dance), tabla, 808 sub, saw bass, nadaswaram, supersaw, veena pluck, harmonium, strings, bansuri, vowel choir, riser,
 // impact and tiger growl. Mixed through a compressor and a generated hall reverb.
 
+import { singLine } from './singer.js';
+
 const mulberry = (a) => () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 export const SCALES = {
   mohanam: [0, 2, 4, 7, 9], hamsadhwani: [0, 2, 4, 7, 11], mayamalavagowla: [0, 1, 4, 5, 7, 8, 11], madhyamavathi: [0, 2, 5, 7, 10],
@@ -74,6 +76,23 @@ export class Studio {
     [[f1, 1, 8], [f2, 0.5, 10], [f3, 0.25, 12]].forEach(([ff, gg, q]) => { const bp = this.ctx.createBiquadFilter(), x = this.ctx.createGain(); bp.type = 'bandpass'; bp.frequency.value = ff; bp.Q.value = q; x.gain.value = gg * 2.2; src.connect(bp); bp.connect(x); x.connect(g); });
     this.send(g, bus, 0.45);
   }
+  jhanj(bus, t, v = 1, open = false) {                         // bhajan cymbals (manjira / jhanj)
+    for (const f of [2430, 3610, 5070]) { const o = this.osc('square', f, t, 0.5), g = this.g(t, 0.001, 0.045 * v, open ? 0.32 : 0.11); const bp = this.ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f; bp.Q.value = 5; o.connect(bp); bp.connect(g); this.send(g, bus, 0.25); }
+    const n = this.nz(t, 0.1, 'highpass', 6500), ng = this.g(t, 0.001, 0.08 * v, 0.05); n.connect(ng); this.send(ng, bus);
+  }
+  maddale(bus, t, v = 1, kind = 'a') {                        // Yakshagana's two-headed barrel drum: round low note + sharp slap
+    const o = this.osc('sine', kind === 'b' ? 190 : 150, t, 0.5), g = this.g(t, 0.002, 0.8 * v, 0.3); o.frequency.exponentialRampToValueAtTime(kind === 'b' ? 150 : 95, t + 0.18); o.connect(g); this.send(g, bus, 0.12);
+    const n = this.nz(t, 0.05, 'bandpass', 1500, 1.4), ng = this.g(t, 0.001, 0.35 * v, 0.04); n.connect(ng); this.send(ng, bus);
+  }
+  conch(bus, t, dur = 3, v = 1, f = 233) {                    // shankha: a long, breathy swell
+    const src = this.ctx.createGain(), g = this.ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.4 * v, t + 0.7); g.gain.setValueAtTime(0.4 * v, t + dur * 0.7); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    for (const d of [-6, 6]) { const o = this.osc('sawtooth', f, t, dur + 0.2); o.detune.value = d; o.frequency.setValueAtTime(f * 0.97, t); o.frequency.linearRampToValueAtTime(f, t + 0.5); o.connect(src); }
+    [[520, 1], [980, 0.6], [1700, 0.3]].forEach(([ff, gg]) => { const bp = this.ctx.createBiquadFilter(), x = this.ctx.createGain(); bp.type = 'bandpass'; bp.frequency.value = ff; bp.Q.value = 5; x.gain.value = gg * 1.6; src.connect(bp); bp.connect(x); x.connect(g); });
+    this.send(g, bus, 0.6);
+  }
+  gong(bus, t, v = 1, f = 98) {                                // temple gong for the Bahubali feel
+    for (const [m, a] of [[1, 1], [2.01, 0.55], [2.76, 0.4], [4.1, 0.25], [5.4, 0.18]]) { const o = this.osc('sine', f * m, t, 5), g = this.g(t, 0.004, 0.22 * a * v, 4.2); o.connect(g); this.send(g, bus, 0.5); }
+  }
   /* ---------------------------------------------------------------- fx */
   riser(bus, t, dur, v = 1) { const n = this.nz(t, dur + 0.1, 'bandpass', 500, 2.5); n.frequency.setValueAtTime(400, t); n.frequency.exponentialRampToValueAtTime(7000, t + dur); const g = this.ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.35 * v, t + dur); g.gain.linearRampToValueAtTime(0.0001, t + dur + 0.05); n.connect(g); this.send(g, bus, 0.3); }
   impact(bus, t, v = 1) { const o = this.osc('sine', 90, t, 1.2), g = this.g(t, 0.003, 1.0 * v, 0.9); o.frequency.exponentialRampToValueAtTime(34, t + 0.7); o.connect(g); this.send(g, bus, 0.3); const n = this.nz(t, 1.2, 'highpass', 2500), ng = this.g(t, 0.002, 0.3 * v, 0.9); n.connect(ng); this.send(ng, bus, 0.4); }
@@ -121,6 +140,10 @@ export class Studio {
     if (L.has('dollu')) { const h = hit('dollu'); if (h !== ' ' && h !== '.') this.dollu(bus, t, h === 'X' ? 1.1 : 0.85); }
     if (L.has('tassa')) { const h = hit('tassa'); if (h !== ' ' && h !== '.') this.tassa(bus, t, h === 'X' ? 1 : h === 'o' ? 0.45 : 0.75); }
     if (L.has('tabla')) { const h = hit('tabla'); if (h !== ' ' && h !== '.') this.tabla(bus, t, 0.9, h === 'g' ? 'ge' : h === 't' ? 'tin' : 'dha'); }
+    if (L.has('jhanj')) { const h = hit('jhanj'); if (h !== ' ' && h !== '.') this.jhanj(bus, t, h === 'X' ? 1.1 : h === 'o' ? 0.5 : 0.8, h === 'O'); }
+    if (L.has('maddale')) { const h = hit('maddale'); if (h !== ' ' && h !== '.') this.maddale(bus, t, h === 'X' ? 1.1 : h === 'o' ? 0.5 : 0.85, h === 'b' ? 'b' : 'a'); }
+    if (L.has('gong') && s === 0 && bis % 4 === 0) this.gong(bus, t, 0.9, S.root * 0.5);
+    if (L.has('conch') && s === 0 && bis === 0 && i > 0) this.conch(bus, t, dur * 12, 0.9, S.root * 1.5);
     if (L.has('vinyl') && this.rnd() < 0.5) this.vinyl(bus, t);
     // fills at the end of a section: roll into the next
     if (lastBar && s >= 12 && L.has('fill')) { const v = 0.6 + (s - 12) * 0.12; if (S.fill === 'tassa') this.tassa(bus, t, v); else this.chenda(bus, t, v, s === 15 ? 'b' : 'a'); if (s % 2 === 0) this.snare(bus, t, v * 0.7); }
@@ -152,6 +175,10 @@ export class Studio {
     if (sec.counter && L.has('counter')) mel(S.hooks[sec.counter], S.counter || 'flute', S.counterOct || 4, 0.8, false);
     if (L.has('choir') && hookKey) mel(S.hooks[hookKey], null, (S.leadOct || 2), 0.9, true);
     if (L.has('pluck')) mel(S.hooks[hookKey || 'A'], 'pluck', (S.leadOct || 2) * 2, 0.7, false);
+    // sung lyrics: [bar, lineId, bars?, opts?] - the singer takes the words from `lyricText(id)`
+    if (s === 0 && S.lyrics && this.lyricText && !this.noVocals) {
+      for (const [lb, id, span = 2, vo] of S.lyrics) if (lb === bar) { const text = this.lyricText(id); if (text) singLine(this, bus, t, text, span, dur, (d2) => this.degFreq(d2, S.voxOct || 2), { ...(S.vox || {}), ...(vo || {}), vel: (S.vox && S.vox.vel || 1) }); }
+    }
     // lyric / HUD events
     if (s === 0 && this.onBar) this.onBar(bar, sec.name, i);
   }

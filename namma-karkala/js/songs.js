@@ -14,10 +14,13 @@ const sections = (o) => [
   { name: 'outro', bars: 4, layers: o.outro, hook: 'A' },
 ];
 
+/** Verse lines a,b then chorus lines c,d, laid out over the 36-bar form (verse at bar 4, chorus at 12 and 24). */
+const LY = ([a, b, c, d]) => [[4, a], [6, b], [8, a], [10, b], [12, c], [14, d], [16, c], [18, d], [24, c], [26, d], [28, c], [30, d], [32, d, 3]];
+
 export const SONGS = {
   /* =============================================================== Radio Karkala: Tulunadu folk fusion */
   chande: {
-    id: 'chande', title: 'Chande Chaitra', artist: 'Tulunadu Collective', bpm: 108, swing: 0.1, root: 146.83, scale: 'mohanam', seed: 11,
+    id: 'chande', vox: { vel: 1 }, title: 'Chande Chaitra', artist: 'Tulunadu Collective', bpm: 108, swing: 0.1, root: 146.83, scale: 'mohanam', seed: 11,
     prog: [0, 0, 3, 4], lead: 'nadas', leadOct: 2, counter: 'flute', counterOct: 4, padKind: 'harmonium', padRetrig: true, fill: 'chenda',
     pat: {
       kick: 'x.......x..x....', snare: '....x.......x...', clap: '....x.......x...', hat: 'x.x.x.x.x.x.x.xO',
@@ -34,10 +37,10 @@ export const SONGS = {
       brk: ['pad', 'chenda', 'dollu', 'hook', 'fx', 'fill'], hook2: ['pad', 'chenda', 'dollu', 'kick', 'snare', 'clap', 'bass', 'hook', 'counter', 'choir', 'hat', 'tassa', 'fx', 'fill'],
       outro: ['drone', 'pad', 'chenda', 'hook', 'fx'],
     }),
-    lyrics: [[4, 'S01'], [12, 'S02'], [20, 'S03'], [24, 'S04']],
+    lyrics: LY(["S01", "S02", "S03", "S04"]),
   },
   kambala: {
-    id: 'kambala', title: 'Kambala Gallop', artist: 'Miyar Buffalo Brigade', bpm: 124, swing: 0.06, root: 164.81, scale: 'hamsadhwani', seed: 23,
+    id: 'kambala', vox: { vel: 1, startDeg: 3 }, title: 'Kambala Gallop', artist: 'Miyar Buffalo Brigade', bpm: 124, swing: 0.06, root: 164.81, scale: 'hamsadhwani', seed: 23,
     prog: [0, 3, 4, 3], lead: 'nadas', leadOct: 2, counter: 'pluck', counterOct: 4, padKind: 'harmonium', padRetrig: true, fill: 'tassa',
     pat: {
       kick: ['x..x..x.x..x..x.', 'x..x..x.x..x.xx.'], snare: '....x.......x..x', clap: '....x.......x...', hat: 'x.xxx.xxx.xxx.xx',
@@ -53,11 +56,11 @@ export const SONGS = {
       brk: ['chenda', 'tassa', 'dollu', 'hook', 'fx', 'fill'], hook2: ['pad', 'chenda', 'dollu', 'kick', 'snare', 'clap', 'bass', 'hook', 'counter', 'choir', 'hat', 'tassa', 'fx', 'fill'],
       outro: ['chenda', 'tassa', 'pad', 'hook', 'fx'],
     }),
-    lyrics: [[4, 'S05'], [12, 'S06'], [24, 'S07']],
+    lyrics: LY(["S05", "S06", "S07", "S08"]),
   },
   /* =============================================================== Pili Beats FM: tiger-dance bass */
   pili: {
-    id: 'pili', title: 'Pili Vesha', artist: 'DJ Hulibande', bpm: 150, swing: 0, root: 138.59, scale: 'mayamalavagowla', seed: 31,
+    id: 'pili', vox: { vel: 1.1, startDeg: 3, top: 5 }, title: 'Pili Vesha', artist: 'DJ Hulibande', bpm: 150, swing: 0, root: 138.59, scale: 'mayamalavagowla', seed: 31,
     prog: [0, 0, 1, 0], lead: 'supersaw', leadOct: 2, counter: 'nadas', counterOct: 4, bass: 'sub', padKind: 'strings', padRetrig: false, fill: 'tassa',
     pat: {
       kick: 'x...x...x...x...', snare: '....x.......x...', clap: '....x.......x...', hat: 'x.x.x.x.x.x.x.xO',
@@ -73,10 +76,10 @@ export const SONGS = {
       brk: ['tassa', 'dollu', 'pad', 'hook', 'fx', 'fill'], hook2: ['kick', 'snare', 'clap', 'tassa', 'dollu', 'chenda', 'bass', 'hat', 'hook', 'counter', 'choir', 'pad', 'fx', 'fill'],
       outro: ['tassa', 'dollu', 'kick', 'hook', 'fx'],
     }),
-    lyrics: [[4, 'S08'], [12, 'S09'], [24, 'S10']],
+    lyrics: LY(["S09", "S10", "S11", "S12"]),
   },
   tigerdrop: {
-    id: 'tigerdrop', title: 'Tiger Drop', artist: 'DJ Hulibande', bpm: 160, swing: 0, root: 130.81, scale: 'todi', seed: 37,
+    id: 'tigerdrop', vox: { vel: 1.05, startDeg: 2, top: 4 }, title: 'Tiger Drop', artist: 'DJ Hulibande', bpm: 160, swing: 0, root: 130.81, scale: 'todi', seed: 37,
     prog: [0, 0, 5, 4], lead: 'supersaw', leadOct: 2, counter: 'nadas', counterOct: 4, bass: 'sub', padKind: 'strings', padRetrig: false, fill: 'tassa',
     pat: {
       kick: ['x..x..x.x..x..x.', 'x..x..x.x..xx.x.'], snare: '....x.......x.x.', clap: '....x.......x...', hat: 'xxxxxxxxxxxxxxxx',
@@ -92,11 +95,11 @@ export const SONGS = {
       brk: ['tassa', 'dollu', 'hook', 'fx', 'fill', 'pad'], hook2: ['kick', 'snare', 'clap', 'tassa', 'dollu', 'chenda', 'bass', 'hat', 'hook', 'counter', 'choir', 'pad', 'fx', 'fill'],
       outro: ['tassa', 'dollu', 'kick', 'hook', 'fx'],
     }),
-    lyrics: [[4, 'S08'], [12, 'S10'], [24, 'S09']],
+    lyrics: LY(["S13", "S14", "S15", "S16"]),
   },
   /* =============================================================== Sandalwood Retro: golden Kannada film style */
   mallige: {
-    id: 'mallige', title: 'Mallige Kanasu', artist: 'Savitha & The Mysore Strings', bpm: 96, swing: 0.14, root: 146.83, scale: 'shankarabharana', seed: 41,
+    id: 'mallige', vox: { vel: 0.9, formantShift: 1.15, chorus: true, startDeg: 3, wet: 0.5 }, title: 'Mallige Kanasu', artist: 'Savitha & The Mysore Strings', bpm: 96, swing: 0.14, root: 146.83, scale: 'shankarabharana', seed: 41,
     prog: [0, 5, 3, 4], lead: 'flute', leadOct: 4, counter: 'pluck', counterOct: 4, padKind: 'strings', padRetrig: false, fill: 'chenda',
     pat: {
       kick: 'x.......x.x.....', snare: '....x.......x...', hat: 'x.x.x.x.x.x.x.x.', tabla: 'x.t.g.t.x.t.g.tt', bass: 'x..x....x..x..5.', bassLen: 1.6,
@@ -109,10 +112,10 @@ export const SONGS = {
       intro: ['pad', 'tabla', 'hook'], verse: ['pad', 'tabla', 'bass', 'hook', 'hat'], hook: ['pad', 'tabla', 'kick', 'snare', 'bass', 'hook', 'counter', 'choir', 'hat', 'fx'],
       brk: ['pad', 'tabla', 'hook', 'fx'], hook2: ['pad', 'tabla', 'kick', 'snare', 'bass', 'hook', 'counter', 'choir', 'hat', 'fx', 'fill'], outro: ['pad', 'tabla', 'hook'],
     }),
-    lyrics: [[4, 'S11'], [12, 'S12'], [24, 'S13']],
+    lyrics: LY(["S17", "S18", "S19", "S20"]),
   },
   kanasu: {
-    id: 'kanasu', title: 'Bus Nildana', artist: 'Savitha & The Mysore Strings', bpm: 104, swing: 0.12, root: 130.81, scale: 'kharaharapriya', seed: 43,
+    id: 'kanasu', vox: { vel: 0.9, formantShift: 1.15, chorus: true, startDeg: 3, wet: 0.5 }, title: 'Bus Nildana', artist: 'Savitha & The Mysore Strings', bpm: 104, swing: 0.12, root: 130.81, scale: 'kharaharapriya', seed: 43,
     prog: [0, 3, 4, 0], lead: 'strings', leadOct: 2, counter: 'flute', counterOct: 4, padKind: 'strings', padRetrig: false, fill: 'chenda',
     pat: {
       kick: 'x.......x.x.....', snare: '....x.......x...', hat: 'x.x.x.x.x.x.x.x.', tabla: 'x.t.g.t.x.tt.g.t', bass: 'x..x..x.x..x..5.', bassLen: 1.6,
@@ -125,11 +128,11 @@ export const SONGS = {
       intro: ['pad', 'tabla', 'hook'], verse: ['pad', 'tabla', 'bass', 'hook', 'hat'], hook: ['pad', 'tabla', 'kick', 'snare', 'bass', 'hook', 'counter', 'choir', 'hat', 'fx'],
       brk: ['pad', 'tabla', 'hook', 'fx'], hook2: ['pad', 'tabla', 'kick', 'snare', 'bass', 'hook', 'counter', 'choir', 'hat', 'fx', 'fill'], outro: ['pad', 'tabla', 'hook'],
     }),
-    lyrics: [[4, 'S12'], [12, 'S11'], [24, 'S13']],
+    lyrics: LY(["S21", "S22", "S23", "S24"]),
   },
   /* =============================================================== Kere FM: lake-side chill */
   kere: {
-    id: 'kere', title: 'Kere Sandhye', artist: 'Aanekere Sessions', bpm: 76, swing: 0.2, root: 130.81, scale: 'madhyamavathi', seed: 51,
+    id: 'kere', vox: { vel: 0.8, wet: 0.7, vib: 0.016, startDeg: 2 }, title: 'Kere Sandhye', artist: 'Aanekere Sessions', bpm: 76, swing: 0.2, root: 130.81, scale: 'madhyamavathi', seed: 51,
     prog: [0, 3, 0, 4], lead: 'pluck', leadOct: 2, counter: 'flute', counterOct: 4, padKind: 'strings', padRetrig: false, fill: 'chenda',
     pat: { kick: 'x.......x.......', snare: '........x.......', hat: 'x.o.x.o.x.o.x.oo', tabla: 'x...t...g...t...', bass: 'x.......x.....5.', bassLen: 3 },
     hooks: {
@@ -140,10 +143,10 @@ export const SONGS = {
       intro: ['drone', 'pad', 'vinyl', 'hook'], verse: ['pad', 'vinyl', 'tabla', 'bass', 'hook', 'hat'], hook: ['pad', 'vinyl', 'tabla', 'kick', 'snare', 'bass', 'hook', 'counter', 'hat'],
       brk: ['drone', 'pad', 'vinyl', 'hook'], hook2: ['pad', 'vinyl', 'tabla', 'kick', 'snare', 'bass', 'hook', 'counter', 'hat', 'choir'], outro: ['drone', 'pad', 'vinyl', 'hook'],
     }),
-    lyrics: [[4, 'S14'], [20, 'S15']],
+    lyrics: LY(["S25", "S26", "S27", "S28"]),
   },
   malnad: {
-    id: 'malnad', title: 'Malenaadu Mazhe', artist: 'Aanekere Sessions', bpm: 70, swing: 0.18, root: 146.83, scale: 'hamsadhwani', seed: 53,
+    id: 'malnad', vox: { vel: 0.8, wet: 0.7, vib: 0.016, startDeg: 2 }, title: 'Malenaadu Mazhe', artist: 'Aanekere Sessions', bpm: 70, swing: 0.18, root: 146.83, scale: 'hamsadhwani', seed: 53,
     prog: [0, 4, 3, 0], lead: 'pluck', leadOct: 2, counter: 'flute', counterOct: 4, padKind: 'strings', padRetrig: false, fill: 'chenda',
     pat: { kick: 'x.......x.......', snare: '........x.......', hat: 'x.o.x.o.x.o.x.oo', tabla: 'x...t...g...t...', bass: 'x.......x.....8.', bassLen: 3 },
     hooks: {
@@ -154,11 +157,56 @@ export const SONGS = {
       intro: ['drone', 'pad', 'vinyl', 'hook'], verse: ['pad', 'vinyl', 'tabla', 'bass', 'hook', 'hat'], hook: ['pad', 'vinyl', 'tabla', 'kick', 'snare', 'bass', 'hook', 'counter', 'hat', 'choir'],
       brk: ['drone', 'pad', 'vinyl', 'hook'], hook2: ['pad', 'vinyl', 'tabla', 'kick', 'snare', 'bass', 'hook', 'counter', 'hat', 'choir'], outro: ['drone', 'pad', 'vinyl', 'hook'],
     }),
-    lyrics: [[4, 'S15'], [20, 'S14']],
+    lyrics: LY(["S29", "S30", "S31", "S32"]),
+  },
+
+  /* =============================================================== culture: bhajane, Yakshagana, paddana */
+  bhajane: {
+    id: 'bhajane', vox: { vel: 1, startDeg: 3, wet: 0.5, chorus: true }, title: 'Hari Om Bhajane', artist: 'Durga Mahila Bhajana Mandali', bpm: 100, swing: 0.05, root: 130.81, scale: 'shankarabharana', seed: 71,
+    prog: [0, 3, 4, 0], lead: 'flute', leadOct: 4, counter: 'pluck', counterOct: 4, padKind: 'harmonium', padRetrig: true, fill: 'chenda', bass: 'sub',
+    pat: { tabla: 'x...t...g...t.t.', jhanj: 'x.x.x.x.x.x.x.xO', clap: '....x.......x...', bass: 'x.......x.......', bassLen: 3, dollu: 'x.......x.......' },
+    hooks: {
+      A: N([[0, 4, 2], [2, 5, 2], [4, 4, 2], [6, 2, 2], [8, 3, 4], [12, 2, 2], [14, 0, 2], [16, 2, 2], [18, 4, 2], [20, 5, 4], [24, 4, 2], [26, 2, 2], [28, 0, 4]]),
+      B: N([[0, 7, 2], [2, 6, 2], [4, 5, 2], [6, 4, 2], [8, 5, 4], [12, 4, 2], [14, 2, 2], [16, 4, 2], [18, 5, 2], [20, 7, 4], [24, 5, 2], [26, 4, 2], [28, 2, 4]]),
+    },
+    sections: sections({
+      intro: ['drone', 'pad', 'hook', 'tabla'], verse: ['pad', 'tabla', 'jhanj', 'bass', 'hook'], hook: ['pad', 'tabla', 'jhanj', 'clap', 'bass', 'hook', 'counter', 'choir', 'conch'],
+      brk: ['pad', 'tabla', 'jhanj', 'hook'], hook2: ['pad', 'tabla', 'jhanj', 'clap', 'bass', 'hook', 'counter', 'choir', 'dollu', 'conch'], outro: ['drone', 'pad', 'jhanj', 'hook'],
+    }),
+    lyrics: LY(["S41", "S42", "S43", "S44"]),
+  },
+  yaksha: {
+    id: 'yaksha', vox: { vel: 1.15, nasal: true, formantShift: 1.04, startDeg: 4, top: 8, vib: 0.016 }, title: 'Yakshagana Ranga Pravesha', artist: 'Bhagavatha Mela', bpm: 132, swing: 0.04, root: 146.83, scale: 'kharaharapriya', seed: 73,
+    prog: [0, 0, 3, 4], lead: 'nadas', leadOct: 2, counter: 'flute', counterOct: 4, padKind: 'harmonium', padRetrig: true, fill: 'chenda',
+    pat: { chenda: ['x.xxx.xxx.xxx.xx', 'xxxxx.xxxxxxxbx'], maddale: 'x..b..x.x..b.x..', jhanj: 'x.x.x.x.x.x.x.x.', dollu: 'x.......x.......', tassa: '..x...x...x...x.', bass: 'x..x....x..x..8.', bassLen: 1.4, kick: 'x.......x.......' },
+    hooks: {
+      A: N([[0, 5, 2], [2, 6, 1], [3, 5, 1], [4, 4, 2, 'g'], [6, 3, 2], [8, 4, 2], [10, 3, 1], [11, 2, 1], [12, 0, 4], [16, 2, 2], [18, 3, 2], [20, 4, 2], [22, 5, 2], [24, 6, 2, 'g'], [26, 5, 2], [28, 4, 4]]),
+      B: N([[0, 7, 2], [2, 8, 1], [3, 7, 1], [4, 6, 2, 'g'], [6, 5, 2], [8, 6, 4], [12, 5, 2], [14, 4, 2], [16, 5, 2], [18, 4, 2], [20, 3, 4, 'g'], [24, 2, 2], [26, 3, 2], [28, 4, 2], [30, 2, 2]]),
+    },
+    sections: sections({
+      intro: ['drone', 'pad', 'chenda', 'maddale', 'hook', 'fx'], verse: ['pad', 'chenda', 'maddale', 'jhanj', 'bass', 'hook', 'dollu'],
+      hook: ['pad', 'chenda', 'maddale', 'jhanj', 'dollu', 'kick', 'tassa', 'bass', 'hook', 'counter', 'choir', 'fx', 'fill'],
+      brk: ['pad', 'chenda', 'maddale', 'hook', 'fx', 'fill'], hook2: ['pad', 'chenda', 'maddale', 'jhanj', 'dollu', 'kick', 'tassa', 'bass', 'hook', 'counter', 'choir', 'fx', 'fill'], outro: ['drone', 'pad', 'chenda', 'maddale', 'hook'],
+    }),
+    lyrics: LY(["S45", "S46", "S47", "S48"]),
+  },
+  paddana: {
+    id: 'paddana', vox: { vel: 1.1, nasal: true, startDeg: 2, top: 5, vib: 0.014, wet: 0.55 }, title: 'Koti Chennaya Paddana', artist: 'Tulu Paddana Sangha', bpm: 84, swing: 0.1, root: 130.81, scale: 'madhyamavathi', seed: 79,
+    prog: [0, 0, 2, 0], lead: 'pluck', leadOct: 2, counter: 'flute', counterOct: 4, padKind: 'strings', padRetrig: false, fill: 'chenda', bass: 'sub',
+    pat: { dollu: 'x.......x..x....', tassa: '..x...x...x...x.', chenda: ['........x...x...', '........x..xx.xb'], bass: 'x......x........', bassLen: 4 },
+    hooks: {
+      A: N([[0, 3, 4], [4, 2, 2], [6, 1, 2], [8, 2, 4, 'g'], [12, 0, 4], [16, 1, 2], [18, 2, 2], [20, 3, 4, 'g'], [24, 2, 4], [28, 0, 4]]),
+      B: N([[0, 5, 4, 'g'], [4, 4, 2], [6, 3, 2], [8, 4, 4], [12, 3, 4], [16, 2, 2], [18, 3, 2], [20, 4, 4, 'g'], [24, 3, 4], [28, 2, 4]]),
+    },
+    sections: sections({
+      intro: ['drone', 'pad', 'hook', 'conch'], verse: ['drone', 'pad', 'dollu', 'tassa', 'hook', 'bass'], hook: ['drone', 'pad', 'dollu', 'tassa', 'chenda', 'hook', 'counter', 'choir', 'bass', 'fx'],
+      brk: ['drone', 'pad', 'chenda', 'hook'], hook2: ['drone', 'pad', 'dollu', 'tassa', 'chenda', 'hook', 'counter', 'choir', 'bass', 'fx'], outro: ['drone', 'pad', 'hook', 'gong'],
+    }),
+    lyrics: LY(["S49", "S50", "S51", "S52"]),
   },
   /* =============================================================== game score */
   theme: {
-    id: 'theme', title: 'Namma Karkala', artist: 'Game theme', bpm: 100, swing: 0.08, root: 146.83, scale: 'mohanam', seed: 61,
+    id: 'theme', vox: { vel: 0.9, startDeg: 3 }, title: 'Namma Karkala', artist: 'Game theme', bpm: 100, swing: 0.08, root: 146.83, scale: 'mohanam', seed: 61,
     prog: [0, 3, 4, 3], lead: 'nadas', leadOct: 2, counter: 'strings', counterOct: 2, padKind: 'strings', padRetrig: false, fill: 'chenda',
     pat: {
       kick: 'x.......x..x....', snare: '........x.......', hat: 'x.x.x.x.x.x.x.xO', chenda: ['x.x.xx.x.x.xx.x.', 'x.x.xx.x.xxxx.xb'], dollu: 'x.......x.......', tassa: '..x...x...x...x.',
@@ -174,10 +222,10 @@ export const SONGS = {
       brk: ['pad', 'chenda', 'dollu', 'hook', 'fx', 'fill'], hook2: ['pad', 'chenda', 'dollu', 'kick', 'snare', 'bass', 'hook', 'counter', 'choir', 'hat', 'tassa', 'fx', 'fill'],
       outro: ['drone', 'pad', 'chenda', 'hook', 'fx'],
     }),
-    lyrics: [[12, 'S16']],
+    lyrics: LY(["S33", "S34", "S35", "S36"]),
   },
   bahubali: {
-    id: 'bahubali', title: 'Bahubali Betta', artist: 'Game theme', bpm: 62, swing: 0, root: 146.83, scale: 'hamsadhwani', seed: 67,
+    id: 'bahubali', vox: { vel: 1.1, wet: 0.75, vib: 0.008, top: 4, startDeg: 2 }, voxOct: 1, title: 'Bahubali Betta', artist: 'Game theme', bpm: 62, swing: 0, root: 146.83, scale: 'hamsadhwani', seed: 67,
     prog: [0, 3, 4, 0], lead: 'flute', leadOct: 4, counter: 'strings', counterOct: 2, padKind: 'strings', padRetrig: false, fill: 'chenda',
     pat: { dollu: 'x...............', kick: 'x...............', chenda: '........x.......', bass: 'x...............', bassLen: 6 },
     hooks: {
@@ -185,10 +233,10 @@ export const SONGS = {
       B: N([[0, 7, 8], [8, 6, 4], [12, 5, 4], [16, 4, 8], [24, 3, 4], [28, 5, 4]]),
     },
     sections: sections({
-      intro: ['drone', 'pad', 'hook'], verse: ['drone', 'pad', 'hook', 'dollu'], hook: ['drone', 'pad', 'hook', 'choir', 'dollu', 'bass', 'counter', 'fx'],
-      brk: ['drone', 'pad', 'hook'], hook2: ['drone', 'pad', 'hook', 'choir', 'dollu', 'bass', 'counter', 'chenda', 'fx'], outro: ['drone', 'pad', 'hook', 'choir'],
+      intro: ['drone', 'pad', 'hook', 'gong'], verse: ['drone', 'pad', 'hook', 'dollu', 'gong', 'conch'], hook: ['drone', 'pad', 'hook', 'choir', 'dollu', 'bass', 'counter', 'fx', 'gong', 'conch'],
+      brk: ['drone', 'pad', 'hook', 'gong'], hook2: ['drone', 'pad', 'hook', 'choir', 'dollu', 'bass', 'counter', 'chenda', 'fx', 'gong', 'conch'], outro: ['drone', 'pad', 'hook', 'choir', 'gong', 'conch'],
     }),
-    lyrics: [[12, 'S16']],
+    lyrics: LY(["S37", "S38", "S39", "S40"]),
   },
 };
 
@@ -196,6 +244,7 @@ export const STATIONS = [
   { id: 'karkala', name: 'Radio Karkala 91.1', tag: 'Tulunadu folk fusion', color: '#fbbf24', songs: ['chande', 'kambala'], ident: 'R01' },
   { id: 'pili', name: 'Pili Beats FM', tag: 'Tiger-dance bass', color: '#f97316', songs: ['pili', 'tigerdrop'], ident: 'R02' },
   { id: 'retro', name: 'Sandalwood Retro', tag: 'Golden Kannada hits', color: '#a78bfa', songs: ['mallige', 'kanasu'], ident: 'R03' },
+  { id: 'paddana', name: 'Tulu Paddana FM 94.5', tag: 'Bhajane, Yakshagana, paddana', color: '#ef4444', songs: ['paddana', 'bhajane', 'yaksha'], ident: 'R05' },
   { id: 'kere', name: 'Kere FM', tag: 'Lake-side chill', color: '#38bdf8', songs: ['kere', 'malnad'], ident: 'R04' },
 ];
 
