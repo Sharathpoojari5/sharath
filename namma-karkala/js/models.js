@@ -93,9 +93,6 @@ export function person(o = {}) {
     P(box(0.045, 0.045, 0.02), '#0b0b0b', [-0.063, 1.69, 0.125]), P(box(0.045, 0.045, 0.02), '#0b0b0b', [0.063, 1.69, 0.125]),
     P(box(0.07, 0.016, 0.02), '#161616', [-0.063, 1.735, 0.125]), P(box(0.07, 0.016, 0.02), '#161616', [0.063, 1.735, 0.125]),
     P(box(0.03, 0.05, 0.03), skin, [0, 1.655, 0.135]), P(box(0.085, 0.016, 0.02), '#5a2a22', [0, 1.6, 0.125]),
-    P(box(0.12, 0.52, 0.13), kind === 'saree' ? skin : shirt, [-0.3, 1.18, 0], [0, 0, 0.06]),
-    P(box(0.12, 0.52, 0.13), kind === 'saree' ? skin : shirt, [0.3, 1.18, 0], [0, 0, -0.06]),
-    P(box(0.1, 0.1, 0.1), skin, [-0.32, 0.88, 0]), P(box(0.1, 0.1, 0.1), skin, [0.32, 0.88, 0]),
   ];
   if (kind === 'lungi') parts.push(P(box(0.46, 0.5, 0.3), o.lungi || pick(LUNGI), [0, 0.68, 0]));
   if (kind === 'saree') { parts.push(P(box(0.5, 0.82, 0.34), o.saree || pick(SAREE), [0, 0.5, 0])); parts.push(P(box(0.2, 0.5, 0.05), '#facc15', [0.12, 1.25, 0.14], [0, 0, 0.4])); }
@@ -106,6 +103,9 @@ export function person(o = {}) {
   const legL = mesh(legGeo), legR = mesh(legGeo);
   legL.position.set(-0.12, 0.9, 0); legR.position.set(0.12, 0.9, 0);
   if (kind !== 'saree') { g.add(legL); g.add(legR); }
+  // arms hang from the shoulder so they can swing when walking
+  const armGeo = merge([P(box(0.12, 0.52, 0.13), kind === 'saree' ? skin : shirt, [0, -0.26, 0]), P(box(0.1, 0.1, 0.1), skin, [0, -0.57, 0])]);
+  const armL = mesh(armGeo), armR = mesh(armGeo); armL.position.set(-0.3, 1.45, 0); armR.position.set(0.3, 1.45, 0); armL.rotation.z = 0.06; armR.rotation.z = -0.06; g.add(armL); g.add(armR); g.armL = armL; g.armR = armR;
   g.legL = kind !== 'saree' ? legL : null; g.legR = kind !== 'saree' ? legR : null; g.body = body;
   return g;
 }

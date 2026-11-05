@@ -19,6 +19,7 @@ const pick = (a) => a[Math.floor(Math.random() * a.length)];
 const $ = (id) => document.getElementById(id);
 const SAVE_KEY = 'namma-karkala-v1';
 const WANTED = ['', 'GOSSIP', 'FINE', 'JEEP CHASE', 'CHECKPOST', 'FRONT PAGE'];
+const TIME_SCALE = 0.2;
 const Q_OUCH = ['Q01', 'Q02', 'Q03', 'Q04', 'Q05', 'Q06'];
 const Q_HIJACK = ['Q07', 'Q08', 'Q09'];
 const SPK = { RAJU: ['Raju', '#38bdf8'], AMMA: ['Amma · on the phone', '#f472b6'], AJJI: ['Ajji', '#fb923c'], ARCHAKARU: ['Archakaru', '#fbbf24'], PRAMOD: ['Pramod', '#4ade80'],
@@ -40,6 +41,7 @@ export class Game {
     const sun = this.sun = new THREE.DirectionalLight('#fff1d6', 2.2); sun.castShadow = true;
     sun.shadow.mapSize.set(1536, 1536); Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, near: 1, far: 400 }); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.04;
     S.add(sun); S.add(sun.target);
+    this.torch = new THREE.PointLight('#ffe2b0', 0, 22, 1.6); S.add(this.torch);
     this.headlight = new THREE.SpotLight('#fff3cc', 0, 70, 0.55, 0.5, 1.2); S.add(this.headlight); S.add(this.headlight.target);
     this.makeSky(); this.makeRain();
     this.vehicles = []; this.peds = []; this.cows = []; this.police = [];
@@ -511,15 +513,15 @@ export class Game {
 
   /* ====================================================================== time, weather */
   updateSky(dt) {
-    if (!this.photo) this.time = (this.time + dt * (60 / 60)) % 1440;      // 1 real second = 1 game minute
+    if (!this.photo) this.time = (this.time + dt * TIME_SCALE) % 1440;      // game minutes per real second: a full day takes 2 real hours, a night about 35 minutes
     const t = this.time / 1440, el = Math.sin((t - 0.25) * Math.PI * 2), az = (t - 0.25) * Math.PI * 2;
     const day = clamp(el * 3 + 0.25, 0, 1), dusk = clamp(1 - Math.abs(el) * 4, 0, 1) * (el > -0.2 ? 1 : 0);
     this.dayAmt = day; const p = this.carOrPlayer();
     const sd = new THREE.Vector3(Math.cos(az) * 0.8, Math.max(0.08, el), Math.sin(az) * 0.6).normalize();
     this.sun.position.set(p.x + sd.x * 150, sd.y * 150, p.z + sd.z * 150); this.sun.target.position.set(p.x, 0, p.z);
     const rain = this.raining;
-    const top = new THREE.Color('#0b1430').lerp(new THREE.Color('#4f93dc'), day).lerp(new THREE.Color('#5b6675'), rain * 0.85);
-    const bot = new THREE.Color('#1a2236').lerp(new THREE.Color('#d9e8f3'), day).lerp(new THREE.Color('#ff9c5a'), dusk * 0.65).lerp(new THREE.Color('#8b939c'), rain * 0.8);
+    const top = new THREE.Color('#162552').lerp(new THREE.Color('#4f93dc'), day).lerp(new THREE.Color('#5b6675'), rain * 0.85);
+    const bot = new THREE.Color('#2b3d66').lerp(new THREE.Color('#d9e8f3'), day).lerp(new THREE.Color('#ff9c5a'), dusk * 0.65).lerp(new THREE.Color('#8b939c'), rain * 0.8);
     this.skyMat.uniforms.top.value.copy(top); this.skyMat.uniforms.bot.value.copy(bot); this.skyMat.uniforms.sunDir.value.copy(sd); this.skyMat.uniforms.night.value = 1 - day;
     this.skyMat.uniforms.sunCol.value.set(day > 0.1 ? '#fff1c2' : '#000'); this.skyMat.uniforms.sunCol.value.multiplyScalar(1 - rain);
     const U = this.skyMat.uniforms; U.uTime.value = this.now; U.cover.value = 0.38 + rain * 0.55;
@@ -528,10 +530,10 @@ export class Game {
     this.envT = (this.envT || 0) - dt;
     if (this.envT <= 0) { this.envT = 20; this.bakeEnv(); }
     this.scene.fog.color.copy(bot); this.scene.fog.far = lerp(560, 260, rain); this.scene.fog.near = lerp(140, 40, rain);
-    this.sun.intensity = (0.15 + 2.3 * day) * (1 - rain * 0.7); this.sun.color.set(dusk > 0.3 ? '#ffb27a' : '#fff1d6');
-    if (day < 0.05) { this.sun.color.set('#9fb4ff'); this.sun.intensity = 0.35; }
-    this.hemi.intensity = 0.35 + 1.15 * day; this.hemi.color.set(day > 0.2 ? '#cfe4ff' : '#5266a8');
-    this.renderer.toneMappingExposure = 0.95 + 0.25 * (1 - day);
+    this.sun.intensity = (0.55 + 1.95 * day) * (1 - rain * 0.7); this.sun.color.set(dusk > 0.3 ? '#ffb27a' : '#fff1d6');
+    if (day < 0.05) { this.sun.color.set('#a9bdff'); this.sun.intensity = 1.1; }
+    this.hemi.intensity = 1.0 + 0.5 * day; this.hemi.color.set(day > 0.2 ? '#cfe4ff' : '#7a90d0'); this.hemi.groundColor.set(day > 0.2 ? '#5b6b3a' : '#3d4a6a');
+    this.renderer.toneMappingExposure = 0.95 + 0.4 * (1 - day);
     this.world.setNight(1 - day); this.world.setWet(rain);
     // weather: Karkala rains often
     if (!this.cheatWeather) { this.wxT = (this.wxT || 0) - dt; if (this.wxT < 0) { this.wxT = rnd(60, 180); this.rainOn = this.rainOn ? Math.random() < 0.55 : Math.random() < 0.3; if (this.rainOn) this.toast('MALE BANTHU', 'It is raining again. Of course it is. This is Karkala.'); } }
@@ -543,6 +545,7 @@ export class Game {
       this.rain.geometry.attributes.position.needsUpdate = true; this.rain.position.set(cp.x, cp.y - 15, cp.z);
     }
     this.audio.rain(this.raining);
+    { const nt = clamp((0.6 - day) / 0.5, 0, 1), pp = this.player; this.torch.intensity = this.car ? 0 : 14 * nt; this.torch.position.set(pp.x, pp.y + 2.4, pp.z); }      // a soft lantern glow around you on foot at night
     const lightsOn = day < 0.5 || rain > 0.6;
     if (this.car && lightsOn && !this.car.def.two) { this.headlight.intensity = 40; } else if (this.car && lightsOn) this.headlight.intensity = 25; else this.headlight.intensity = 0;
     if (this.car) { const c = this.car; this.headlight.position.set(c.x + c.fx * c.def.L / 2, c.y + 1.1, c.z + c.fz * c.def.L / 2); this.headlight.target.position.set(c.x + c.fx * 25, 0, c.z + c.fz * 25); }
@@ -720,7 +723,7 @@ export class Game {
     R.setSize(innerWidth, innerHeight);
   }
   update(dt) {
-    const inp = this.input(), p = this.player, w = this.world;
+    const inp = this.input(), p = this.player, w = this.world; this._inp = inp;
     this.popT = (this.popT || 0) - dt; if (this.popT < 0) { this.popT = 0.4; this.populate(); }
     const cin = this.cine.active;
     if ((this.cullT = (this.cullT || 0) + 1) % 6 === 0) this.cullFar();
@@ -769,6 +772,10 @@ export class Game {
     if (k) { c.position.set(k.p[0], k.p[1], k.p[2]); c.lookAt(k.l[0], k.l[1], k.l[2]); if (Math.abs(c.fov - k.fov) > 0.05) { c.fov = k.fov; c.updateProjectionMatrix(); } this.sky.position.copy(c.position); return; }
     if (this.startOrbit && !this.started) { this.startOrbit(dt); return; }
     if (this.car && this.now - this.lastMouse > 1.2 && Math.abs(this.car.v) > 1) { const want = this.car.v > 0 ? this.car.h : this.car.h + Math.PI; this.camYaw += wrap(want - this.camYaw) * Math.min(1, dt * 2.5); }
+    else if (!this.car && this._inp && !this.photo && this.now - this.lastMouse > 0.7) {      // on foot: swing the camera round behind you as you steer
+      const iv = this._inp, moving = Math.hypot(iv.x, iv.y) > 0.1;
+      if (moving && iv.y > -0.1) this.camYaw += wrap(this.player.h - this.camYaw) * Math.min(1, dt * (Math.abs(iv.x) > 0.1 ? 2.8 : 1.0));
+    }
     const h = this.car ? this.car.def.H * 0.75 + 0.6 : 1.6;
     const ty = (this.car ? this.car.y : this.player.y) + h, d = this.camDist, cp = Math.cos(this.camPitch), sp = Math.sin(this.camPitch);
     let x = t.x - Math.sin(this.camYaw) * d * cp, z = t.z - Math.cos(this.camYaw) * d * cp, y = ty + d * sp;

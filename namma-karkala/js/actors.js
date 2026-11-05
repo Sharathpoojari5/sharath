@@ -27,6 +27,7 @@ export class Vehicle {
       : M.person({ kind: 'shirt', shirt: this.driver === 'thief' ? '#111827' : undefined, cap: this.driver === 'thief' ? '#dc2626' : undefined });
     p.position.set(...this.def.seat); p.position.y += this.def.two ? -0.25 : -0.4;
     if (p.legL) { p.legL.rotation.x = -1.2; p.legR.rotation.x = -1.2; }
+    if (p.armL) { p.armL.rotation.x = -1.15; p.armR.rotation.x = -1.15; }
     if (this.kind === 'cycle') p.position.y += 0.12;
     this.mesh.add(p); this.dm = p;
   }
@@ -171,6 +172,7 @@ export class Ped {
     this.y = w.groundH(this.x, this.z);
     this.phase += dt * spd * 4.2; const sw = spd > 0 ? Math.sin(this.phase) * 0.6 : 0;
     if (m.legL) { m.legL.rotation.x = sw; m.legR.rotation.x = -sw; }
+    if (m.armL) { m.armL.rotation.x = -sw * 1.1; m.armR.rotation.x = sw * 1.1; }
     m.position.set(this.x, this.y, this.z); m.rotation.y = this.h;
   }
 }
@@ -206,18 +208,19 @@ export class Player {
       mx /= L; mz /= L;
       const fx = Math.sin(camYaw), fz = Math.cos(camYaw), rx = -fz, rz = fx;
       const dx = fx * mz + rx * mx, dz = fz * mz + rz * mx;
-      const want = Math.atan2(dx, dz); this.h += wrap(want - this.h) * Math.min(1, dt * 12);
+      const want = Math.atan2(dx, dz), dh = wrap(want - this.h) * Math.min(1, dt * 12); this.turn = -dh * 2; this.h += dh;
       let nx = this.x + dx * run * dt, nz = this.z + dz * run * dt;
       const p = w.collide(nx, nz, 0.35); nx += p.x; nz += p.z;
       for (const v of this.g.vehicles) { const dd = Math.hypot(v.x - nx, v.z - nz); if (dd < v.def.L / 2 + 0.6) { for (let i = 0; i < v.n; i++) { const off = v.n === 1 ? 0 : -v.def.L / 2 + v.r + (i * (v.def.L - 2 * v.r)) / (v.n - 1), cx = v.x + v.fx * off, cz = v.z + v.fz * off, d2 = Math.hypot(nx - cx, nz - cz), R = v.r + 0.35; if (d2 < R && d2 > 1e-3) { nx = cx + (nx - cx) / d2 * R; nz = cz + (nz - cz) / d2 * R; } } } }
       if (!w.inWater(nx, nz)) { const b = w.ext; this.x = clamp(nx, b.x0, b.x1); this.z = clamp(nz, b.z0, b.z1); }
       this.phase += dt * run * 2.2;
-    } else this.phase = 0;
+    } else { this.phase = 0; this.turn = 0; }
     const gh = w.groundH(this.x, this.z);
     if (inp.jump && this.y <= gh + 0.01) this.vy = this.g.cheats.moon ? 9 : 5.2;
     this.vy -= (this.g.cheats.moon ? 2.5 : 14) * dt; this.y += this.vy * dt; if (this.y < gh) { this.y = gh; this.vy = 0; }
     const sw = Math.sin(this.phase) * (inp.run ? 0.9 : 0.6);
     if (m.legL) { m.legL.rotation.x = sw; m.legR.rotation.x = -sw; }
-    m.position.set(this.x, this.y, this.z); m.rotation.set(0, this.h, 0);
+    if (m.armL) { const air = this.y > gh + 0.2; m.armL.rotation.x = air ? -2.4 : -sw * 1.1; m.armR.rotation.x = air ? -2.4 : sw * 1.1; m.armL.rotation.z = 0.06 + (air ? 0.4 : 0); m.armR.rotation.z = -0.06 - (air ? 0.4 : 0); }
+    m.position.set(this.x, this.y, this.z); m.rotation.set(0, this.h, 0); m.rotation.z = (m.userData.lean = (m.userData.lean || 0) + ((this.turn || 0) * 0.25 - (m.userData.lean || 0)) * Math.min(1, dt * 8));
   }
 }

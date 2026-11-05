@@ -504,7 +504,7 @@ export class World {
 
   setNight(n) {     // 0 day .. 1 night
     this.night = n;
-    if (this.lamps) { for (const m of this.lamps.pools) m.visible = n > 0.35; this.lamps.poolMat.opacity = 0.25 * n; }
+    if (this.lamps) { for (const m of this.lamps.pools) m.visible = n > 0.35; this.lamps.poolMat.opacity = 0.4 * n; }
     if (this.wallMats) for (const m of this.wallMats) m.userData.uNight.value = n;
     if (this.shopMats) { this.shopMats[0].emissive.setRGB(0.25 * n, 0.22 * n, 0.15 * n); this.shopMats[1].emissive.setRGB(0.45 * n, 0.45 * n, 0.45 * n); }
   }
