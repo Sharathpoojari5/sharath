@@ -14,7 +14,7 @@ Best on a laptop with a keyboard (Chrome, Edge, Safari or Firefox).
 
 ## Publish free on Cloudflare Pages (from the repo root)
 
-    npx wrangler pages deploy namma-karkala --project-name namma-karkala --branch main
+    npx wrangler pages deploy namma-karkala --project-name namma-karkala --branch production
 
 ## What's in it
 
