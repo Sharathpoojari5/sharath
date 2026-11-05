@@ -85,27 +85,36 @@ const pick = (a, r = Math.random) => a[Math.floor(r() * a.length)];
 export function person(o = {}) {
   const skin = o.skin || pick(SKIN), g = new THREE.Group();
   const kind = o.kind || pick(['shirt', 'shirt', 'lungi', 'saree']);
-  const shirt = o.shirt || pick(SHIRT);
+  const shirt = o.shirt || pick(SHIRT), hair = o.hair || '#141414', saree = o.saree || pick(SAREE);
+  const top = kind === 'saree' ? saree : shirt, TAU = Math.PI * 2;
   const parts = [
-    P(box(0.44, 0.58, 0.26), kind === 'saree' ? (o.saree || pick(SAREE)) : shirt, [0, 1.2, 0]),
-    P(box(0.24, 0.27, 0.24), skin, [0, 1.66, 0]),
-    P(box(0.26, 0.09, 0.26), o.hair || '#141414', [0, 1.82, -0.01]), P(box(0.26, 0.2, 0.06), o.hair || '#141414', [0, 1.7, -0.115]),
-    P(box(0.045, 0.045, 0.02), '#0b0b0b', [-0.063, 1.69, 0.125]), P(box(0.045, 0.045, 0.02), '#0b0b0b', [0.063, 1.69, 0.125]),
-    P(box(0.07, 0.016, 0.02), '#161616', [-0.063, 1.735, 0.125]), P(box(0.07, 0.016, 0.02), '#161616', [0.063, 1.735, 0.125]),
-    P(box(0.03, 0.05, 0.03), skin, [0, 1.655, 0.135]), P(box(0.085, 0.016, 0.02), '#5a2a22', [0, 1.6, 0.125]),
+    // torso with rounded shoulders and a neck
+    P(cyl(0.2, 0.165, 0.64, 12), top, [0, 1.19, 0], [0, 0, 0], [1.12, 1, 0.76]), P(sph(0.205, 12, 6), top, [0, 1.47, 0], [0, 0, 0], [1.12, 0.4, 0.72]),
+    P(cyl(0.052, 0.06, 0.11, 8), skin, [0, 1.56, 0]),
+    // head: egg shape, ears, nose, eyes with whites, brows, mouth, hair cap
+    P(sph(0.125, 14, 10), skin, [0, 1.69, 0], [0, 0, 0], [0.94, 1.13, 1.0]), P(sph(0.03, 6, 4), skin, [-0.118, 1.69, 0], [0, 0, 0], [0.5, 1, 0.8]), P(sph(0.03, 6, 4), skin, [0.118, 1.69, 0], [0, 0, 0], [0.5, 1, 0.8]),
+    P(cone(0.024, 0.055, 4), skin, [0, 1.665, 0.126], [Math.PI / 2, 0, 0]),
+    P(sph(0.019, 6, 4), '#f8fafc', [-0.046, 1.71, 0.112], [0, 0, 0], [1.2, 0.7, 0.5]), P(sph(0.019, 6, 4), '#f8fafc', [0.046, 1.71, 0.112], [0, 0, 0], [1.2, 0.7, 0.5]),
+    P(sph(0.0105, 6, 4), '#0b0b0b', [-0.046, 1.71, 0.121]), P(sph(0.0105, 6, 4), '#0b0b0b', [0.046, 1.71, 0.121]),
+    P(box(0.055, 0.011, 0.012), hair, [-0.046, 1.745, 0.115], [0, 0, 0.1]), P(box(0.055, 0.011, 0.012), hair, [0.046, 1.745, 0.115], [0, 0, -0.1]),
+    P(box(0.05, 0.011, 0.012), '#7a2e2a', [0, 1.625, 0.117]),
+    P(new THREE.SphereGeometry(0.133, 12, 8, 0, TAU, 0, Math.PI * 0.56), hair, [0, 1.705, -0.012], [-0.32, 0, 0], [0.97, 1.08, 1.02]),
   ];
-  if (kind === 'lungi') parts.push(P(box(0.46, 0.5, 0.3), o.lungi || pick(LUNGI), [0, 0.68, 0]));
-  if (kind === 'saree') { parts.push(P(box(0.5, 0.82, 0.34), o.saree || pick(SAREE), [0, 0.5, 0])); parts.push(P(box(0.2, 0.5, 0.05), '#facc15', [0.12, 1.25, 0.14], [0, 0, 0.4])); }
-  if (o.cap) parts.push(P(box(0.3, 0.08, 0.34), o.cap, [0, 1.86, 0.03]));
+  if (o.beard) parts.push(P(sph(0.1, 8, 6), o.beard, [0, 1.62, 0.03], [0, 0, 0], [0.9, 0.55, 0.8]));
+  if (kind === 'lungi') { parts.push(P(cyl(0.245, 0.3, 0.64, 14), o.lungi || pick(LUNGI), [0, 0.64, 0], [0, 0, 0], [1.0, 1, 0.78]), P(cyl(0.225, 0.225, 0.045, 12), '#7f1d1d', [0, 0.96, 0], [0, 0, 0], [1.0, 1, 0.78])); }
+  else if (kind === 'saree') { parts.push(P(cyl(0.2, 0.36, 0.95, 16), saree, [0, 0.48, 0], [0, 0, 0], [1, 1, 0.85]), P(cyl(0.37, 0.37, 0.05, 16), '#facc15', [0, 0.04, 0], [0, 0, 0], [1, 1, 0.85]), P(box(0.17, 0.62, 0.06), '#facc15', [0.1, 1.24, 0.13], [0, 0, 0.5]), P(box(0.1, 0.5, 0.05), saree, [-0.14, 1.12, -0.17], [0, 0, 0.1])); }
+  else parts.push(P(cyl(0.18, 0.18, 0.04, 12), '#1f1f1f', [0, 0.93, 0], [0, 0, 0], [1.12, 1, 0.76]), P(box(0.1, 0.05, 0.05), '#f8fafc', [0, 1.52, 0.1]));
+  if (o.cap) parts.push(P(new THREE.SphereGeometry(0.142, 12, 6, 0, TAU, 0, Math.PI * 0.5), o.cap, [0, 1.75, 0.0], [-0.08, 0, 0], [1, 0.9, 1.05]), P(box(0.26, 0.012, 0.13), o.cap, [0, 1.76, 0.14]));
   const body = mesh(merge(parts)); g.add(body);
   const legCol = kind === 'shirt' ? (o.pants || pick(['#1f2937', '#334155', '#78350f', '#1e3a8a'])) : skin;
-  const legGeo = merge([P(box(0.17, 0.86, 0.18), legCol, [0, -0.43, 0]), P(box(0.18, 0.08, 0.28), '#111827', [0, -0.86, 0.04])]);
+  const legGeo = merge([P(cyl(0.085, 0.07, 0.86, 8), legCol, [0, -0.43, 0]), P(box(0.125, 0.07, 0.27), kind === 'shirt' ? '#111827' : '#292524', [0, -0.855, 0.05]), P(sph(0.07, 6, 4), legCol, [0, -0.43, 0.01], [0, 0, 0], [1, 0.4, 1])]);
   const legL = mesh(legGeo), legR = mesh(legGeo);
-  legL.position.set(-0.12, 0.9, 0); legR.position.set(0.12, 0.9, 0);
+  legL.position.set(-0.115, 0.9, 0); legR.position.set(0.115, 0.9, 0);
   if (kind !== 'saree') { g.add(legL); g.add(legR); }
   // arms hang from the shoulder so they can swing when walking
-  const armGeo = merge([P(box(0.12, 0.52, 0.13), kind === 'saree' ? skin : shirt, [0, -0.26, 0]), P(box(0.1, 0.1, 0.1), skin, [0, -0.57, 0])]);
-  const armL = mesh(armGeo), armR = mesh(armGeo); armL.position.set(-0.3, 1.45, 0); armR.position.set(0.3, 1.45, 0); armL.rotation.z = 0.06; armR.rotation.z = -0.06; g.add(armL); g.add(armR); g.armL = armL; g.armR = armR;
+  const sleeve = kind === 'saree' ? saree : shirt;
+  const armGeo = merge([P(sph(0.058, 8, 6), sleeve, [0, 0, 0]), P(cyl(0.052, 0.046, 0.3, 8), sleeve, [0, -0.15, 0]), P(cyl(0.042, 0.037, 0.27, 8), skin, [0, -0.43, 0]), P(sph(0.046, 8, 6), skin, [0, -0.59, 0.005], [0, 0, 0], [1, 1.15, 0.8])]);
+  const armL = mesh(armGeo), armR = mesh(armGeo); armL.position.set(-0.285, 1.47, 0); armR.position.set(0.285, 1.47, 0); armL.rotation.z = 0.06; armR.rotation.z = -0.06; g.add(armL); g.add(armR); g.armL = armL; g.armR = armR;
   g.legL = kind !== 'saree' ? legL : null; g.legR = kind !== 'saree' ? legR : null; g.body = body;
   return g;
 }

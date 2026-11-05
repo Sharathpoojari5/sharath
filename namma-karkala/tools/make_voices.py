@@ -32,6 +32,16 @@ PITCH = {  # semitone shift applied to single-voice engines (MMS) so characters 
 }
 
 
+TRANSLIT = {"Baap": "ಬಾಪ್", "baap": "ಬಾಪ್", "Can't": "ಕ್ಯಾಂಟ್", "Can’t": "ಕ್ಯಾಂಟ್", "Cow": "ಕೌ", "Kaan": "ಕಾನ್", "Move": "ಮೂವ್", "move": "ಮೂವ್", "Tera": "ತೇರಾ", "We": "ವಿ",
+            "chadega": "ಚಡೇಗಾ", "fat": "ಫಟ್", "gaya": "ಗಯಾ", "hai": "ಹೈ", "heard": "ಹರ್ಡ್", "ka": "ಕಾ", "ke": "ಕೇ", "kya": "ಕ್ಯಾ", "see": "ಸೀ", "upar": "ಊಪರ್", "you": "ಯೂ"}
+
+
+def spoken(text):
+    """The Kannada voices cannot read Latin letters, so the few English / Hindi words in the mixed street lines are written in Kannada script."""
+    import re
+    return re.sub(r"[A-Za-z][A-Za-z’']*", lambda m: TRANSLIT.get(m.group(0), m.group(0)), text)
+
+
 def load_script(path):
     doc = json.load(open(path, encoding='utf-8'))
     return doc['lines'], doc.get('speakers', {})
@@ -151,19 +161,29 @@ def main():
         torch.set_num_threads(os.cpu_count() or 4)
         dev = a.device or ('cuda' if torch.cuda.is_available() else 'cpu')
         print('device:', dev)
-        parler = None
+        kn_engine = None
+
+        def get_kn():
+            """Indic Parler-TTS (best prosody, gated: needs HF_TOKEN and the licence accepted on huggingface.co);
+            otherwise Meta MMS-TTS Kannada (open, CC-BY-NC, flatter delivery)."""
+            nonlocal kn_engine
+            if kn_engine is None:
+                if a.engine in ('auto', 'parler') and (os.environ.get('HF_TOKEN') or a.engine == 'parler'):
+                    try:
+                        kn_engine = Parler(dev); print('Kannada: using ai4bharat/indic-parler-tts')
+                    except Exception as e:
+                        print('Indic Parler-TTS not available (%s); falling back to MMS-TTS Kannada' % str(e)[:120])
+                if kn_engine is None:
+                    kn_engine = MMS('facebook/mms-tts-kan', dev); print('Kannada: using facebook/mms-tts-kan')
+            return kn_engine
+
         for lang in a.langs:
             if lang == 'tcy' and a.engine in ('auto', 'mms'):
                 try:
-                    engines[lang] = MMS('facebook/mms-tts-tcy', dev)
-                    print('Tulu: using facebook/mms-tts-tcy')
-                    continue
+                    engines[lang] = MMS('facebook/mms-tts-tcy', dev); print('Tulu: using facebook/mms-tts-tcy'); continue
                 except Exception as e:
-                    print('Tulu MMS model not available (%s); falling back to the Kannada Parler voice' % str(e)[:100])
-            if parler is None:
-                parler = Parler(dev)
-            engines[lang] = parler
-            print(lang, ': using ai4bharat/indic-parler-tts')
+                    print('Tulu MMS model not available (%s); the Kannada voice will read the Tulu text' % str(e)[:100])
+            engines[lang] = get_kn()
 
     for lang in a.langs:
         done = set(manifest.get(lang, []))
@@ -173,7 +193,7 @@ def main():
             if a.skip_existing and os.path.exists(path):
                 done.add(id_)
                 continue
-            text = rec[lang]
+            text = spoken(rec[lang]) if lang in ('kn', 'tcy') else rec[lang]
             try:
                 wav, sr = engines[lang].say(text, rec['w'], speakers)
                 to_mp3(trim_and_normalise(wav, sr), sr, path)

@@ -45,6 +45,8 @@ jobs:
           key: hf-voices-v1
       - name: "Generate voices (sung lyrics are skipped, the in-game singer sings them)"
         working-directory: namma-karkala/tools
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: python make_voices.py --script ../voice/script.json --out ../voice --langs ${{ matrix.lang }} --skip-prefix S --shard ${{ matrix.shard }}/4 --skip-existing
       - uses: actions/upload-artifact@v4
         with:
