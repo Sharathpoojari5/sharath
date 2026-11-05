@@ -20,6 +20,8 @@ const $ = (id) => document.getElementById(id);
 const SAVE_KEY = 'namma-karkala-v1';
 const WANTED = ['', 'GOSSIP', 'FINE', 'JEEP CHASE', 'CHECKPOST', 'FRONT PAGE'];
 const TIME_SCALE = 0.2;
+const ISTMIN = () => { const d = new Date(); return (d.getUTCHours() * 60 + d.getUTCMinutes() + d.getUTCSeconds() / 60 + 330) % 1440; };      // Karkala (IST) minutes since midnight
+const RAIN_CODES = new Set([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99]);
 const Q_OUCH = ['Q01', 'Q02', 'Q03', 'Q04', 'Q05', 'Q06'];
 const Q_HIJACK = ['Q07', 'Q08', 'Q09'];
 const SPK = { RAJU: ['Raju', '#38bdf8'], AMMA: ['Amma · on the phone', '#f472b6'], AJJI: ['Ajji', '#fb923c'], ARCHAKARU: ['Archakaru', '#fbbf24'], PRAMOD: ['Pramod', '#4ade80'],
@@ -149,6 +151,8 @@ export class Game {
     $('resume').onclick = () => this.togglePause();
     $('music').onclick = () => { this.audio.setMusic(!this.audio.musicOn); $('music').textContent = this.audio.musicOn ? 'Music: on' : 'Music: off'; };
     $('voices').onclick = () => { Voice.enabled = !Voice.enabled; if (!Voice.enabled) Voice.stop(); $('voices').textContent = Voice.enabled ? 'Voices: on' : 'Voices: off'; };
+    try { this.live = localStorage.getItem('nk-live') !== '0'; } catch (e) { this.live = true; } $('timemode').textContent = this.live ? 'Time: Karkala live' : 'Time: game clock';
+    $('timemode').onclick = () => { this.live = !this.live; this.cheatWeather = !this.live ? this.cheatWeather : false; try { localStorage.setItem('nk-live', this.live ? '1' : '0'); } catch (e) { } $('timemode').textContent = this.live ? 'Time: Karkala live' : 'Time: game clock'; this.toast(this.live ? 'LIVE' : 'GAME CLOCK', this.live ? 'Time and weather follow Karkala now.' : 'A game day takes two real hours. Type SANJE for evening, IRULU for night.'); };
     const GN = ['Graphics: auto', 'Graphics: low', 'Graphics: lowest']; try { this.gfx = parseInt(localStorage.getItem('nk-gfx') || '0', 10) || 0; } catch (e) { this.gfx = 0; } if (new URLSearchParams(location.search).has('low')) this.gfx = 1; $('gfx').textContent = GN[this.gfx]; if (this.gfx) this.setGraphics(this.gfx);
     $('gfx').onclick = () => { this.setGraphics((this.gfx + 1) % 3); $('gfx').textContent = GN[this.gfx]; };
     let vox = true; try { vox = localStorage.getItem('nk-vocals') !== '0'; } catch (e) { } this.audio.setVocals(vox); $('vocals').textContent = vox ? 'Song vocals: on' : 'Song vocals: off';
@@ -168,8 +172,9 @@ export class Game {
   cheat(ch) {
     this.cbuf = ((this.cbuf || '') + ch).slice(-12);
     const C = {
-      barsa: ['Heavy rain (barsa!)', () => { this.rainOn = true; }], surya: ['Clear skies', () => { this.rainOn = false; }],
-      irulu: ['Night falls', () => { this.time = 22 * 60; }], belaku: ['Morning light', () => { this.time = 7 * 60; }],
+      barsa: ['Heavy rain (barsa!)', () => { this.cheatWeather = true; this.rainOn = true; this.rainMax = 1; }], surya: ['Clear skies', () => { this.cheatWeather = true; this.rainOn = false; }],
+      live: ['Back to real Karkala time and weather', () => { this.live = true; this.cheatWeather = false; $('timemode').textContent = 'Time: Karkala live'; }], sanje: ['Evening (shows start)', () => { this.live = false; this.time = 17.5 * 60; $('timemode').textContent = 'Time: game clock'; }],
+      irulu: ['Night falls', () => { this.live = false; this.time = 22 * 60; $('timemode').textContent = 'Time: game clock'; }], belaku: ['Morning light', () => { this.live = false; this.time = 7 * 60; $('timemode').textContent = 'Time: game clock'; }],
       paisa: ['+₹10,000 (not real, sadly)', () => { this.addMoney(10000, true); }], policeilla: ['Police forgot about you', () => { this.heat = 0; }],
       golibaje: ['Full health. Goli baje fixes everything.', () => { this.player.hp = 100; }], bahubali: ['Bahubali jump', () => { this.cheats.moon = !this.cheats.moon; }],
       busbeku: ['A bus appears', () => this.spawnNear('bus')], autobeku: ['Pom pom! An auto', () => this.spawnNear('auto')], bullet: ['A motorbike', () => this.spawnNear('bike')],
@@ -513,7 +518,7 @@ export class Game {
 
   /* ====================================================================== time, weather */
   updateSky(dt) {
-    if (!this.photo) this.time = (this.time + dt * TIME_SCALE) % 1440;      // game minutes per real second: a full day takes 2 real hours, a night about 35 minutes
+    if (!this.photo) { if (this.live && !this.cine.active && !this.endMode) this.time = ISTMIN(); else this.time = (this.time + dt * TIME_SCALE) % 1440; }      // game minutes per real second: a full day takes 2 real hours, a night about 35 minutes
     const t = this.time / 1440, el = Math.sin((t - 0.25) * Math.PI * 2), az = (t - 0.25) * Math.PI * 2;
     const day = clamp(el * 3 + 0.25, 0, 1), dusk = clamp(1 - Math.abs(el) * 4, 0, 1) * (el > -0.2 ? 1 : 0);
     this.dayAmt = day; const p = this.carOrPlayer();
@@ -524,7 +529,7 @@ export class Game {
     const bot = new THREE.Color('#2b3d66').lerp(new THREE.Color('#d9e8f3'), day).lerp(new THREE.Color('#ff9c5a'), dusk * 0.65).lerp(new THREE.Color('#8b939c'), rain * 0.8);
     this.skyMat.uniforms.top.value.copy(top); this.skyMat.uniforms.bot.value.copy(bot); this.skyMat.uniforms.sunDir.value.copy(sd); this.skyMat.uniforms.night.value = 1 - day;
     this.skyMat.uniforms.sunCol.value.set(day > 0.1 ? '#fff1c2' : '#000'); this.skyMat.uniforms.sunCol.value.multiplyScalar(1 - rain);
-    const U = this.skyMat.uniforms; U.uTime.value = this.now; U.cover.value = 0.38 + rain * 0.55;
+    const U = this.skyMat.uniforms; U.uTime.value = this.now; U.cover.value = (this.live && this.wx ? 0.15 + 0.6 * this.wx.cloud : 0.38) + rain * 0.55;
     U.cloudCol.value.set('#ffffff').lerp(new THREE.Color('#ffb48a'), dusk * 0.7).multiplyScalar(0.12 + 0.88 * day).lerp(new THREE.Color('#6b7280'), rain * 0.7 * day);
     // sky reflections for glass, paint and water: re-baked every few game minutes
     this.envT = (this.envT || 0) - dt;
@@ -536,8 +541,10 @@ export class Game {
     this.renderer.toneMappingExposure = 0.95 + 0.4 * (1 - day);
     this.world.setNight(1 - day); this.world.setWet(rain);
     // weather: Karkala rains often
-    if (!this.cheatWeather) { this.wxT = (this.wxT || 0) - dt; if (this.wxT < 0) { this.wxT = rnd(60, 180); this.rainOn = this.rainOn ? Math.random() < 0.55 : Math.random() < 0.3; if (this.rainOn) this.toast('MALE BANTHU', 'It is raining again. Of course it is. This is Karkala.'); } }
-    this.raining = clamp(this.raining + (this.rainOn ? dt / 6 : -dt / 8), 0, 1);
+    if (this.live && !this.cheatWeather && this.wx) { const w = this.wx; this.rainOn = w.rain > 0.05 || RAIN_CODES.has(w.code); this.rainMax = this.rainOn ? clamp(0.5 + w.rain / 4, 0.5, 1) : 1; }
+    this.wxPoll = (this.wxPoll || 0) - dt; if (this.wxPoll <= 0) { this.wxPoll = 600; this.fetchWeather(); }
+    if (!(this.live && this.wx) && !this.cheatWeather) { this.wxT = (this.wxT || 0) - dt; if (this.wxT < 0) { this.wxT = rnd(60, 180); this.rainOn = this.rainOn ? Math.random() < 0.55 : Math.random() < 0.3; if (this.rainOn) this.toast('MALE BANTHU', 'It is raining again. Of course it is. This is Karkala.'); } }
+    this.raining = clamp(this.raining + (this.rainOn ? dt / 6 : -dt / 8), 0, this.rainMax ?? 1);
     this.rain.visible = this.raining > 0.05; this.rain.material.opacity = 0.6 * this.raining;
     if (this.rain.visible) {
       const a = this.rain.geometry.attributes.position.array, cp = this.cam.position, fall = 26 * dt;
@@ -697,6 +704,15 @@ export class Game {
   /** Debug/testing: advance the simulation without rendering. */
   step(n = 1, dt = 1 / 30) { this.dtLast = dt; for (let i = 0; i < n; i++) { this.now += dt; this.update(dt); } this.updateCamera(dt); }
   /** Lower resolution, then shadow quality, on slow laptops (checked every 4 seconds). */
+  /** Real sky over Karkala: current rain and cloud from Open-Meteo (free, no key). Falls back to the game's own weather if it can't be reached. */
+  async fetchWeather() {
+    try {
+      const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=13.2135&longitude=74.996&current=precipitation,rain,showers,cloud_cover,weather_code&timezone=Asia%2FKolkata', { cache: 'no-store' });
+      const c = (await r.json()).current; if (!c) throw 0;
+      const first = !this.wx; this.wx = { rain: c.precipitation || 0, cloud: (c.cloud_cover || 0) / 100, code: c.weather_code };
+      if (first && this.live) { const hh = Math.floor(this.time / 60), mm = Math.floor(this.time % 60); this.toast('KARKALA, LIVE', `${((hh + 11) % 12) + 1}:${String(mm).padStart(2, '0')} ${hh < 12 ? 'AM' : 'PM'} IST · ${this.wx.rain > 0.05 ? 'raining right now' : 'dry'} · ${Math.round(this.wx.cloud * 100)}% cloud`); }
+    } catch (e) { /* offline: keep the game's own weather */ }
+  }
   /** Hide city tiles that are further than the fog distance: they are fully fogged anyway and cost draw calls. */
   cullFar() {
     if (!this.tiles) { this.tiles = this.scene.children.filter(o => o.isInstancedMesh); for (const t of this.tiles) if (!t.boundingSphere) t.computeBoundingSphere(); }
@@ -825,7 +841,7 @@ export class Game {
     $('money').textContent = '₹' + Math.round(this.shownMoney).toLocaleString('en-IN');
     const hh = Math.floor(this.time / 60), mm = Math.floor(this.time % 60);
     $('clock').textContent = `${((hh + 11) % 12) + 1}:${String(mm).padStart(2, '0')} ${hh < 12 ? 'AM' : 'PM'}`;
-    $('wx').textContent = this.raining > 0.4 ? '🌧 Rain' : (hh >= 19 || hh < 6) ? '🌙 Clear' : '☀ Clear';
+    $('wx').textContent = (this.raining > 0.4 ? '🌧 Rain' : (hh >= 19 || hh < 6) ? '🌙 Clear' : '☀ Clear') + (this.live ? (this.wx ? ' · live' : ' · live time') : '');
     const lvl = this.level; $('stars').innerHTML = [1, 2, 3, 4, 5].map(i => `<i class="${i <= lvl ? 'on' : ''}">★</i>`).join(''); $('wlabel').textContent = WANTED[lvl] || '';
     $('wanted').classList.toggle('hot', lvl >= 2); $('hpbar').style.width = clamp(this.player.hp, 0, 100) + '%';
     if (this.car) { $('speed').style.display = 'block'; $('kmh').textContent = Math.round(Math.abs(this.car.v) * 3.6); $('vname').textContent = this.car.def.label + (this.car.mesh.userData.busName ? ` · ${this.car.mesh.userData.busName}` : ''); }

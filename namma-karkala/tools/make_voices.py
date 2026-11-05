@@ -24,6 +24,7 @@ try:
 except ImportError:
     sys.exit('pip install soundfile')
 
+KN_SPEAKER = {'AMMA': 'Anu', 'AJJI': 'Anu', 'SHWETHA': 'Anu', 'AUNTY': 'Anu'}      # everyone else is Suresh
 BASE_DESC = 'The recording is very clear, close up, with no background noise or reverb.'
 PITCH = {  # semitone shift applied to single-voice engines (MMS) so characters differ
     'RAJU': 0, 'AMMA': 4, 'AJJI': 6, 'ARCHAKARU': -3, 'PRAMOD': 1, 'OWNER': -2, 'CANTEEN': -4,
@@ -51,7 +52,10 @@ class Parler:
 
     def say(self, text, who, speakers):
         t = self.torch
-        desc = f"A {speakers.get(who, 'clear adult voice')} speaks in Kannada. {BASE_DESC}"
+        name = KN_SPEAKER.get(who, 'Suresh')              # Indic Parler-TTS has named Kannada speakers: Suresh (male), Anu (female)
+        look = speakers.get(who, 'clear adult voice')
+        desc = (f"{name}'s voice is expressive and natural, a {look}, speaking Kannada with a clear local accent, "
+                f"natural pauses at commas and full stops, and lively intonation. The recording is very clear and close, with no background noise or reverb.")
         seed = sum(ord(c) for c in who)             # same speaker -> same seed -> a consistent voice across lines
         t.manual_seed(seed)
         d = self.dtok(desc, return_tensors='pt').to(self.device)
@@ -124,10 +128,18 @@ def main():
     ap.add_argument('--skip-existing', action='store_true')
     ap.add_argument('--device', default=None)
     ap.add_argument('--selftest', action='store_true')
+    ap.add_argument('--skip-prefix', nargs='*', default=[], help='skip line ids that start with these letters (e.g. S = sung lyrics)')
+    ap.add_argument('--shard', default=None, help='i/n: only lines i, i+n, i+2n ... (run shards in parallel)')
+    ap.add_argument('--rebuild-manifest', action='store_true', help='only rebuild voice/manifest.json from the mp3 files on disk')
     a = ap.parse_args()
 
     lines, speakers = load_script(a.script)
-    ids = a.only or list(lines)
+    ids = a.only or [k for k in lines if not any(k.startswith(p) for p in a.skip_prefix)]
+    if a.shard:
+        i, n = map(int, a.shard.split('/')); ids = ids[i::n]
+    if a.rebuild_manifest:
+        m = {lang: sorted(f[:-4] for f in os.listdir(os.path.join(a.out, lang)) if f.endswith('.mp3')) for lang in ('kn', 'tcy', 'en') if os.path.isdir(os.path.join(a.out, lang))}
+        json.dump(m, open(os.path.join(a.out, 'manifest.json'), 'w'), indent=1); print('manifest:', {k: len(v) for k, v in m.items()}); return
     manifest_path = os.path.join(a.out, 'manifest.json')
     manifest = json.load(open(manifest_path)) if os.path.exists(manifest_path) else {}
 
@@ -136,6 +148,7 @@ def main():
         engines = {l: SineEngine() for l in a.langs}
     else:
         import torch
+        torch.set_num_threads(os.cpu_count() or 4)
         dev = a.device or ('cuda' if torch.cuda.is_available() else 'cpu')
         print('device:', dev)
         parler = None
