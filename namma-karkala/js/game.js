@@ -4,6 +4,8 @@ import { World, AREAS } from './world.js';
 import { Vehicle, Ped, Cow, Player, wrap } from './actors.js';
 import * as M from './models.js';
 import { Audio } from './audio.js';
+import { Cinematic } from './cine.js';
+import { Voice } from './voice.js';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -14,6 +16,9 @@ const SAVE_KEY = 'namma-karkala-v1';
 const WANTED = ['', 'GOSSIP', 'FINE', 'JEEP CHASE', 'CHECKPOST', 'FRONT PAGE'];
 const OUCH = ['Ey! Kannu kaanalva?', 'Yen maaraya!', 'Swalpa nodi hogi!', 'Ayyo, nanna kaalu!', 'Daane maaraya?!', 'Police ge call maadtini!'];
 const HIJACK = ['Nanna gaadi! Ille nillu!', 'Ey! Kallaa! Kallaa!', 'Amma! Gaadi hoytu!'];
+const SPK = { RAJU: ['Raju', '#38bdf8'], AMMA: ['Amma · on the phone', '#f472b6'], AJJI: ['Ajji', '#fb923c'], ARCHAKARU: ['Archakaru', '#fbbf24'], PRAMOD: ['Pramod', '#4ade80'],
+  OWNER: ['Hotel owner', '#f87171'], CANTEEN: ['Canteen Anna', '#a78bfa'], SHWETHA: ['Shwetha', '#f0abfc'], THIEF: ['Thief', '#cbd5e1'], NARRATOR: ['', '#fde047'] };
+const S = (w, t) => ({ w, t });
 const COWHIT = ['You hit a cow. In Karkala. Everyone saw.', 'The cow is fine. Your reputation is not.'];
 
 export class Game {
@@ -45,8 +50,10 @@ export class Game {
     this.camYaw = st ? Math.atan2(-st.n[0], -st.n[1]) : 0; this.camPitch = 0.28; this.camDist = 5.5; this.lastMouse = -99;
     this.marker = M.markerMesh('#facc15'); this.marker.visible = false; S.add(this.marker);
     this.startMarker = M.markerMesh('#f97316'); this.startMarker.visible = false; S.add(this.startMarker);
-    this.setupParked(); this.setupMissions();
+    this.cine = new Cinematic(this); this.npcs = {}; this.dlg = null; this.inputLock = false; Voice.init();
+    this.setupParked(); this.setupMissions(); this.setupNpcs();
     this.bindInput(); this.hudInit();
+    this.clock = new THREE.Clock(); const loop = () => { requestAnimationFrame(loop); this.frame(); }; loop();
     addEventListener('resize', () => { R.setSize(innerWidth, innerHeight); this.cam.aspect = innerWidth / innerHeight; this.cam.updateProjectionMatrix(); });
   }
 
@@ -103,8 +110,10 @@ export class Game {
   bindInput() {
     const cv = $('view');
     addEventListener('keydown', (e) => {
-      if (!this.started) return;
+      if (!this.started && !this.cine.active) return;
       const k = e.key.toLowerCase(); this.audio.resume();
+      if (this.cine.active) { if (k === ' ' || k === 'escape' || k === 'enter') { e.preventDefault(); this.cine.stop(false); } return; }
+      if (this.dlg) { if (k === ' ' || k === 'enter' || k === 'f' || k === 'e') { e.preventDefault(); this.advanceTalk(); } else if (k === 'escape') this.skipTalk(); return; }
       if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault();
       if (e.repeat) return;
       this.keys.add(k);
@@ -121,6 +130,7 @@ export class Game {
     });
     addEventListener('keyup', (e) => this.keys.delete(e.key.toLowerCase()));
     addEventListener('blur', () => this.keys.clear());
+    addEventListener('mousedown', (e) => { if (this.dlg && !e.target.closest('button')) this.advanceTalk(); });
     cv.addEventListener('click', () => { if (this.started && !this.paused && document.pointerLockElement !== cv) cv.requestPointerLock?.(); });
     addEventListener('mousemove', (e) => {
       if (document.pointerLockElement !== cv && !(e.buttons & 1)) return;
@@ -128,11 +138,15 @@ export class Game {
     });
     addEventListener('wheel', (e) => { if (this.started) this.camDist = clamp(this.camDist * (e.deltaY > 0 ? 1.1 : 0.9), 3, 30); }, { passive: true });
     $('resume').onclick = () => this.togglePause();
+    $('music').onclick = () => { this.audio.setMusic(!this.audio.musicOn); $('music').textContent = this.audio.musicOn ? 'Music: on' : 'Music: off'; };
+    $('voices').onclick = () => { Voice.enabled = !Voice.enabled; if (!Voice.enabled) Voice.stop(); $('voices').textContent = Voice.enabled ? 'Voices: on' : 'Voices: off'; };
+    $('replay').onclick = () => { this.togglePause(); this.playTrailer(); };
     $('mute').onclick = () => { this.audio.setMuted(this.audio.on); $('mute').textContent = this.audio.on ? 'Sound: on' : 'Sound: off'; };
     $('reset').onclick = () => { if (confirm('Delete your Karkala progress and start again?')) { localStorage.removeItem(SAVE_KEY); location.reload(); } };
     $('photoSave').onclick = () => this.savePhoto();
   }
   input() {
+    if (this.inputLock || this.dlg) return { x: 0, y: 0, run: false, jump: false, hand: true, boost: false };
     const k = this.keys, x = (k.has('d') || k.has('arrowright') ? 1 : 0) - (k.has('a') || k.has('arrowleft') ? 1 : 0), y = (k.has('w') || k.has('arrowup') ? 1 : 0) - (k.has('s') || k.has('arrowdown') ? 1 : 0);
     return { x, y, run: k.has('shift'), jump: k.has(' '), hand: k.has(' '), boost: k.has('shift') };
   }
@@ -176,7 +190,7 @@ export class Game {
     if (best.driver === 'ai' || best.driver === 'police' || best.driver === 'thief') {
       if (best.driver === 'thief') return;
       const ped = new Ped(this, best.x - Math.cos(best.h) * 2, best.z + Math.sin(best.h) * 2); ped.state = 'flee'; this.peds.push(ped);
-      this.say(pick(HIJACK), 2.5); this.offence(best.driver === 'police' ? 2.2 : 1.1);
+      this.say(pick(HIJACK), 2.5, 'AJJI'); this.offence(best.driver === 'police' ? 2.2 : 1.1);
       if (best.police) this.police = this.police.filter(v => v !== best);
     }
     best.driver = 'player'; best.parked = false; best.removeDriverModel(); this.car = best; this.camDist = best.def.cam;
@@ -234,7 +248,7 @@ export class Game {
     for (const q of this.peds) if (q.state === 'walk' && Math.hypot(q.x - src.x, q.z - src.z) < 14) { q.dodge = 1.2; q.h += Math.PI / 2 * (Math.random() < 0.5 ? 1 : -1); }
     if (src === this.car || src === this.player) for (const c of this.cows) if (Math.hypot(c.x - src.x, c.z - src.z) < 16 && Math.random() < 0.15) this.say('The cow heard you. The cow does not care.', 2.2);
   }
-  shout(ped) { if (Math.hypot(ped.x - this.player.x, ped.z - this.player.z) < 40) this.say(pick(OUCH), 2.2); }
+  shout(ped) { if (Math.hypot(ped.x - this.player.x, ped.z - this.player.z) < 40) this.say(pick(OUCH), 2.2, 'OWNER'); }
   offence(n) { this.heat = Math.min(5.99, this.heat + n); this.lastOffence = this.now; }
   onCrash(me, other) {
     if (other.driver === 'police') this.offence(1.2); else if (other.driver === 'ai' && Math.abs(me.v) > 9) this.offence(0.35);
@@ -286,41 +300,68 @@ export class Game {
     const w = this.world, R = (n, o) => () => this.roadAt(n, o);
     const temple = () => { const t = w.temple; return t ? this.roadAt([t[0] + Math.sin(t[2]) * 16, t[1] + Math.cos(t[2]) * 16]) : this.roadAt('Sri Venkataramana Temple'); };
     const bus = () => w.busStand ? [w.busStand.x - w.busStand.n[0] * 7.5, w.busStand.z - w.busStand.n[1] * 7.5] : [150, 38];
+    const npcPos = (id) => () => { const n = this.npcs[id]; return n ? [n.x, n.z] : [150, 38]; };
     this.MISSIONS = [
       { id: 'm1', title: 'Welcome Home', reward: 300, start: () => bus(), auto: true, steps: [
-        { t: 'say', lines: ['RAJU: Four years in Bengaluru. Three of them stuck at Silk Board. Enough.', 'AMMA (phone): Raju! Ajja\'s scooter is parked near Gandhi Maidan. Take it to the temple for pooja first!'] },
+        { t: 'say', lines: [S('NARRATOR', 'Karkala bus stand. Four thirty in the evening.'),
+          S('RAJU', 'Four years in Bengaluru. Three of them stuck at Silk Board. My laptop is on twelve percent and my soul is on two.'),
+          S('RAJU', 'Karkala. The hill is still there. The cows are still there. Nobody has asked me for my sprint update.'),
+          S('AMMA', 'Raju! Did you reach? Did you eat? Ajja\'s scooter is parked near Gandhi Maidan. He wanted you to have it.'),
+          S('RAJU', 'Amma, it is twenty-five years old.'),
+          S('AMMA', 'And still better than your Bengaluru auto driver. Take it to the temple first. Pooja, then pizza.')] },
         { t: 'goto', at: () => this.ajja ? [this.ajja.x, this.ajja.z] : R('Gandhi Maidan')(), r: 4, need: 'foot', text: 'Walk to Ajja\'s old red scooter near <b>Gandhi Maidan</b>' },
         { t: 'enter', tag: 'ajja', text: 'Press <b>F</b> to get on the scooter' },
+        { t: 'say', lines: [S('RAJU', 'It still smells of Ajja\'s attar and petrol. Okay. One kick, and we go.')] },
         { t: 'stop', at: temple, r: 9, hold: 2.5, text: 'Ride to <b>Sri Venkataramana Temple</b> and stop at the gate' },
-        { t: 'say', lines: ['ARCHAKARU: Lemon under the wheel... kumkuma on the headlight... done. Drive slowly, magu.', 'RAJU: A blessed 1998 scooter. Now we are unstoppable.'] }] },
-      { id: 'm2', title: 'Goli Baje Express', reward: 500, start: R('Hotel Taj Mahal'), steps: [
-        { t: 'say', lines: ['HOTEL OWNER: College canteen order! Forty goli baje, hot hot. If they get cold, don\'t come back.'] },
+        { t: 'say', lines: [S('ARCHAKARU', 'Raju? Gopalayya\'s grandson? Come, come. Lemon under the front wheel, kumkuma on the headlight. Slowly, magu.'),
+          S('ARCHAKARU', 'Your Ajja rode this scooter to this gate every Thursday for thirty years. Not once did he go above twenty.'),
+          S('RAJU', 'A blessed 1998 scooter, a full tank, and a town that has not changed. We are unstoppable.')] }] },
+      { id: 'm2', title: 'Goli Baje Express', reward: 500, start: npcPos('owner'), steps: [
+        { t: 'say', lines: [S('OWNER', 'You! Gopalayya\'s grandson! You have a scooter? Forty goli baje for the college canteen. Hot hot. Wrap them well.'),
+          S('RAJU', 'Anna, I am a software engineer.'),
+          S('OWNER', 'Today you are a delivery boy. Two minutes is hot. Three minutes is a cold bonda. Go!')] },
         { t: 'enter', two: true, text: 'Get on a <b>two-wheeler</b> (your scooter works)' },
         { t: 'timer', sec: 120 },
         { t: 'stop', at: R('Sri Bhuvanendra College'), r: 10, hold: 1, text: 'Deliver the hot goli baje to <b>Bhuvanendra College</b>' },
-        { t: 'say', lines: ['CANTEEN ANNA: Still hot! Good boy. Students will survive one more lecture.'] }] },
-      { id: 'm3', title: 'Conductor Saab', reward: 800, start: () => bus(), steps: [
-        { t: 'say', lines: ['PRAMOD: Machaa, I have fever. Take my bus, SRI DURGA, on the town round. Stop at every stop. Right?', 'PRAMOD: And honk. A bus that does not honk is not a bus.'] },
+        { t: 'say', lines: [S('CANTEEN', 'Still hot! Who are you? Hotel Raj Mahal sent a new boy?'),
+          S('RAJU', 'Just a boy with a scooter. And a degree.'),
+          S('CANTEEN', 'Keep your degree. Keep these two goli baje as well. Students will survive one more lecture.')] }] },
+      { id: 'm3', title: 'Conductor Saab', reward: 800, start: npcPos('pramod'), steps: [
+        { t: 'say', lines: [S('PRAMOD', 'Machaa! You are back! Listen, I have fever and the bus has a schedule. Take SRI DURGA on the town round. Stop at every stop. Right?'),
+          S('RAJU', 'I have never driven a bus.'),
+          S('PRAMOD', 'Nobody drives a bus. You just hold the horn and trust the Lord. And honk. A bus that does not honk is not a bus.')] },
         { t: 'enter', tag: 'pramod', text: 'Get into the red bus <b>SRI DURGA</b> at the bus stand' },
+        { t: 'say', lines: [S('RAJU', 'Gears like a washing machine. Okay, Karkala, please stay out of my way.')] },
         { t: 'stop', at: R('Gandhi Maidan'), r: 12, hold: 2, text: 'Stop 1 of 3: <b>Gandhi Maidan</b>', pax: true },
         { t: 'stop', at: temple, r: 12, hold: 2, text: 'Stop 2 of 3: <b>Venkataramana Temple</b>', pax: true },
         { t: 'stop', at: R('Karkala Government Hospital'), r: 12, hold: 2, text: 'Stop 3 of 3: <b>Government Hospital</b>', pax: true },
         { t: 'stop', at: () => bus(), r: 14, hold: 2, text: 'Back to the <b>bus stand</b>' },
-        { t: 'say', lines: ['PRAMOD: Full bus, no scratches? You should quit software, machaa.'] }] },
-      { id: 'm4', title: 'The Mallige Thief', reward: 700, start: () => (w.marketRoad ? [w.marketRoad.pts[Math.floor(w.marketRoad.pts.length / 2)][0], w.marketRoad.pts[Math.floor(w.marketRoad.pts.length / 2)][1]] : R('Gopal Towers')()), steps: [
-        { t: 'say', lines: ['AJJI: Ayyo! That boy in the red cap took my mallige! Twenty moLa! Catch him, Raju!'] },
+        { t: 'say', lines: [S('PRAMOD', 'Full bus, no scratches? You are a natural, machaa. Quit software. Join the transport business.'),
+          S('RAJU', 'Pramod, I think I only lost two mirrors and my dignity.')] }] },
+      { id: 'm4', title: 'The Mallige Thief', reward: 700, start: npcPos('ajji'), steps: [
+        { t: 'say', lines: [S('AJJI', 'Ayyo! That boy in the red cap took my whole mallige basket! Twenty moLa, fresh from Udupi! Catch him, Raju!'),
+          S('RAJU', 'Ajji, how do you know my name?'),
+          S('AJJI', 'I sold your mother mallige for forty years. Go! He is on the black motorbike!')] },
         { t: 'chase', sec: 110, text: 'Catch the <b>thief on the black bike</b>. Stay close to him!' },
-        { t: 'say', lines: ['THIEF: Sorry sorry! It was for my girlfriend!', 'AJJI: Buy her your own mallige. Here, ₹700 for the petrol.'] }] },
-      { id: 'm5', title: 'Kere Evening', reward: 400, start: R('Rama Samudra'), steps: [
-        { t: 'say', lines: ['SHWETHA: Raju anna! My Insta needs a photo of the basadi in Aanekere. Golden hour. Please?'] },
+        { t: 'say', lines: [S('THIEF', 'Sorry sorry! It was for my girlfriend. She said no flowers, no coffee.'),
+          S('RAJU', 'Then buy her flowers. With money.'),
+          S('AJJI', 'Raju, here is ₹700 for the petrol. And tell your amma I said the mallige is on the house.')] }] },
+      { id: 'm5', title: 'Kere Evening', reward: 400, start: npcPos('shwetha'), steps: [
+        { t: 'say', lines: [S('SHWETHA', 'Raju anna! Remember me? Pai uncle\'s daughter. My Insta needs a photo of the basadi in Aanekere. Golden hour. Please?'),
+          S('RAJU', 'You need a photographer?'),
+          S('SHWETHA', 'No. I need someone with a phone, patience, and no opinions about filters.')] },
         { t: 'goto', at: () => { const k = w.kereBasadi || [112, 360]; const rd = w.nearestRoad(k[0], k[1], 200); return rd ? [rd.x, rd.z] : k; }, r: 9, text: 'Go to <b>Aanekere</b>, by the lake' },
+        { t: 'say', lines: [S('RAJU', 'A temple floating in the middle of a lake, and the sun going down behind it. Bengaluru has a lake too. It is on fire.')] },
         { t: 'photo', text: 'Press <b>O</b> for photo mode, frame the basadi in the lake, then press <b>Enter</b>' },
-        { t: 'say', lines: ['SHWETHA: 400 likes in ten minutes! You are hired.'] }] },
+        { t: 'say', lines: [S('SHWETHA', 'Four hundred likes in ten minutes! You are hired. Next: Bahubali Betta. Everyone goes there, and nobody goes alone.'),
+          S('RAJU', 'I think I should go alone.')] }] },
       { id: 'm6', title: 'Bahubali Calling', reward: 1000, start: () => w.hillFoot || R('Bahubali Hill')(), steps: [
-        { t: 'say', lines: ['RAJU: Ajja used to bring me here. Every step, he said, is one less worry.'] },
+        { t: 'say', lines: [S('NARRATOR', 'Bahubali Betta. Forty-two feet of granite, standing in silence for five hundred years.'),
+          S('RAJU', 'Ajja brought me here when I was six. I counted the steps. I lost count at two hundred.'),
+          S('RAJU', 'Every step, he said, is one less worry.')] },
         { t: 'goto', at: () => w.hillTop || [w.hill.x, w.hill.z], r: 7, need: 'foot', text: 'Climb the steps up <b>Bahubali Betta</b> on foot' },
         { t: 'photo', text: 'Press <b>O</b> and take a photo with Bahubali, then press <b>Enter</b>' },
-        { t: 'say', lines: ['RAJU: Silk Board never had a view like this.', 'RAJU: I am staying. Work from home. Work from Karkala.'] }] },
+        { t: 'ending' }] },
     ];
     this.mission = null;
   }
@@ -333,7 +374,8 @@ export class Game {
     const ms = this.mission; ms.i++; ms.hold = 0;
     const s = ms.def.steps[ms.i];
     if (!s) return this.passMission();
-    if (s.t === 'say') { ms.say = s.lines.slice(); ms.sayT = 0; }
+    if (s.t === 'say') { ms.talking = true; this.talk(s.lines).then(() => { ms.talking = false; if (this.mission === ms) this.nextStep(); }); }
+    if (s.t === 'ending') { ms.talking = true; this.endingScene().then(() => { ms.talking = false; if (this.mission === ms) this.nextStep(); }); }
     if (s.t === 'timer') { ms.timer = s.sec; return this.nextStep(); }
     if (s.t === 'chase') this.spawnThief(s);
     this.objective(s.text || '');
@@ -369,7 +411,7 @@ export class Game {
     this.startMarker.visible = false;
     if (ms.timer > 0) { ms.timer -= dt; $('timer').style.display = 'block'; $('timer').textContent = fmtT(ms.timer); if (ms.timer <= 0) { $('timer').style.display = 'none'; return this.failMission(ms.def.steps[ms.i].t === 'chase' ? 'He got away with the mallige.' : 'Too late. The goli baje went cold.'); } }
     const s = ms.def.steps[ms.i]; if (!s) return;
-    if (s.t === 'say') { this.marker.visible = false; ms.sayT -= dt; if (ms.sayT <= 0) { if (!ms.say.length) return this.nextStep(); this.say(ms.say.shift(), 3.6); ms.sayT = 3.8; } return; }
+    if (s.t === 'say' || s.t === 'ending') { this.marker.visible = false; return; }
     if (s.t === 'enter') {
       const ok = this.car && (s.tag ? this.car.tag === s.tag : s.two ? this.car.def.two : true);
       const tgt = s.tag ? this.vehicles.find(v => v.tag === s.tag) : null;
@@ -440,7 +482,7 @@ export class Game {
     if (!this.photo) this.time = (this.time + dt * (60 / 60)) % 1440;      // 1 real second = 1 game minute
     const t = this.time / 1440, el = Math.sin((t - 0.25) * Math.PI * 2), az = (t - 0.25) * Math.PI * 2;
     const day = clamp(el * 3 + 0.25, 0, 1), dusk = clamp(1 - Math.abs(el) * 4, 0, 1) * (el > -0.2 ? 1 : 0);
-    const p = this.carOrPlayer();
+    this.dayAmt = day; const p = this.carOrPlayer();
     const sd = new THREE.Vector3(Math.cos(az) * 0.8, Math.max(0.08, el), Math.sin(az) * 0.6).normalize();
     this.sun.position.set(p.x + sd.x * 150, sd.y * 150, p.z + sd.z * 150); this.sun.target.position.set(p.x, 0, p.z);
     const rain = this.raining;
@@ -482,20 +524,135 @@ export class Game {
     if (this.envRT) this.envRT.dispose(); this.envRT = rt;
     for (const [m, k] of [[M.MAT.shiny, 0.9], [M.GLASS, 1.2], [this.world.waterMat, 0.35]]) { m.envMap = rt.texture; m.envMapIntensity = k; m.needsUpdate = !m.userData.envSet; m.userData.envSet = true; }
   }
+  /* ====================================================================== story NPCs */
+  setupNpcs() {
+    const w = this.world, side = (pt, off = 3.2) => { const rd = w.nearestRoad(pt[0], pt[1], 200); return rd ? [rd.x - rd.dirz * (rd.w / 2 + off), rd.z + rd.dirx * (rd.w / 2 + off)] : pt; };
+    const place = (id, name, pt, o, mission) => {
+      let [x, z] = side(pt, o.off || 2.6); if (w.blocked(x, z, 0.6)) { x = pt[0]; z = pt[1]; }
+      const mesh = M.person(o); this.scene.add(mesh);
+      const tag = this.makeTag(name); tag.position.y = 2.35; mesh.add(tag);
+      const bang = this.makeTag('!', '#facc15', 64); bang.scale.set(0.9, 0.9, 1); bang.position.y = 3.1; mesh.add(bang);
+      const n = { id, name, mesh, x, z, h: 0, y: w.groundH(x, z), tag, bang, mission }; w.addObs({ x, z, r: 0.55 }); mesh.position.set(x, n.y, z); this.npcs[id] = n;
+    };
+    const P = w.pois, t = w.temple;
+    if (t) { const lx = 4, lz = 19.5, c = Math.cos(t[2]), sn = Math.sin(t[2]); const x = t[0] + lx * c + lz * sn, z = t[1] - lx * sn + lz * c; place('archakaru', 'Archakaru', [x, z], { kind: 'lungi', shirt: '#f8fafc', lungi: '#f8fafc', skin: '#a8703f', off: 0.5 }, null); }
+    place('owner', 'Hotel owner', P['Hotel Taj Mahal'] || [90, -82], { kind: 'lungi', shirt: '#f8fafc', lungi: '#e5e7eb', skin: '#b9814f', off: 3 }, 'm2');
+    place('canteen', 'Canteen Anna', this.roadAt('Sri Bhuvanendra College'), { kind: 'shirt', shirt: '#f59e0b', pants: '#1f2937', skin: '#7b4b2c', off: 3 }, null);
+    const pv = this.vehicles.find(v => v.tag === 'pramod'); place('pramod', 'Pramod', pv ? [pv.x + 6, pv.z] : [150, 38], { kind: 'shirt', shirt: '#1d4ed8', pants: '#111827', cap: '#facc15', skin: '#a8703f', off: 1.5 }, 'm3');
+    const mr = w.marketRoad; place('ajji', 'Ajji', mr ? mr.pts[Math.floor(mr.pts.length / 2)] : [150, 40], { kind: 'saree', saree: '#db2777', skin: '#8d5a3b', off: 3 }, 'm4');
+    place('shwetha', 'Shwetha', this.roadAt('Rama Samudra'), { kind: 'saree', saree: '#7c3aed', skin: '#b9814f', off: 3 }, 'm5');
+  }
+  makeTag(text, col = '#ffffff', size = 256) {
+    const c = document.createElement('canvas'); c.width = size; c.height = size === 256 ? 64 : 64; const x = c.getContext('2d');
+    if (size === 256) { x.fillStyle = 'rgba(0,0,0,.62)'; x.beginPath(); x.roundRect(4, 8, 248, 48, 14); x.fill(); }
+    x.fillStyle = col; x.textAlign = 'center'; x.textBaseline = 'middle'; x.font = size === 256 ? '800 28px system-ui,sans-serif' : '900 56px system-ui,sans-serif'; x.fillText(text, c.width / 2, 34);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false })); sp.scale.set(size === 256 ? 2.4 : 0.9, 0.6, 1); return sp;
+  }
+  updateNpcs(dt) {
+    const p = this.carOrPlayer(), m = this.nextMission();
+    for (const n of Object.values(this.npcs)) {
+      const d = Math.hypot(n.x - p.x, n.z - p.z), want = Math.atan2(p.x - n.x, p.z - n.z);
+      if (d < 14 || this.dlg) n.h += wrap(want - n.h) * Math.min(1, dt * 4);
+      n.mesh.rotation.y = n.h; n.tag.visible = d < 28 && !this.cine.active; n.bang.visible = !this.cine.active && !this.mission && !!m && m.id === n.mission && d < 120;
+      if (n.bang.visible) n.bang.position.y = 3.1 + Math.sin(this.now * 4) * 0.12;
+      n.mesh.visible = d < 260;
+    }
+  }
+
+  /* ====================================================================== dialogue scenes */
+  /** Show a conversation: letterbox, camera on the speaker, typewriter text, voice-over (or blips). Resolves when finished. */
+  talk(lines) {
+    return new Promise((res) => {
+      this.dlg = { lines, i: -1, res, camP: null }; document.body.classList.add('talk'); this.audio.init(); this.audio.resume(); this.keys.clear();
+      this.nextLine();
+    });
+  }
+  speaker(w) {
+    const n = { ARCHAKARU: 'archakaru', PRAMOD: 'pramod', OWNER: 'owner', CANTEEN: 'canteen', AJJI: 'ajji', SHWETHA: 'shwetha' }[w];
+    if (n && this.npcs[n]) return this.npcs[n];
+    if (w === 'THIEF' && this.thief) return this.thief;
+    return this.car || this.player;
+  }
+  nextLine() {
+    const d = this.dlg; d.i++; Voice.stop();
+    if (d.i >= d.lines.length) return this.endTalk();
+    const L = d.lines[d.i], [name, col] = SPK[L.w] || ['', '#fff']; d.L = L; d.shown = 0; d.timer = 0; d.voiceDone = false; d.voiceOk = false; d.full = false; d.sp = this.speaker(L.w);
+    if (L.w === 'AMMA' && (d.i === 0 || d.lines[d.i - 1].w !== 'AMMA')) this.audio.ring();
+    if (d.sp && d.sp.mesh && d.sp.id) { d.sp.h = Math.atan2(this.player.x - d.sp.x, this.player.z - d.sp.z); }
+    $('dwho').textContent = name; $('dwho').style.color = col; $('dchip').style.background = col; $('dchip').textContent = (name || '·')[0]; $('dtxt').textContent = '';
+    $('dlg').classList.toggle('narr', L.w === 'NARRATOR'); $('dlg').style.display = 'block'; $('dlg').classList.remove('in'); void $('dlg').offsetWidth; $('dlg').classList.add('in');
+    Voice.speak(L.t, L.w, (ok) => { d.voiceDone = true; d.voiceOk = ok; });
+    d.mode = (d.i % 2) ? 1 : -1;
+  }
+  updateDialogue(dt) {
+    const d = this.dlg; if (!d) return; d.timer += dt;
+    const L = d.L, n = L.t.length;
+    if (!d.full) {
+      const target = Math.min(n, Math.floor(d.timer * 42)); if (target > d.shown) { for (let k = d.shown; k < target; k += 3) this.audio.blip(L.w, L.t[k] || 'a'); d.shown = target; $('dtxt').textContent = L.t.slice(0, d.shown); }
+      if (d.shown >= n) { d.full = true; d.doneAt = d.timer; }
+    } else {
+      const read = 1.3 + n * 0.042;
+      if ((d.voiceDone && d.voiceOk && d.timer - d.doneAt > 0.6) || (!Voice.ok && d.timer - d.doneAt > read * 0.55) || (Voice.ok && !d.voiceOk && d.voiceDone && d.timer - d.doneAt > read * 0.55)) this.nextLine();
+    }
+  }
+  advanceTalk() { const d = this.dlg; if (!d) return; if (!d.full) { d.full = true; d.shown = d.L.t.length; d.doneAt = d.timer; $('dtxt').textContent = d.L.t; } else this.nextLine(); }
+  skipTalk() { if (this.dlg) { this.dlg.i = this.dlg.lines.length; this.nextLine(); } }
+  endTalk() { const d = this.dlg; this.dlg = null; Voice.stop(); $('dlg').style.display = 'none'; document.body.classList.remove('talk'); d.res(); }
+  /** Camera for the current line (null = normal gameplay camera). */
+  dialogueCam(dt) {
+    const d = this.dlg, sp = d.sp; if (!sp) return null;
+    const isVeh = !!sp.def, face = isVeh ? 1.7 + sp.def.H * 0.3 : (sp.mesh && sp.id ? 1.6 : 1.6), hy = (sp.y || 0) + face, dist = isVeh ? 5 + sp.def.L * 0.3 : 2.6;
+    const az = (sp.h || 0) + d.mode * 0.55 + (isVeh ? 0.8 : 0), tp = [sp.x + Math.sin(az) * dist, hy + 0.1 + Math.min(0.5, d.timer * 0.04), sp.z + Math.cos(az) * dist];
+    d.camP = d.camP ? [d.camP[0] + (tp[0] - d.camP[0]) * Math.min(1, dt * 5), d.camP[1] + (tp[1] - d.camP[1]) * Math.min(1, dt * 5), d.camP[2] + (tp[2] - d.camP[2]) * Math.min(1, dt * 5)] : tp;
+    return { p: d.camP, l: [sp.x, hy - 0.05, sp.z], fov: 38 };
+  }
+  /** Mission 6 finale: sunrise at the statue, a phone call, credits, then free roam. */
+  endingScene() {
+    return new Promise(async (res) => {
+      this.endMode = true; this.inputLock = true; document.body.classList.add('cine'); this.audio.music.set('ending');
+      const h = this.world.hill, f = this.world.hillFace || 0, sv = { time: this.time, cw: this.cheatWeather, rain: this.rainOn, raining: this.raining };
+      this.cheatWeather = true; this.rainOn = false; this.raining = 0; this.time = 5.9 * 60; this.player.mesh.visible = false;
+      let t = 0; const tick = (dt) => { t += dt; const a = f + 0.4 - Math.min(1, t / 40) * 0.8; this.cinCam = { p: [h.x + Math.sin(a) * 22, h.H + 7.5 - Math.min(1, t / 40) * 1.5, h.z + Math.cos(a) * 22], l: [h.x, h.H + 8.5, h.z], fov: 50 }; };
+      this.endTick = tick; await new Promise(r => setTimeout(r, 1500));
+      document.body.classList.remove('cine'); document.body.classList.add('talk');
+      await this.talk([S('NARRATOR', 'Sunrise on Bahubali Betta.'), S('RAJU', 'Five hundred years of standing still. And I thought I was good at patience.'),
+        S('AMMA', 'Raju! Where are you? It is six in the morning. Are you on that hill again?'), S('RAJU', 'Amma... I am staying.'),
+        S('AMMA', 'Staying? In Karkala? Your boss in Bengaluru will cry.'), S('RAJU', 'He can cry on a video call. I will work from here. From the temple steps, if I must.'),
+        S('AMMA', 'Then come home for breakfast. And bring bread. And mallige from Ajji.'), S('RAJU', 'Bread and mallige. Coming, Amma.'),
+        S('NARRATOR', 'The traffic will still be late. The rain will still be punctual. And Karkala will still be home.')]);
+      this.endTick = null; this.cinCam = { p: [h.x + Math.sin(f) * 30, h.H + 6, h.z + Math.cos(f) * 30], l: [h.x, h.H + 9, h.z], fov: 50 };
+      $('credits').classList.add('roll'); this.audio.music.set('ending'); await new Promise(r => setTimeout(r, 24000)); $('credits').classList.remove('roll');
+      this.endMode = false; this.cinCam = null; this.endTick = null; this.inputLock = false; document.body.classList.remove('cine', 'talk');
+      this.time = sv.time; this.cheatWeather = sv.cw; this.rainOn = sv.rain; this.raining = sv.raining; this.player.mesh.visible = !this.car; res();
+    });
+  }
+  /** The intro trailer, optionally recorded to a video file. */
+  playTrailer(o = {}) {
+    if (this.cine.active) return; this.keys.clear();
+    $('title').classList.add('gone'); this.audio.init(); this.audio.resume();
+    this.cine.play({ record: o.record, onVideo: o.onVideo, onEnd: (fin) => { this.save.seenIntro = true; this.store(); o.onEnd && o.onEnd(fin); } });
+  }
+
   /* ====================================================================== main loop */
   start() {
-    this.started = true; this.audio.init(); this.audio.resume(); this.clock = new THREE.Clock();
-    this.hudShow(true); const loop = () => { requestAnimationFrame(loop); this.frame(); }; loop();
+    this.started = true; this.audio.init(); this.audio.resume(); this.hudShow(true);
     setInterval(() => this.store(), 15000);
-    if (this.save.done.length) this.toast('WELCOME BACK', `₹${this.save.money.toLocaleString('en-IN')} in your pocket`);
+    if (!this.save.seenIntro && !this.save.done.length) this.playTrailer({ onEnd: () => { } });
+    else if (this.save.done.length) this.toast('WELCOME BACK', `₹${this.save.money.toLocaleString('en-IN')} in your pocket`);
   }
   frame() {
     if (this.freezeFrame) return;            // used by automated screenshot tests
     const raw = this.clock.getDelta(), dt = Math.min(0.05, raw); this.now += dt; this.dtLast = dt;
     this.adaptQuality(raw);
-    if (!this.paused && !this.photo) this.update(dt); else if (this.photo) this.updateSky(0);
+    const live = this.started || this.cine.active;
+    if (this.cine.active) this.cine.update(dt);
+    if (this.endTick) this.endTick(dt);
+    if (live && !this.paused && !this.photo) this.update(dt); else if (this.photo) this.updateSky(0);
+    if (this.dlg) this.updateDialogue(dt);
     this.updateCamera(dt); this.renderer.render(this.scene, this.cam);
-    if (!this.paused && !this.photo) this.hudUpdate(dt);
+    if (this.cine.active) { this.cine.captureFrame(this.renderer.domElement); this.cine.drawOverlay(); }
+    if (live && !this.paused && !this.photo && !this.cine.active) this.hudUpdate(dt);
+    if (this.audio.ctx && live) { const p = this.carOrPlayer(), t = this.world.temple; this.audio.update(dt, { day: this.dayAmt ?? 1, rain: this.raining, templeDist: t ? Math.hypot(t[0] - p.x, t[1] - p.z) : 999, traffic: this.vehicles.reduce((a, v) => a + (v.driver === 'ai' && Math.hypot(v.x - p.x, v.z - p.z) < 80 ? 1 : 0), 0), chase: this.level >= 2, scene: this.cine.active ? this.cine.list[this.cine.shot]?.music : this.endMode ? 'ending' : null }); }
   }
   /** Debug/testing: advance the simulation without rendering. */
   step(n = 1, dt = 1 / 30) { this.dtLast = dt; for (let i = 0; i < n; i++) { this.now += dt; this.update(dt); } this.updateCamera(dt); }
@@ -514,8 +671,10 @@ export class Game {
   update(dt) {
     const inp = this.input(), p = this.player, w = this.world;
     this.popT = (this.popT || 0) - dt; if (this.popT < 0) { this.popT = 0.4; this.populate(); }
+    const cin = this.cine.active;
+    this.updateNpcs(dt);
     // the player
-    if (this.car) {
+    if (cin) { /* no player in the trailer */ } else if (this.car) {
       const c = this.car, steer = inp.x, thr = inp.y;
       const impact = c.physics(dt, { thr, steer, hand: inp.hand, boost: inp.boost });
       if (impact > 6) { this.audio.thud(impact); this.shake = Math.min(0.6, impact * 0.04); if (c.def.two && impact > 12) { this.exitVehicle(); p.down = 1.6; p.hp -= impact * 2; this.say('Ayyo! Off the scooter!', 2); } }
@@ -524,7 +683,7 @@ export class Game {
       if (w.inWater(c.x, c.z) && !this.sinking) { this.sinking = 1; this.audio.splash(); this.say(c.kind === 'bus' ? 'You drove a bus into the kere. Pramod will hear about this.' : 'Splash! Into the kere.', 3); }
       if (this.sinking) { c.v *= 0.9; c.sink = -(this.sinking - 1) * 1.6; this.sinking += dt; if (this.sinking > 2.5) { this.sinking = 0; c.sink = 0; const rd = w.nearestRoad(c.x, c.z, 200); this.exitVehicle(); if (rd) this.teleport(rd.x, rd.z); this.addMoney(-150); this.toast('TOWED', 'Crane hire ₹150. Your vehicle is with the fish now.'); const i = this.vehicles.indexOf(c); if (i >= 0 && !c.tag) { c.dispose(); this.vehicles.splice(i, 1); } } }
     } else p.update(dt, inp, this.camYaw);
-    if (p.hp <= 0) this.hospital(); else if (this.now - p.lastHurt > 8) p.hp = Math.min(100, p.hp + dt * 2);
+    if (!cin && p.hp <= 0) this.hospital(); else if (this.now - p.lastHurt > 8) p.hp = Math.min(100, p.hp + dt * 2);
     // traffic and others
     for (const v of this.vehicles) {
       if (v === this.car || v.police) continue;
@@ -533,19 +692,19 @@ export class Game {
       else if (Math.abs(v.v) > 0.05) v.physics(dt, { thr: 0, steer: 0, hand: true });
       v.sync();
       // a moving vehicle hitting the player on foot
-      if (!this.car && Math.abs(v.v) > 6 && p.down <= 0) { const d = Math.hypot(v.x - p.x, v.z - p.z); if (d < v.def.L / 2 + 0.4 && this.rayHit(v, p.x, p.z, 0.4)) { p.down = 1.8; p.hp -= Math.abs(v.v) * 3; p.lastHurt = this.now; this.audio.thud(v.v); v.v *= 0.3; this.say(pick(['Ayyo!', 'Kanninda nodi, maaraya!']), 2); } }
+      if (!cin && !this.car && Math.abs(v.v) > 6 && p.down <= 0) { const d = Math.hypot(v.x - p.x, v.z - p.z); if (d < v.def.L / 2 + 0.4 && this.rayHit(v, p.x, p.z, 0.4)) { p.down = 1.8; p.hp -= Math.abs(v.v) * 3; p.lastHurt = this.now; this.audio.thud(v.v); v.v *= 0.3; this.say(pick(['Ayyo!', 'Kanninda nodi, maaraya!']), 2); } }
     }
-    this.updatePolice(dt);
+    if (!cin) this.updatePolice(dt);
     for (const v of this.police) v.sync();
     for (const q of this.peds) {
       q.update(dt);
-      if (this.car && q.state !== 'down' && Math.abs(this.car.v) > 4 && this.rayHit(this.car, q.x, q.z, 0.35)) { q.knock(this.car.fx, this.car.fz, Math.abs(this.car.v)); this.audio.thud(this.car.v); this.offence(1); this.car.v *= 0.75; }
+      if (!cin && this.car && q.state !== 'down' && Math.abs(this.car.v) > 4 && this.rayHit(this.car, q.x, q.z, 0.35)) { q.knock(this.car.fx, this.car.fz, Math.abs(this.car.v)); this.audio.thud(this.car.v); this.offence(1); this.car.v *= 0.75; }
     }
     for (const c of this.cows) {
       c.update(dt);
-      if (this.car && c.hit <= 0 && Math.abs(this.car.v) > 4 && this.rayHit(this.car, c.x, c.z, 0.9)) { c.hit = 3; c.h = this.car.h; this.audio.thud(9); this.offence(2); this.say(pick(COWHIT), 3); this.car.v *= 0.2; }
+      if (!cin && this.car && c.hit <= 0 && Math.abs(this.car.v) > 4 && this.rayHit(this.car, c.x, c.z, 0.9)) { c.hit = 3; c.h = this.car.h; this.audio.thud(9); this.offence(2); this.say(pick(COWHIT), 3); this.car.v *= 0.2; }
     }
-    if (this.mission) this.missionUpdate(dt); else if (this.job) this.jobUpdate(dt); else this.missionUpdate(dt);
+    if (!cin) { if (this.mission) this.missionUpdate(dt); else if (this.job) this.jobUpdate(dt); else this.missionUpdate(dt); }
     this.updateSky(dt); this.world.update(dt);
     this.marker.rotation.y += dt; if (this.marker.arrow) this.marker.arrow.position.y = 4 + Math.sin(this.now * 3) * 0.4;
     this.startMarker.rotation.y -= dt;
@@ -554,6 +713,9 @@ export class Game {
   rayHit(v, x, z, r) { const dx = x - v.x, dz = z - v.z, a = dx * v.fx + dz * v.fz, l = dx * v.fz - dz * v.fx; return Math.abs(a) < v.def.L / 2 + r && Math.abs(l) < v.def.W / 2 + r; }
   updateCamera(dt) {
     const t = this.car || this.player, c = this.cam;
+    const k = this.cinCam || (this.dlg ? this.dialogueCam(dt) : null);
+    if (k) { c.position.set(k.p[0], k.p[1], k.p[2]); c.lookAt(k.l[0], k.l[1], k.l[2]); if (Math.abs(c.fov - k.fov) > 0.05) { c.fov = k.fov; c.updateProjectionMatrix(); } this.sky.position.copy(c.position); return; }
+    if (this.startOrbit && !this.started) { this.startOrbit(dt); return; }
     if (this.car && this.now - this.lastMouse > 1.2 && Math.abs(this.car.v) > 1) { const want = this.car.v > 0 ? this.car.h : this.car.h + Math.PI; this.camYaw += wrap(want - this.camYaw) * Math.min(1, dt * 2.5); }
     const h = this.car ? this.car.def.H * 0.75 + 0.6 : 1.6;
     const ty = (this.car ? this.car.y : this.player.y) + h, d = this.camDist, cp = Math.cos(this.camPitch), sp = Math.sin(this.camPitch);
@@ -581,7 +743,7 @@ export class Game {
   hudInit() { this.miniC = $('mini'); this.miniX = this.miniC.getContext('2d'); this.shownMoney = this.save.money; this.areaT = 0; }
   hudShow(on) { document.body.classList.toggle('playing', on); }
   objective(html) { $('obj').innerHTML = html; $('obj').style.display = html ? 'block' : 'none'; }
-  say(text, sec = 3) { const el = $('say'); el.textContent = text; el.style.opacity = 1; clearTimeout(this._sayT); this._sayT = setTimeout(() => el.style.opacity = 0, sec * 1000); }
+  say(text, sec = 3, who) { if (who && Voice.enabled && !this.cine.active) Voice.speak(text.replace(/^[^:]+: /, ''), who); const el = $('say'); el.textContent = text; el.style.opacity = 1; clearTimeout(this._sayT); this._sayT = setTimeout(() => el.style.opacity = 0, sec * 1000); }
   hint(text, sec = 1.5) { const el = $('hint'); el.textContent = text; el.style.opacity = 1; clearTimeout(this._hintT); this._hintT = setTimeout(() => el.style.opacity = 0, sec * 1000); }
   toast(title, text) { const el = $('toast'); el.innerHTML = `<b>${title}</b><span>${text}</span>`; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
   big(title, sub, color) { const el = $('big'); el.innerHTML = `<div style="color:${color}">${title}</div><span>${sub}</span>`; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
@@ -633,7 +795,8 @@ export class Game {
   togglePause() {
     this.paused = !this.paused; $('pause').classList.toggle('show', this.paused); this.keys.clear();
     if (this.paused) { document.exitPointerLock?.(); this.audio.engine(null); this.audio.siren(false); this.store();
-      $('progress').textContent = `${this.save.done.length} / ${this.MISSIONS.length} missions · ₹${this.save.money.toLocaleString('en-IN')}`; }
+      $('progress').innerHTML = `${this.save.done.length} / ${this.MISSIONS.length} missions · ₹${this.save.money.toLocaleString('en-IN')}<div style="text-align:left;margin:10px auto 0;display:inline-block;font-size:14px;line-height:1.7">` +
+        this.MISSIONS.map((m, i) => { const d = this.save.done.includes(m.id), nx = this.nextMission() === m; return `<div style="color:${d ? '#86efac' : nx ? '#facc15' : '#8d7c63'}">${d ? '✓' : nx ? '▶' : '○'} Chapter 1.${i + 1} · ${m.title}</div>`; }).join('') + '</div>'; }
   }
   togglePhoto() {
     this.photo = !this.photo; document.body.classList.toggle('photo', this.photo); this.keys.clear(); this.audio.engine(null);

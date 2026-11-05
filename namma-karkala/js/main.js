@@ -33,7 +33,11 @@ async function boot() {
   $('loading').classList.add('done');
   const hasSave = game.save.done.length > 0;
   $('play').textContent = hasSave ? 'Continue' : 'Play';
-  $('play').disabled = false;
-  $('play').onclick = () => { clearInterval(tipTimer); $('title').classList.add('gone'); game.start(); $('view').requestPointerLock?.(); };
+  $('play').disabled = false; $('trailer').disabled = false; $('trailerSave').disabled = !window.MediaRecorder;
+  $('play').onclick = () => { clearInterval(tipTimer); $('title').classList.add('gone'); game.start(); if (!game.cine.active) $('view').requestPointerLock?.(); };
+  const back = () => { $('title').classList.remove('gone'); };
+  $('trailer').onclick = () => game.playTrailer({ onEnd: back });
+  $('trailerSave').onclick = () => { $('trailerSave').textContent = 'Recording… (about a minute)'; game.playTrailer({ record: true, onEnd: back, onVideo: (blob) => {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'namma-karkala-trailer.' + (blob.type.includes('mp4') ? 'mp4' : 'webm'); document.body.appendChild(a); a.click(); a.remove(); $('trailerSave').textContent = '⬇ Save trailer as video'; } }); };
 }
 boot().catch((e) => { console.error(e); $('loadmsg').textContent = 'Could not load: ' + e.message; });
