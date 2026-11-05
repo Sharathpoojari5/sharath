@@ -1,0 +1,544 @@
+// Builds Karkala from the OpenStreetMap-derived map file and answers spatial questions
+// (ground height, collisions, nearest road, water, place names) for everything that moves.
+import * as THREE from './three.module.min.js';
+import * as M from './models.js';
+
+let seed = 1337;
+export const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+const rr = (a, b) => a + rand() * (b - a);
+
+export class World {
+  constructor(scene, map) {
+    this.scene = scene; this.map = map;
+    this.obs = new Map(); this.OBS = 16;          // collision grid: cell -> [obstacle]
+    this.segGrid = new Map(); this.SEG = 32; this.segs = [];
+    this.water = map.water.map(w => ({ ...w, bb: bbox(w.pts) }));
+    this.pois = {}; for (const p of map.pois) if (!this.pois[p.name]) this.pois[p.name] = p.p;
+    this.lamps = null; this.night = 0;
+    const hillP = this.pois['Karkala Gomateshwara Statue'] || [570, 592];
+    this.hill = { x: hillP[0], z: hillP[1], R: 80, H: 30 };
+    this.buildRoadIndex();
+    this.buildGraph();
+  }
+
+  /* ---------------------------------------------------------------- queries */
+  groundH(x, z) {
+    const h = this.hill, d = Math.hypot(x - h.x, z - h.z);
+    if (d >= h.R) return 0;
+    const t = d / h.R; return h.H * (0.5 + 0.5 * Math.cos(Math.PI * t)) * (1 - 0.15 * t);
+  }
+  inWater(x, z) {
+    for (const w of this.water) if (x > w.bb[0] && x < w.bb[2] && z > w.bb[1] && z < w.bb[3] && pip(x, z, w.pts)) return w;
+    return null;
+  }
+  key(ix, iz) { return ix * 100003 + iz; }
+  addObs(o) {
+    const r = o.r || Math.hypot(o.hx, o.hz);
+    const x0 = Math.floor((o.x - r) / this.OBS), x1 = Math.floor((o.x + r) / this.OBS), z0 = Math.floor((o.z - r) / this.OBS), z1 = Math.floor((o.z + r) / this.OBS);
+    for (let i = x0; i <= x1; i++) for (let j = z0; j <= z1; j++) { const k = this.key(i, j); let a = this.obs.get(k); if (!a) this.obs.set(k, a = []); a.push(o); }
+  }
+  /** Circle (x,z,r) against static obstacles. Returns {x,z} push (0,0 when free). */
+  collide(x, z, r) {
+    let px = 0, pz = 0;
+    const i0 = Math.floor((x - r) / this.OBS), i1 = Math.floor((x + r) / this.OBS), j0 = Math.floor((z - r) / this.OBS), j1 = Math.floor((z + r) / this.OBS);
+    const seen = this._seen || (this._seen = new Set()); seen.clear();
+    for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++) {
+      const a = this.obs.get(this.key(i, j)); if (!a) continue;
+      for (const o of a) {
+        if (seen.has(o)) continue; seen.add(o);
+        const cx = x + px, cz = z + pz;
+        if (o.hx !== undefined) {
+          const dx = cx - o.x, dz = cz - o.z, lx = dx * o.c + dz * o.s, lz = -dx * o.s + dz * o.c;
+          const qx = Math.max(-o.hx, Math.min(o.hx, lx)), qz = Math.max(-o.hz, Math.min(o.hz, lz));
+          let ex = lx - qx, ez = lz - qz, d = Math.hypot(ex, ez);
+          if (d >= r) continue;
+          if (d < 1e-4) { // centre inside the box: push out along the shallowest axis
+            const ox = o.hx - Math.abs(lx), oz = o.hz - Math.abs(lz);
+            if (ox < oz) { ex = Math.sign(lx) || 1; ez = 0; d = -ox; } else { ex = 0; ez = Math.sign(lz) || 1; d = -oz; }
+            const m = r - d; px += (ex * o.c - ez * o.s) * m; pz += (ex * o.s + ez * o.c) * m; continue;
+          }
+          const m = (r - d) / d; px += (ex * o.c - ez * o.s) * m; pz += (ex * o.s + ez * o.c) * m;
+        } else {
+          const dx = cx - o.x, dz = cz - o.z, d = Math.hypot(dx, dz), R = r + o.r;
+          if (d < R && d > 1e-4) { const m = (R - d) / d; px += dx * m; pz += dz * m; }
+        }
+      }
+    }
+    return { x: px, z: pz };
+  }
+  /** Is a straight line blocked by an obstacle? (coarse, used by police whiskers) */
+  blocked(x, z, r) { const p = this.collide(x, z, r); return Math.abs(p.x) + Math.abs(p.z) > 0.05; }
+
+  buildRoadIndex() {
+    this.map.roads.forEach((rd, ri) => {
+      for (let i = 0; i < rd.pts.length - 1; i++) {
+        const [ax, az] = rd.pts[i], [bx, bz] = rd.pts[i + 1];
+        const s = { ax, az, bx, bz, w: rd.w, ri, cls: rd.cls }; const si = this.segs.push(s) - 1;
+        const m = rd.w / 2 + 2;
+        const x0 = Math.floor((Math.min(ax, bx) - m) / this.SEG), x1 = Math.floor((Math.max(ax, bx) + m) / this.SEG);
+        const z0 = Math.floor((Math.min(az, bz) - m) / this.SEG), z1 = Math.floor((Math.max(az, bz) + m) / this.SEG);
+        for (let a = x0; a <= x1; a++) for (let b = z0; b <= z1; b++) { const k = this.key(a, b); let arr = this.segGrid.get(k); if (!arr) this.segGrid.set(k, arr = []); arr.push(si); }
+      }
+    });
+  }
+  /** Nearest road point within maxR. Returns {x,z,d,w,seg,dirx,dirz,name} or null. */
+  nearestRoad(x, z, maxR = 80) {
+    let best = null;
+    const n = Math.ceil(maxR / this.SEG), ci = Math.floor(x / this.SEG), cj = Math.floor(z / this.SEG);
+    for (let a = ci - n; a <= ci + n; a++) for (let b = cj - n; b <= cj + n; b++) {
+      const arr = this.segGrid.get(this.key(a, b)); if (!arr) continue;
+      for (const si of arr) {
+        const s = this.segs[si]; const q = closest(x, z, s.ax, s.az, s.bx, s.bz);
+        if (q.d < maxR && (!best || q.d < best.d)) { const L = Math.hypot(s.bx - s.ax, s.bz - s.az) || 1; best = { x: q.x, z: q.z, d: q.d, w: s.w, seg: s, dirx: (s.bx - s.ax) / L, dirz: (s.bz - s.az) / L, name: this.map.roads[s.ri].name }; }
+      }
+    }
+    return best;
+  }
+  /** Distance from a point to any road edge (negative = on the road). */
+  roadClearance(x, z, pad = 0) {
+    const ci = Math.floor(x / this.SEG), cj = Math.floor(z / this.SEG); let m = 1e9;
+    for (let a = ci - 1; a <= ci + 1; a++) for (let b = cj - 1; b <= cj + 1; b++) {
+      const arr = this.segGrid.get(this.key(a, b)); if (!arr) continue;
+      for (const si of arr) { const s = this.segs[si]; const q = closest(x, z, s.ax, s.az, s.bx, s.bz); m = Math.min(m, q.d - s.w / 2 - pad); }
+    }
+    return m;
+  }
+
+  buildGraph() {
+    const N = new Map();
+    const node = (id, p) => { let n = N.get(id); if (!n) N.set(id, n = { id, x: p[0], z: p[1], adj: [] }); return n; };
+    for (const rd of this.map.roads) {
+      if (rd.cls === 'track' || rd.cls === 'service') continue;
+      for (let i = 0; i < rd.ids.length - 1; i++) {
+        const a = node(rd.ids[i], rd.pts[i]), b = node(rd.ids[i + 1], rd.pts[i + 1]);
+        if (a === b) continue;
+        a.adj.push({ n: b, w: rd.w, cls: rd.cls }); b.adj.push({ n: a, w: rd.w, cls: rd.cls });
+      }
+    }
+    this.nodes = [...N.values()].filter(n => n.adj.length);
+    this.bigNodes = this.nodes.filter(n => n.adj.some(e => e.w >= 9));
+    this.nodeGrid = new Map();
+    for (const n of this.nodes) { const k = this.key(Math.floor(n.x / 64), Math.floor(n.z / 64)); let a = this.nodeGrid.get(k); if (!a) this.nodeGrid.set(k, a = []); a.push(n); }
+  }
+  nodesNear(x, z, R) {
+    const out = [], n = Math.ceil(R / 64), ci = Math.floor(x / 64), cj = Math.floor(z / 64);
+    for (let a = ci - n; a <= ci + n; a++) for (let b = cj - n; b <= cj + n; b++) { const arr = this.nodeGrid.get(this.key(a, b)); if (arr) for (const nd of arr) if (Math.hypot(nd.x - x, nd.z - z) < R) out.push(nd); }
+    return out;
+  }
+
+  placeName(x, z) {
+    const rd = this.nearestRoad(x, z, 14);
+    let best = null, bd = 1e9;
+    for (const a of AREAS) { const p = typeof a.at === 'string' ? this.pois[a.at] : a.at; if (!p) continue; const d = Math.hypot(p[0] - x, p[1] - z); if (d < a.r && d < bd) { bd = d; best = a.name; } }
+    if (best) return best;
+    if (rd && rd.name) return rd.name;
+    return 'Karkala';
+  }
+
+  /* ---------------------------------------------------------------- building the scene */
+  async build(onProgress = () => {}) {
+    const tick = () => new Promise(r => setTimeout(r, 0));
+    const S = this.scene, b = this.map.bounds;
+    const W = b[2] - b[0] + 700, H = b[3] - b[1] + 700, cx = (b[0] + b[2]) / 2, cz = (b[1] + b[3]) / 2;
+    this.ext = { x0: b[0] - 120, z0: b[1] - 120, x1: b[2] + 120, z1: b[3] + 120 };
+    // ground: detail texture tinted by vertex colours (paddy, laterite, lawns)
+    const gGeo = new THREE.PlaneGeometry(W, H, 180, 140); gGeo.rotateX(-Math.PI / 2); gGeo.translate(cx, 0, cz);
+    const gp = gGeo.attributes.position, gc = new Float32Array(gp.count * 3), col = new THREE.Color();
+    for (let i = 0; i < gp.count; i++) {
+      const x = gp.getX(i), z = gp.getZ(i), n = noise2(x * 0.004, z * 0.004), m = noise2(x * 0.02 + 9, z * 0.02 - 3);
+      if (n > 0.62) col.set('#9aa83f');          // paddy edge
+      else if (n < 0.28) col.set('#8a5a3c');     // laterite soil
+      else col.set('#5c8a3a');
+      col.offsetHSL(0, 0, (m - 0.5) * 0.08);
+      gc[i * 3] = col.r; gc[i * 3 + 1] = col.g; gc[i * 3 + 2] = col.b;
+    }
+    gGeo.setAttribute('color', new THREE.BufferAttribute(gc, 3));
+    const ground = new THREE.Mesh(gGeo, new THREE.MeshStandardMaterial({ vertexColors: true, map: noiseTex('#d9e6c3', '#b7c99a', 256, 6), roughness: 1 }));
+    ground.material.map.repeat.set(W / 9, H / 9); ground.receiveShadow = true; S.add(ground); this.groundMat = ground.material;
+    onProgress(0.15, 'Laying the roads'); await tick();
+    this.buildRoads(); onProgress(0.3, 'Filling the keres'); await tick();
+    this.buildWater(); this.buildHill(); onProgress(0.4, 'Building the town'); await tick();
+    this.buildLandmarks(); this.buildOsmBuildings(); this.buildTown(); onProgress(0.7, 'Planting coconut trees'); await tick();
+    this.buildTrees(); this.buildLamps(); onProgress(0.85, 'Drawing the map'); await tick();
+    this.minimap = this.drawMinimap(); onProgress(0.95, 'Almost there');
+  }
+
+  buildRoads() {
+    const groups = { main: [], minor: [], track: [] };
+    for (const rd of this.map.roads) (rd.cls === 'track' ? groups.track : rd.w >= 9 ? groups.main : groups.minor).push(rd);
+    const mk = (list, tex, y) => {
+      const pos = [], uv = [], idx = [];
+      for (const rd of list) {
+        const pts = rd.pts, hw = rd.w / 2; let v = 0; const base = pos.length / 3;
+        for (let i = 0; i < pts.length; i++) {
+          const p = pts[i], a = pts[Math.max(0, i - 1)], c = pts[Math.min(pts.length - 1, i + 1)];
+          let dx = c[0] - a[0], dz = c[1] - a[1]; const L = Math.hypot(dx, dz) || 1; dx /= L; dz /= L;
+          let nx = -dz, nz = dx, k = 1;
+          if (i > 0 && i < pts.length - 1) { // miter
+            const d1x = p[0] - a[0], d1z = p[1] - a[1], l1 = Math.hypot(d1x, d1z) || 1;
+            const cos = (-d1z / l1) * nx + (d1x / l1) * nz; k = Math.min(2.2, 1 / Math.max(0.45, cos));
+          }
+          if (i > 0) v += Math.hypot(p[0] - pts[i - 1][0], p[1] - pts[i - 1][1]) / 10;
+          for (const s of [-1, 1]) { const x = p[0] + nx * hw * k * s, z = p[1] + nz * hw * k * s; pos.push(x, this.groundH(x, z) + y, z); uv.push(s < 0 ? 0 : 1, v); }
+          if (i > 0) { const q = base + (i - 1) * 2; idx.push(q, q + 1, q + 2, q + 1, q + 3, q + 2); }
+        }
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
+      const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ map: tex, roughness: 0.92, polygonOffset: true, polygonOffsetFactor: -1 - y * 20, polygonOffsetUnits: -2 - y * 40 }));
+      m.receiveShadow = true; this.scene.add(m); return m;
+    };
+    this.roadMats = [];
+    this.roadMats.push(mk(groups.track, noiseTex('#a3623f', '#8f5236', 64, 3), 0.02).material);
+    this.roadMats.push(mk(groups.minor, roadTex(false), 0.03).material);
+    this.roadMats.push(mk(groups.main, roadTex(true), 0.05).material);
+    // junction patches cover the seams where roads meet
+    const disc = [], dm = new THREE.Matrix4();
+    for (const n of this.nodes) if (n.adj.length >= 3 || n.adj.length === 1) disc.push([n.x, n.z, Math.max(...n.adj.map(e => e.w)) / 2]);
+    const dg = new THREE.CircleGeometry(1, 16); dg.rotateX(-Math.PI / 2);
+    const im = new THREE.InstancedMesh(dg, new THREE.MeshStandardMaterial({ color: '#4a4e54', roughness: 0.95, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 }), disc.length);
+    disc.forEach(([x, z, r], i) => { dm.makeScale(r, 1, r); dm.setPosition(x, this.groundH(x, z) + 0.06, z); im.setMatrixAt(i, dm); });
+    im.receiveShadow = true; this.scene.add(im); this.roadMats.push(im.material);
+  }
+
+  buildWater() {
+    this.waterMat = new THREE.MeshStandardMaterial({ color: '#2b6c88', roughness: 0.12, metalness: 0.2 });
+    const edge = new THREE.MeshStandardMaterial({ color: '#8a6a52', roughness: 1 });
+    for (const w of this.water) {
+      const sh = new THREE.Shape(w.pts.map(p => new THREE.Vector2(p[0], -p[1])));
+      const g = new THREE.ShapeGeometry(sh); g.rotateX(-Math.PI / 2);
+      const m = new THREE.Mesh(g, this.waterMat); m.position.y = 0.12; m.receiveShadow = true; this.scene.add(m);
+      // laterite steps around the kere
+      const ring = ribbon(w.pts.concat([w.pts[0]]), 2.6, 0.18, this);
+      this.scene.add(new THREE.Mesh(ring, edge));
+      // water is solid for the collision grid: approximate with circles along the shoreline so walkers stop at the edge
+    }
+    for (const r of this.map.rivers) { const m = new THREE.Mesh(ribbon(r.pts, 9, 0.015, this), this.waterMat); m.receiveShadow = true; this.scene.add(m); }
+    const grass = new THREE.MeshStandardMaterial({ color: '#6ea544', roughness: 1, map: noiseTex('#ffffff', '#cfe3b6', 128, 4) });
+    grass.map.repeat.set(8, 8);
+    for (const g of this.map.green) {
+      const sh = new THREE.Shape(g.pts.map(p => new THREE.Vector2(p[0], -p[1])));
+      const geo = new THREE.ShapeGeometry(sh); geo.rotateX(-Math.PI / 2);
+      const m = new THREE.Mesh(geo, grass); m.position.y = 0.04; m.receiveShadow = true; this.scene.add(m);
+    }
+  }
+
+  buildHill() {
+    const h = this.hill, g = new THREE.CircleGeometry(h.R + 4, 72, 0, Math.PI * 2);
+    // add rings for smooth displacement
+    const geo = new THREE.RingGeometry(0.01, h.R + 4, 72, 40); geo.rotateX(-Math.PI / 2);
+    const p = geo.attributes.position, c = new Float32Array(p.count * 3), col = new THREE.Color();
+    for (let i = 0; i < p.count; i++) {
+      const x = p.getX(i) + h.x, z = p.getZ(i) + h.z, y = this.groundH(x, z);
+      p.setXYZ(i, x, y + 0.05, z);
+      const t = y / h.H, n = noise2(x * 0.08, z * 0.08);
+      col.set(t < 0.12 ? '#5f7f3d' : n > 0.7 ? '#6f7b54' : '#8d887e'); col.offsetHSL(0, 0, (n - 0.5) * 0.12);
+      c[i * 3] = col.r; c[i * 3 + 1] = col.g; c[i * 3 + 2] = col.b;
+    }
+    geo.setAttribute('color', new THREE.BufferAttribute(c, 3)); geo.computeVertexNormals(); g.dispose();
+    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, flatShading: true }));
+    m.receiveShadow = true; m.castShadow = true; this.scene.add(m);
+    // the statue on top, facing north towards town
+    const st = M.statue(); st.position.set(h.x, h.H - 0.2, h.z); st.rotation.y = Math.PI; this.scene.add(st);
+    this.addObs({ x: h.x, z: h.z, hx: 3.4, hz: 2.8, c: 1, s: 0 });
+    // steps up the north face, from the nearest road
+    const rd = this.nearestRoad(h.x, h.z - h.R, 120) || { x: h.x, z: h.z - h.R - 10 };
+    const dx = h.x - rd.x, dz = h.z - rd.z, L = Math.hypot(dx, dz), ux = dx / L, uz = dz / L;
+    const n = Math.floor((L - 6) / 1.1), stepGeo = new THREE.BoxGeometry(4, 0.4, 1.2);
+    const steps = new THREE.InstancedMesh(stepGeo, new THREE.MeshStandardMaterial({ color: '#b1aa9c', roughness: 1 }), n); const mm = new THREE.Matrix4(), q = new THREE.Quaternion();
+    q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.atan2(ux, uz));
+    for (let i = 0; i < n; i++) { const x = rd.x + ux * (i * 1.1 + 3), z = rd.z + uz * (i * 1.1 + 3); mm.compose(new THREE.Vector3(x, this.groundH(x, z) + 0.15, z), q, new THREE.Vector3(1, 1, 1)); steps.setMatrixAt(i, mm); }
+    steps.receiveShadow = true; this.scene.add(steps);
+    this.hillFoot = [rd.x + ux * 3, rd.z + uz * 3]; this.hillTop = [h.x - ux * 6, h.z - uz * 6];
+  }
+
+  landmark(obj, x, z, rot, obb) {
+    obj.position.set(x, this.groundH(x, z), z); obj.rotation.y = rot; this.scene.add(obj);
+    if (obb) for (const o of obb) { const c = Math.cos(rot), s = Math.sin(rot), ox = o[0] * c + o[1] * s, oz = -o[0] * s + o[1] * c; this.addObs({ x: x + ox, z: z + oz, hx: o[2], hz: o[3], c: Math.cos(-rot), s: Math.sin(-rot) }); }
+  }
+  /** rotation that makes a landmark's front (+z) face the nearest road */
+  faceRoad(x, z) { const r = this.nearestRoad(x, z, 150); return r ? Math.atan2(r.x - x, r.z - z) : 0; }
+
+  buildLandmarks() {
+    const P = this.pois; this.special = [];
+    const put = (name, fn) => { const p = P[name]; if (p) { fn(p[0], p[1]); this.special.push(p); } };
+    put('Sri Venkataramana Temple', (x, z) => { const r = this.faceRoad(x, z); this.landmark(M.temple(), x, z, r, [[0, 15, 15, 0.4], [0, -15, 15, 0.4], [15, 0, 0.4, 15], [-15, 0, 0.4, 15], [0, -4, 6, 7]]); this.temple = [x, z, r]; });
+    put('Chaturmakha Basadi', (x, z) => this.landmark(M.basadi(), x, z, this.faceRoad(x, z), [[0, 0, 12, 12]]));
+    put('Karkala Bus Stand', (x, z) => {
+      const rd = this.nearestRoad(x, z, 80); if (!rd) return;
+      const n0x = -rd.dirz, n0z = rd.dirx, side = Math.sign((x - rd.x) * n0x + (z - rd.z) * n0z) || 1;
+      const off = rd.w / 2 + 12, bx = rd.x + n0x * side * off, bz = rd.z + n0z * side * off;
+      let rot = Math.atan2(-rd.dirz, rd.dirx); if (side > 0) rot += Math.PI;   // sign (+z) faces the road
+      this.landmark(M.busStand(), bx, bz, rot, [[0, 0, 23, 0.8], [-16, -2, 4, 2]]);
+      this.busStand = { x: bx, z: bz, rot, road: rd, side, n: [n0x * side, n0z * side] };
+    });
+    put('Gopal Towers', (x, z) => this.tower(x, z, ['GOPAL TOWERS', 'ಗೋಪಾಲ್ ಟವರ್ಸ್'], 16, 14, 4, '#e2e8f0'));
+    put('Sri Bhuvanendra College', (x, z) => this.tower(x, z, ['SRI BHUVANENDRA COLLEGE'], 40, 16, 3, '#fef3c7'));
+    put('Police Station', (x, z) => this.tower(x, z, ['POLICE STATION', 'ಪೊಲೀಸ್ ಠಾಣೆ'], 18, 12, 2, '#fde68a', '#b91c1c'));
+    put('Karkala Government Hospital', (x, z) => this.tower(x, z, ['GOVERNMENT HOSPITAL', 'ಸರ್ಕಾರಿ ಆಸ್ಪತ್ರೆ'], 26, 14, 3, '#f8fafc', '#15803d'));
+    put('Taluk Office', (x, z) => this.tower(x, z, ['TALUK OFFICE'], 20, 12, 2, '#fef9c3'));
+    put('Hotel Taj Mahal', (x, z) => this.tower(x, z, ['HOTEL RAJ MAHAL', 'Veg · Non-veg · Goli Baje'], 14, 12, 2, '#fff7ed', '#c2410c'));
+    put('Hotel Prakash', (x, z) => this.tower(x, z, ['HOTEL PRAKASHAM', 'Meals Ready'], 14, 11, 2, '#fefce8', '#a16207'));
+    put('Shree Durga Lunch Home', (x, z) => this.tower(x, z, ['DURGA LUNCH HOME', 'Fish Thali'], 12, 10, 2, '#ecfeff', '#0e7490'));
+    // Aanekere: the little basadi in the middle of the lake
+    const ak = this.water.find(w => w.name === 'Aanekere');
+    if (ak) {
+      let sx = 0, sz = 0; ak.pts.forEach(p => { sx += p[0]; sz += p[1]; }); sx /= ak.pts.length; sz /= ak.pts.length;
+      const isl = new THREE.Mesh(new THREE.CylinderGeometry(13, 14, 1.2, 20), new THREE.MeshStandardMaterial({ color: '#8f887a', roughness: 1 }));
+      isl.position.set(sx, 0.5, sz); this.scene.add(isl);
+      const bs = M.basadi(0.45); bs.position.set(sx, 1.0, sz); this.scene.add(bs); this.kereBasadi = [sx, sz];
+    }
+    // Market Road stalls
+    const mr = this.map.roads.find(r => r.name === 'Market Road');
+    this.stalls = [];
+    if (mr) {
+      const geo = M.stallGeo(), spots = [];
+      walk(mr.pts, 9, (x, z, dx, dz) => { for (const s of [-1, 1]) if (rand() < 0.75) spots.push([x - dz * s * (mr.w / 2 + 2.2), z + dx * s * (mr.w / 2 + 2.2), Math.atan2(dz * s, -dx * s) + Math.PI / 2]); });
+      const im = new THREE.InstancedMesh(geo, M.MAT.solid, spots.length), m4 = new THREE.Matrix4(), q = new THREE.Quaternion();
+      spots.forEach(([x, z, r], i) => { q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), r); m4.compose(new THREE.Vector3(x, 0, z), q, new THREE.Vector3(1, 1, 1)); im.setMatrixAt(i, m4); this.addObs({ x, z, r: 1.3 }); });
+      im.castShadow = true; this.scene.add(im); this.stalls = spots; this.marketRoad = mr;
+    }
+  }
+
+  tower(x, z, sign, w, d, floors, wall, signBg = '#1d4ed8') {
+    const rot = this.faceRoad(x, z), h = floors * 3.4 + 0.6;
+    const parts = [M.P(M.box(w, h, d), wall, [0, h / 2, 0]), M.P(M.box(w + 0.6, 0.5, d + 0.6), '#94a3b8', [0, h + 0.25, 0])];
+    for (let f = 0; f < floors; f++) for (let i = 0; i < Math.floor(w / 3); i++) parts.push(M.P(M.box(1.4, 1.4, 0.1), '#334155', [-w / 2 + 1.6 + i * 3, f * 3.4 + 2.0, d / 2 + 0.05]));
+    parts.push(M.P(M.box(Math.min(5, w * 0.4), 2.6, 0.1), '#1f2937', [0, 1.3, d / 2 + 0.06]));
+    const g = new THREE.Group(); const m = new THREE.Mesh(M.merge(parts), M.MAT.solid); m.castShadow = true; m.receiveShadow = true; g.add(m);
+    const s = M.signMesh(sign, Math.min(w * 0.9, 14), 1.8, { bg: signBg, fg: '#fff', w: 1024, h: 140 }); s.position.set(0, Math.min(h - 0.6, 4.6), d / 2 + 0.12); g.add(s);
+    this.landmark(g, x, z, rot, [[0, 0, w / 2, d / 2]]);
+  }
+
+  buildOsmBuildings() {
+    const skip = new Set(['Karkala Gomateshwara', 'Sri Venkataramana Temple', 'Chaturmakha Basadi', 'Karkala Bus Stand', 'Sri Bhuvanendra College', 'Police Station', 'Taluk Office', 'Shree Durga Lunch Home', 'Hanuman Temple']);
+    const parts = [];
+    for (const b of this.map.buildings) {
+      if (skip.has(b.name) || b.pts.length < 3) continue;
+      // oriented bounding box from the longest edge
+      let best = 0, ang = 0; for (let i = 0; i < b.pts.length; i++) { const p = b.pts[i], q = b.pts[(i + 1) % b.pts.length], L = Math.hypot(q[0] - p[0], q[1] - p[1]); if (L > best) { best = L; ang = Math.atan2(q[1] - p[1], q[0] - p[0]); } }
+      const c = Math.cos(ang), s = Math.sin(ang); let mnx = 1e9, mxx = -1e9, mnz = 1e9, mxz = -1e9;
+      for (const p of b.pts) { const lx = p[0] * c + p[1] * s, lz = -p[0] * s + p[1] * c; mnx = Math.min(mnx, lx); mxx = Math.max(mxx, lx); mnz = Math.min(mnz, lz); mxz = Math.max(mxz, lz); }
+      const hx = Math.max(2, (mxx - mnx) / 2), hz = Math.max(2, (mxz - mnz) / 2); if (hx > 40 || hz > 40) continue;
+      const lcx = (mnx + mxx) / 2, lcz = (mnz + mxz) / 2, x = lcx * c - lcz * s, z = lcx * s + lcz * c;
+      if (this.roadClearance(x, z) < -0.5) continue;
+      const floors = b.kind === 'school' || b.kind === 'college' ? 2 : 1 + Math.floor(rand() * 2), h = floors * 3.3;
+      parts.push(M.P(M.box(hx * 2, h, hz * 2), pick(WALLS), [x, h / 2, z], [0, -ang, 0]));
+      parts.push(M.P(M.box(hx * 2 + 0.4, 0.35, hz * 2 + 0.4), '#9ca3af', [x, h + 0.17, z], [0, -ang, 0]));
+      this.addObs({ x, z, hx, hz, c, s });
+    }
+    if (parts.length) { const m = new THREE.Mesh(M.merge(parts), M.MAT.solid); m.castShadow = true; m.receiveShadow = true; this.scene.add(m); }
+  }
+
+  /** Procedural houses and shops along every road: denser near the bus stand. */
+  buildTown() {
+    const centre = this.pois['Karkala Bus Stand'] || [150, 38];
+    const north = this.pois['Taluk Office'] || [-886, -759];
+    const B = [], taken = new Map(), TK = 12;
+    const free = (x, z, r) => {
+      const i0 = Math.floor((x - r) / TK), i1 = Math.floor((x + r) / TK), j0 = Math.floor((z - r) / TK), j1 = Math.floor((z + r) / TK);
+      for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++) { const a = taken.get(i * 9973 + j); if (a) for (const o of a) if (Math.hypot(o[0] - x, o[1] - z) < o[2] + r) return false; }
+      return true;
+    };
+    const take = (x, z, r) => { const i0 = Math.floor((x - r) / TK), i1 = Math.floor((x + r) / TK), j0 = Math.floor((z - r) / TK), j1 = Math.floor((z + r) / TK); for (let i = i0; i <= i1; i++) for (let j = j0; j <= j1; j++) { const k = i * 9973 + j; let a = taken.get(k); if (!a) taken.set(k, a = []); a.push([x, z, r]); } };
+    for (const s of this.special) take(s[0], s[1], 26);
+    if (this.busStand) take(this.busStand.x, this.busStand.z, 30);
+    for (const st of this.stalls) take(st[0], st[1], 1.6);
+    for (const rd of this.map.roads) {
+      if (rd.cls === 'track') continue;
+      let acc = 0;
+      for (let i = 0; i < rd.pts.length - 1; i++) {
+        const [ax, az] = rd.pts[i], [bx, bz] = rd.pts[i + 1], L = Math.hypot(bx - ax, bz - az); if (L < 4) continue;
+        const dx = (bx - ax) / L, dz = (bz - az) / L;
+        for (let t = acc; t < L; t += rr(9, 15)) {
+          const x0 = ax + dx * t, z0 = az + dz * t;
+          const dc = Math.min(Math.hypot(x0 - centre[0], z0 - centre[1]), Math.hypot(x0 - north[0], z0 - north[1]) * 1.4);
+          const urban = Math.max(0, 1 - dc / 650);
+          for (const side of [-1, 1]) {
+            if (rand() > 0.22 + urban * 0.7) continue;
+            const shop = urban > 0.45 && rand() < 0.75;
+            const fw = shop ? rr(7, 11) : rr(7, 10), dd = shop ? rr(8, 13) : rr(7, 10);
+            const set = rd.w / 2 + (shop ? 1.8 : rr(3, 7)) + dd / 2;
+            const nx = -dz * side, nz = dx * side, x = x0 + nx * set, z = z0 + nz * set, r = Math.hypot(fw, dd) / 2 * 0.92;
+            if (!free(x, z, r) || this.groundH(x, z) > 0.3 || this.inWater(x, z) || this.inWater(x + nx * dd / 2, z + nz * dd / 2)) continue;
+            const ok = [[0, 0], [fw / 2, dd / 2], [-fw / 2, dd / 2], [fw / 2, -dd / 2], [-fw / 2, -dd / 2]].every(([u, v]) => this.roadClearance(x + dx * u + nx * v, z + dz * u + nz * v, 0.8) > 0);
+            if (!ok) continue;
+            take(x, z, r);
+            const floors = shop ? 1 + Math.floor(rand() * (1 + urban * 3.2)) : 1 + (rand() < 0.35 ? 1 : 0);
+            B.push({ x, z, fw, dd, rot: Math.atan2(-nx, -nz), floors, shop, tiled: !shop && rand() < 0.72 });
+          }
+        }
+        acc = 0;
+      }
+    }
+    this.buildings = B;
+    // instanced, tiled: walls, flat roofs, tiled roofs, windows, shop shutters, shop signs
+    const unit = new THREE.BoxGeometry(1, 1, 1); unit.translate(0, 0.5, 0);
+    const L = { walls: [], flats: [], tiles: [], wins: [], shut: [], sign: [] };
+    const q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), v = new THREE.Vector3(), sc = new THREE.Vector3();
+    const add = (list, b, pos, scl, col) => list.push({ x: b.x, z: b.z, m: new THREE.Matrix4().compose(pos, q, scl), c: col ? new THREE.Color(col) : null });
+    const local = (b, lx, ly, lz) => { const cs = Math.cos(b.rot), sn = Math.sin(b.rot); return new THREE.Vector3(b.x + lx * cs + lz * sn, ly, b.z - lx * sn + lz * cs); };
+    for (const b of B) {
+      const h = b.floors * 3.2; q.setFromAxisAngle(up, b.rot);
+      add(L.walls, b, v.set(b.x, 0, b.z), sc.set(b.fw, h, b.dd), b.shop ? pick(SHOPWALLS) : pick(WALLS));
+      if (b.tiled) add(L.tiles, b, v.set(b.x, h, b.z), sc.set(b.fw + 1.0, rr(2.2, 3.0), b.dd + 1.0), pick(TILES));
+      else add(L.flats, b, v.set(b.x, h, b.z), sc.set(b.fw + 0.3, 0.45, b.dd + 0.3));
+      const nwin = Math.max(1, Math.floor(b.fw / 3.2));
+      for (let f = 0; f < b.floors; f++) for (let k = 0; k < nwin; k++) {
+        if (b.shop && f === 0) continue;
+        add(L.wins, b, local(b, -b.fw / 2 + (k + 0.5) * (b.fw / nwin), f * 3.2 + 1.2, b.dd / 2 + 0.03), sc.set(1.2, 1.3, 0.12));
+      }
+      if (b.shop) {
+        add(L.shut, b, local(b, 0, 0, b.dd / 2 + 0.03), sc.set(b.fw * 0.82, 2.5, 0.1), pick(['#475569', '#64748b', '#1f2937', '#fbbf24', '#f97316', '#e2e8f0']));
+        add(L.sign, b, local(b, 0, 2.65, b.dd / 2 + 0.12), sc.set(b.fw * 0.92, 0.85, 0.12), pick(SIGNS));
+      }
+      this.addObs({ x: b.x, z: b.z, hx: b.fw / 2, hz: b.dd / 2, c: Math.cos(-b.rot), s: Math.sin(-b.rot) });
+    }
+    const S = this.scene;
+    tiled(S, unit, new THREE.MeshStandardMaterial({ roughness: 0.9 }), L.walls);
+    tiled(S, unit, new THREE.MeshStandardMaterial({ color: '#a8a29e', roughness: 1 }), L.flats);
+    tiled(S, hipRoof(), new THREE.MeshStandardMaterial({ roughness: 0.85, flatShading: true }), L.tiles);
+    this.winMat = new THREE.MeshStandardMaterial({ color: '#2b3442', roughness: 0.4, emissive: '#000000' });
+    tiled(S, unit, this.winMat, L.wins, { cast: false });
+    this.shopMats = [new THREE.MeshStandardMaterial({ roughness: 0.6, emissive: '#000' }), new THREE.MeshStandardMaterial({ roughness: 0.5, emissive: '#000' })];
+    tiled(S, unit, this.shopMats[0], L.shut, { cast: false }); tiled(S, unit, this.shopMats[1], L.sign, { cast: false });
+  }
+
+  buildTrees() {
+    const b = this.map.bounds, palms = [], trees = [];
+    for (let i = 0; i < 9000 && palms.length + trees.length < 4200; i++) {
+      const x = rr(b[0] - 100, b[2] + 100), z = rr(b[1] - 100, b[3] + 100);
+      if (this.inWater(x, z) || this.roadClearance(x, z, 1.5) < 0) continue;
+      if (this.blocked(x, z, 1.2)) continue;
+      const hg = this.groundH(x, z); if (hg > 22) continue;
+      if (this.map.green.some(g => pip(x, z, g.pts))) continue;
+      (rand() < 0.62 ? palms : trees).push([x, hg, z, rr(0.75, 1.25), rand() * 6.28, rr(-0.12, 0.12)]);
+    }
+    const put = (geos, list) => {
+      const q = new THREE.Quaternion(), e = new THREE.Euler(), items = [];
+      for (const [x, y, z, s, r, tilt] of list) { e.set(tilt, r, tilt * 0.6); q.setFromEuler(e); items.push({ x, z, m: new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), q, new THREE.Vector3(s, s, s)) }); this.addObs({ x, z, r: 0.35 * s }); }
+      tiled(this.scene, geos.trunk, M.MAT.solid, items, { receive: false }); tiled(this.scene, geos.crown, M.MAT.solid, items, { receive: false });
+    };
+    put(M.palmGeos(), palms); put(M.treeGeos(), trees);
+  }
+
+  buildLamps() {
+    const spots = [];
+    for (const rd of this.map.roads) if (rd.w >= 9) walk(rd.pts, 38, (x, z, dx, dz) => { const s = spots.length % 2 ? 1 : -1; spots.push([x - dz * s * (rd.w / 2 + 0.8), z + dx * s * (rd.w / 2 + 0.8), Math.atan2(dz * s, -dx * s)]); });
+    const g = M.lampGeos(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), poles = [], pools = [];
+    for (const [x, z, r] of spots) {
+      q.setFromAxisAngle(up, r + Math.PI / 2); poles.push({ x, z, m: new THREE.Matrix4().compose(new THREE.Vector3(x, 0, z), q, new THREE.Vector3(1, 1, 1)) });
+      const px = x + Math.sin(r + Math.PI / 2) * 1.5, pz = z + Math.cos(r + Math.PI / 2) * 1.5; pools.push({ x, z, m: new THREE.Matrix4().makeTranslation(px, 0.09, pz) }); this.addObs({ x, z, r: 0.2 });
+    }
+    tiled(this.scene, g.pole, M.MAT.solid, poles, { receive: false }); tiled(this.scene, g.lamp, M.MAT.glow, poles, { cast: false, receive: false });
+    const poolMat = new THREE.MeshBasicMaterial({ color: '#ffd88a', transparent: true, opacity: 0.22, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false });
+    this.lamps = { pools: tiled(this.scene, new THREE.CircleGeometry(6, 20).rotateX(-Math.PI / 2), poolMat, pools, { cast: false, receive: false }), poolMat };
+    for (const m of this.lamps.pools) m.visible = false;
+  }
+
+  setNight(n) {     // 0 day .. 1 night
+    this.night = n;
+    if (this.lamps) { for (const m of this.lamps.pools) m.visible = n > 0.35; this.lamps.poolMat.opacity = 0.25 * n; }
+    if (this.winMat) this.winMat.emissive.setRGB(0.55 * n, 0.42 * n, 0.18 * n);
+    if (this.shopMats) for (const m of this.shopMats) m.emissive.setRGB(0.25 * n, 0.22 * n, 0.15 * n);
+  }
+  setWet(w) { for (const m of this.roadMats || []) m.roughness = 0.92 - 0.6 * w; this.groundMat.color.setScalar(1 - 0.25 * w); }
+
+  drawMinimap() {
+    const b = this.ext, S = 0.5, W = Math.ceil((b.x1 - b.x0) * S), H = Math.ceil((b.z1 - b.z0) * S);
+    const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+    x.fillStyle = '#2f4f2a'; x.fillRect(0, 0, W, H);
+    const P = (p) => [(p[0] - b.x0) * S, (p[1] - b.z0) * S];
+    x.fillStyle = '#4d7a3a'; for (const g of this.map.green) poly(x, g.pts.map(P));
+    x.fillStyle = '#7d786e'; x.beginPath(); x.arc(...P([this.hill.x, this.hill.z]), this.hill.R * S, 0, 7); x.fill();
+    x.fillStyle = '#2d7fb0'; for (const w of this.water) poly(x, w.pts.map(P));
+    x.strokeStyle = '#2d7fb0'; x.lineCap = 'round'; for (const r of this.map.rivers) { x.lineWidth = 4; line(x, r.pts.map(P)); }
+    x.fillStyle = '#6b6357'; for (const bd of this.buildings || []) { const p = P([bd.x, bd.z]); x.fillRect(p[0] - 1.5, p[1] - 1.5, 3, 3); }
+    for (const rd of this.map.roads) { x.strokeStyle = rd.w >= 9 ? '#f1f5f9' : '#cbd5e1'; x.lineWidth = Math.max(1.5, rd.w * S * 1.2); x.lineJoin = 'round'; line(x, rd.pts.map(P)); }
+    return { canvas: c, S, x0: b.x0, z0: b.z0 };
+  }
+}
+
+export const AREAS = [
+  { name: 'Karkala Bus Stand', at: 'Karkala Bus Stand', r: 70 },
+  { name: 'Market Road', at: 'Gopal Towers', r: 90 },
+  { name: 'Gandhi Maidan', at: 'Gandhi Maidan', r: 80 },
+  { name: 'Venkataramana Temple', at: 'Sri Venkataramana Temple', r: 70 },
+  { name: 'Aanekere', at: 'Aanekere', r: 140 },
+  { name: 'Ramasamudra', at: 'Rama Samudra', r: 220 },
+  { name: 'Chaturmukha Basadi', at: 'Chaturmakha Basadi', r: 70 },
+  { name: 'Bahubali Betta', at: 'Bahubali Hill', r: 120 },
+  { name: 'Bhuvanendra College', at: 'Sri Bhuvanendra College', r: 110 },
+  { name: 'Swaraj Maidan', at: 'Swaraj Maidan', r: 70 },
+  { name: 'Taluk Office', at: 'Taluk Office', r: 120 },
+  { name: 'Police Station', at: 'Police Station', r: 70 },
+  { name: 'Government Hospital', at: 'Karkala Government Hospital', r: 60 },
+];
+
+/* ---------------------------------------------------------------- helpers */
+/** Split instances into map tiles so the renderer can frustum-cull them tile by tile. */
+export function tiled(scene, geo, mat, items, o = {}) {
+  const T = o.tile || 180, groups = new Map(), out = [];
+  for (const it of items) { const k = Math.floor(it.x / T) * 1000 + Math.floor(it.z / T); let a = groups.get(k); if (!a) groups.set(k, a = []); a.push(it); }
+  for (const list of groups.values()) {
+    const im = new THREE.InstancedMesh(geo, mat, list.length);
+    list.forEach((it, i) => { im.setMatrixAt(i, it.m); if (it.c) im.setColorAt(i, it.c); });
+    if (im.instanceColor) im.instanceColor.needsUpdate = true;
+    im.computeBoundingSphere(); im.castShadow = o.cast !== false; im.receiveShadow = o.receive !== false;
+    scene.add(im); out.push(im);
+  }
+  return out;
+}
+
+const WALLS = ['#f8fafc', '#fef3c7', '#fde68a', '#e0f2fe', '#fce7f3', '#dcfce7', '#fed7aa', '#e9d5ff', '#f5f5f4', '#fef9c3', '#cffafe', '#fecaca'];
+const SHOPWALLS = ['#f1f5f9', '#e2e8f0', '#fef3c7', '#d1fae5', '#fde68a', '#bae6fd', '#fbcfe8'];
+const TILES = ['#a8442a', '#b5502f', '#9a3b24', '#c05a36', '#8f3a22'];
+const SIGNS = ['#dc2626', '#2563eb', '#16a34a', '#f59e0b', '#7c3aed', '#0891b2', '#db2777', '#ea580c', '#facc15', '#0f766e'];
+export const pick = (a) => a[Math.floor(rand() * a.length)];
+
+function bbox(pts) { let a = 1e9, b = 1e9, c = -1e9, d = -1e9; for (const p of pts) { a = Math.min(a, p[0]); b = Math.min(b, p[1]); c = Math.max(c, p[0]); d = Math.max(d, p[1]); } return [a, b, c, d]; }
+export function pip(x, z, pts) { let ins = false; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const xi = pts[i][0], zi = pts[i][1], xj = pts[j][0], zj = pts[j][1]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) ins = !ins; } return ins; }
+export function closest(x, z, ax, az, bx, bz) { const dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz || 1; let t = ((x - ax) * dx + (z - az) * dz) / L2; t = Math.max(0, Math.min(1, t)); const qx = ax + dx * t, qz = az + dz * t; return { x: qx, z: qz, t, d: Math.hypot(x - qx, z - qz) }; }
+function walk(pts, step, fn) { let carry = 0; for (let i = 0; i < pts.length - 1; i++) { const [ax, az] = pts[i], [bx, bz] = pts[i + 1], L = Math.hypot(bx - ax, bz - az); if (L < 0.01) continue; const dx = (bx - ax) / L, dz = (bz - az) / L; let t = carry; for (; t < L; t += step) fn(ax + dx * t, az + dz * t, dx, dz); carry = t - L; } }
+function ribbon(pts, w, y, world) {
+  const pos = [], idx = [];
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[Math.max(0, i - 1)], c = pts[Math.min(pts.length - 1, i + 1)], p = pts[i];
+    let dx = c[0] - a[0], dz = c[1] - a[1]; const L = Math.hypot(dx, dz) || 1; dx /= L; dz /= L;
+    for (const s of [-1, 1]) { const x = p[0] - dz * w / 2 * s, z = p[1] + dx * w / 2 * s; pos.push(x, world.groundH(x, z) + y, z); }
+    if (i > 0) { const q = (i - 1) * 2; idx.push(q, q + 1, q + 2, q + 1, q + 3, q + 2); }
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); return g;
+}
+function hipRoof() {
+  // unit footprint centred at origin, eaves at y=0, ridge at y=1 running along x
+  const v = [-0.5, 0, -0.5, 0.5, 0, -0.5, 0.5, 0, 0.5, -0.5, 0, 0.5, -0.22, 1, 0, 0.22, 1, 0];
+  const i = [0, 4, 1, 1, 4, 5, 1, 5, 2, 2, 5, 3, 3, 5, 4, 3, 4, 0];
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3)); g.setIndex(i);
+  const ng = g.toNonIndexed(); ng.computeVertexNormals(); return ng;
+}
+function poly(x, pts) { x.beginPath(); pts.forEach((p, i) => i ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1])); x.closePath(); x.fill(); }
+function line(x, pts) { x.beginPath(); pts.forEach((p, i) => i ? x.lineTo(p[0], p[1]) : x.moveTo(p[0], p[1])); x.stroke(); }
+
+// smooth value noise (deterministic)
+function hash(x, z) { const s = Math.sin(x * 127.1 + z * 311.7) * 43758.5453; return s - Math.floor(s); }
+export function noise2(x, z) {
+  const ix = Math.floor(x), iz = Math.floor(z), fx = x - ix, fz = z - iz, u = fx * fx * (3 - 2 * fx), v = fz * fz * (3 - 2 * fz);
+  const a = hash(ix, iz), b = hash(ix + 1, iz), c = hash(ix, iz + 1), d = hash(ix + 1, iz + 1);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+}
+function noiseTex(c1, c2, size, blobs) {
+  const c = document.createElement('canvas'); c.width = c.height = size; const x = c.getContext('2d');
+  x.fillStyle = c1; x.fillRect(0, 0, size, size);
+  for (let i = 0; i < size * blobs; i++) { x.fillStyle = Math.random() < 0.5 ? c2 : c1; x.globalAlpha = 0.25 + Math.random() * 0.4; const r = 1 + Math.random() * size / 40; x.beginPath(); x.arc(Math.random() * size, Math.random() * size, r, 0, 7); x.fill(); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+}
+function roadTex(main) {
+  const c = document.createElement('canvas'); c.width = 128; c.height = 256; const x = c.getContext('2d');
+  x.fillStyle = main ? '#3b3f45' : '#4a4e55'; x.fillRect(0, 0, 128, 256);
+  for (let i = 0; i < 1400; i++) { x.fillStyle = Math.random() < 0.5 ? '#2f3237' : '#565b62'; x.globalAlpha = 0.5; x.fillRect(Math.random() * 128, Math.random() * 256, 2, 2); }
+  x.globalAlpha = 1;
+  if (main) { x.fillStyle = '#e5e7eb'; x.fillRect(4, 0, 4, 256); x.fillRect(120, 0, 4, 256); x.fillStyle = '#f8fafc'; x.fillRect(62, 0, 4, 120); }
+  else { x.fillStyle = '#6b5a45'; x.globalAlpha = 0.6; x.fillRect(0, 0, 6, 256); x.fillRect(122, 0, 6, 256); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+}
