@@ -251,6 +251,22 @@ function buildKambala(site) {
   return { hw: 8, hd: L / 2 + 8 };
 }
 
+
+/* ---------------------------------------------------------------------------- villagers who sing public-domain songs */
+const buildSinger = (kind) => (site) => {
+  const g = site.group, st = [];
+  const look = { ajji: { kind: 'saree', saree: '#db2777', skin: '#8d5a3b' }, candy: { kind: 'lungi', shirt: '#f8fafc', lungi: '#f8fafc', skin: '#a8703f', cap: '#f8fafc' }, fisher: { kind: 'lungi', shirt: '#94a3b8', lungi: '#1e3a8a', skin: '#6e4428', cap: '#f8fafc' }, elder: { kind: 'lungi', shirt: '#f8fafc', lungi: '#f8fafc', skin: '#8d5a3b' } }[kind];
+  const p = M.person(look); p.position.set(0, 0, 0); g.add(p); site.who = p;
+  if (kind === 'ajji') { for (let i = 0; i < 26; i++) st.push(P(sph(0.07, 6, 4), '#fffef5', [0.75 + Math.sin(i) * 0.22, 0.28 + (i % 3) * 0.07, 0.1 + Math.cos(i * 1.7) * 0.2])); st.push(P(cyl(0.34, 0.26, 0.22, 12), '#a16207', [0.75, 0.11, 0.1])); }
+  if (kind === 'candy') { st.push(P(box(1.6, 0.8, 0.9), '#7c4a21', [1.2, 0.4, 0.3]), P(box(1.7, 0.06, 1.0), '#e5e7eb', [1.2, 0.82, 0.3])); for (let i = 0; i < 16; i++) st.push(P(box(0.12, 0.1, 0.12), pick(['#fde68a', '#f8fafc', '#fcd34d']), [0.7 + (i % 6) * 0.2, 0.9, 0.0 + (i >> 3) * 0.3])); st.push(P(cyl(0.04, 0.04, 2.0, 6), '#57534e', [2.0, 1.0, 0.3]), P(cone(1.1, 0.5, 8), '#dc2626', [1.2, 2.2, 0.3])); }
+  if (kind === 'fisher') { st.push(P(cyl(0.015, 0.015, 3.0, 5), '#92400e', [0.7, 1.6, 0.6], [0.5, 0, 0.1]), P(cyl(0.3, 0.24, 0.3, 10), '#a16207', [-0.7, 0.15, 0.2])); }
+  if (kind === 'elder') { st.push(P(cyl(0.02, 0.02, 1.2, 5), '#78350f', [0.45, 0.6, 0.15])); }
+  if (st.length) g.add(mk(merge(st)));
+  site.t = rnd() * 9;
+  site.anim = (dt) => { site.t += dt; const t = site.t; p.rotation.z = Math.sin(t * 1.5) * 0.05; p.position.y = Math.abs(Math.sin(t * 3)) * 0.015; p.rotation.y = Math.sin(t * 0.4) * 0.3; if (p.armR) p.armR.rotation.x = -0.25 + Math.sin(t * 3) * 0.2; };
+  return { hw: 3, hd: 3 };
+};
+
 /* ============================================================================ the manager */
 const HOURS = (a, b) => [a * 60, b * 60];
 const DEFS = [
@@ -258,6 +274,10 @@ const DEFS = [
   { id: 'yaksha', poi: 'Gandhi Maidan', name: 'Yakshagana Bayalata', where: 'Gandhi Maidan', hours: [HOURS(18.5, 24)], song: 'yaksha', obs: 3.5, color: '#ef4444', R: 90, build: buildYaksha, line: 'Yakshagana is on tonight' },
   { id: 'bhajane', poi: 'Hanuman Temple', name: 'Bhajane', where: 'the Hanuman Temple', hours: [HOURS(17.5, 20.5), HOURS(5.5, 8)], song: 'bhajane', obs: 2.4, color: '#fbbf24', R: 65, build: buildBhajane, line: 'The bhajane mandali is singing' },
   { id: 'kambala', poi: 'Aanekere', name: 'Kordha Tukatta Kambala', where: 'the fields beside Aanekere', hours: [HOURS(7, 17.5)], song: 'kambala', color: '#a16207', R: 100, build: buildKambala, line: 'Kambala races are on' },
+  { id: 'ajji', poi: 'Sri Venkataramana Temple', name: 'Ajji with jasmine', where: 'the temple street', hours: [HOURS(6, 20)], song: 'bhagyada', color: '#22c55e', R: 30, quiet: true, build: buildSinger('ajji') },
+  { id: 'candy', poi: 'Karkala Bus Stand', name: 'Rock-candy seller', where: 'the bus stand', hours: [HOURS(7, 19)], song: 'kallu', color: '#22c55e', R: 30, quiet: true, build: buildSinger('candy') },
+  { id: 'fisher', poi: 'Aanekere', name: 'Fisherman', where: 'Aanekere', hours: [HOURS(5, 19)], song: 'baagilanu', color: '#22c55e', R: 30, quiet: true, build: buildSinger('fisher') },
+  { id: 'elder', poi: 'Gandhi Maidan', name: 'Old man under the tree', where: 'Gandhi Maidan', hours: [HOURS(6, 21)], song: 'ulluvaru', color: '#22c55e', R: 30, quiet: true, build: buildSinger('elder') },
 ];
 
 export class Culture {
@@ -273,7 +293,7 @@ export class Culture {
     const g = this.g, p = g.carOrPlayer(); let best = null, bv = 0, cheer = 0;
     for (const s of this.sites) {
       const d = Math.hypot(s.x - p.x, s.z - p.z), on = this.force || this.inHours(s, g.time);
-      if (on !== s.on) { s.on = on; if (on && d < 700 && !this.force && g.toast) g.toast(s.def.name.toUpperCase(), `${s.def.line}, at ${s.def.where}.`); }
+      if (on !== s.on) { s.on = on; if (on && d < 700 && !this.force && !s.def.quiet && g.toast) g.toast(s.def.name.toUpperCase(), `${s.def.line}, at ${s.def.where}.`); }
       const vis = on && d < 230; s.group.visible = vis;
       if (vis) { s.anim(dt); if (s.cheer && d < s.def.R) cheer = Math.max(cheer, s.cheer * (1 - d / s.def.R)); }
       if (on && d < s.def.R) { const v = Math.pow(1 - d / s.def.R, 1.4); if (v > bv) { bv = v; best = s; } }

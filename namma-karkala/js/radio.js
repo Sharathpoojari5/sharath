@@ -4,7 +4,7 @@ import { SONGS, STATIONS } from './songs.js';
 import { Voice } from './voice.js';
 
 const NO_RADIO = new Set(['cycle', 'scooter', 'bike', 'tractor', 'ambulance']);
-const DEFAULT = { bus: 3, ksrtc: 3, schoolbus: 0, auto: 1, jeep: 1, car: 0, suv: 1, omni: 0, tempo: 3, lorry: 3, tanker: 4 };      // buses and lorries open on the Tulu station
+const DEFAULT = { bus: 3, ksrtc: 3, schoolbus: 4, auto: 1, jeep: 1, car: 0, suv: 1, omni: 0, tempo: 3, lorry: 3, tanker: 5 };      // buses and lorries open on the Tulu station
 
 export class Radio {
   constructor(game) {

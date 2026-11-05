@@ -1019,6 +1019,108 @@
    "en": "Mangalore buns, soft soft! Come come!",
    "kn": "ಮಂಗಳೂರು ಬನ್ಸ್, ಮೆತ್ತಗೆ ಮೆತ್ತಗೆ! ಬನ್ನಿ!",
    "tcy": "ಮಂಗಳೂರು ಬನ್ಸ್, ಮೆತ್ತಗ್ ಮೆತ್ತಗ್! ಬಲ್ಲೆ!"
+  },
+  "S53": {
+   "w": "SINGER",
+   "en": "Jingling your anklets as you come",
+   "kn": "ಗೆಜ್ಜೆ ಕಾಲ್ಗಳ ಧ್ವನಿಯ ಮಾಡುತ",
+   "tcy": "ಗೆಜ್ಜೆ ಕಾಲ್ಗಳ ಧ್ವನಿಯ ಮಾಡುತ"
+  },
+  "S54": {
+   "w": "SINGER",
+   "en": "Placing step upon step",
+   "kn": "ಹೆಜ್ಜೆ ಮೇಲೊಂದೆಜ್ಜೆಯಿಕ್ಕುತ",
+   "tcy": "ಹೆಜ್ಜೆ ಮೇಲೊಂದೆಜ್ಜೆಯಿಕ್ಕುತ"
+  },
+  "S55": {
+   "w": "SINGER",
+   "en": "Come, Lakshmi, goddess of fortune",
+   "kn": "ಭಾಗ್ಯದ ಲಕ್ಷ್ಮೀ ಬಾರಮ್ಮ",
+   "tcy": "ಭಾಗ್ಯದ ಲಕ್ಷ್ಮೀ ಬಾರಮ್ಮ"
+  },
+  "S56": {
+   "w": "SINGER",
+   "en": "Our mother, come with good fortune",
+   "kn": "ನಮ್ಮಮ್ಮ ನೀ ಸೌಭಾಗ್ಯದ ಲಕ್ಷ್ಮೀ ಬಾರಮ್ಮ",
+   "tcy": "ನಮ್ಮಮ್ಮ ನೀ ಸೌಭಾಗ್ಯದ ಲಕ್ಷ್ಮೀ ಬಾರಮ್ಮ"
+  },
+  "S57": {
+   "w": "SINGER",
+   "en": "Open the door, Hari",
+   "kn": "ಬಾಗಿಲನು ತೆರೆದು ಹರಿಯೇ",
+   "tcy": "ಬಾಗಿಲನು ತೆರೆದು ಹರಿಯೇ"
+  },
+  "S58": {
+   "w": "SINGER",
+   "en": "Let me serve you",
+   "kn": "ಸೇವೆಯನು ಕೊಡು ಹರಿಯೇ",
+   "tcy": "ಸೇವೆಯನು ಕೊಡು ಹರಿಯೇ"
+  },
+  "S59": {
+   "w": "SINGER",
+   "en": "Open the door and grant me your service",
+   "kn": "ಬಾಗಿಲನು ತೆರೆದು ಸೇವೆಯನು ಕೊಡು ಹರಿಯೇ",
+   "tcy": "ಬಾಗಿಲನು ತೆರೆದು ಸೇವೆಯನು ಕೊಡು ಹರಿಯೇ"
+  },
+  "S60": {
+   "w": "SINGER",
+   "en": "Lord Keshava of Kaginele",
+   "kn": "ಕಾಗಿನೆಲೆಯಾದಿ ಕೇಶವ",
+   "tcy": "ಕಾಗಿನೆಲೆಯಾದಿ ಕೇಶವ"
+  },
+  "S61": {
+   "w": "SINGER",
+   "en": "Buy rock candy, buy rock candy",
+   "kn": "ಕಲ್ಲು ಸಕ್ಕರೆ ಕೊಳ್ಳಿರೋ",
+   "tcy": "ಕಲ್ಲು ಸಕ್ಕರೆ ಕೊಳ್ಳಿರೋ"
+  },
+  "S62": {
+   "w": "SINGER",
+   "en": "The sweet name of Hari",
+   "kn": "ಹರಿನಾಮ ಸಿಹಿ ಕಲ್ಲು ಸಕ್ಕರೆ",
+   "tcy": "ಹರಿನಾಮ ಸಿಹಿ ಕಲ್ಲು ಸಕ್ಕರೆ"
+  },
+  "S63": {
+   "w": "SINGER",
+   "en": "Buy rock candy, buy rock candy",
+   "kn": "ಕಲ್ಲು ಸಕ್ಕರೆ ಕೊಳ್ಳಿರೋ ಕಲ್ಲು ಸಕ್ಕರೆ ಕೊಳ್ಳಿರೋ",
+   "tcy": "ಕಲ್ಲು ಸಕ್ಕರೆ ಕೊಳ್ಳಿರೋ ಕಲ್ಲು ಸಕ್ಕರೆ ಕೊಳ್ಳಿರೋ"
+  },
+  "S64": {
+   "w": "SINGER",
+   "en": "Everyone, come and buy",
+   "kn": "ಎಲ್ಲರೂ ಬನ್ನಿ ಕೊಳ್ಳಿರೋ",
+   "tcy": "ಎಲ್ಲರೂ ಬನ್ನಿ ಕೊಳ್ಳಿರೋ"
+  },
+  "S65": {
+   "w": "SINGER",
+   "en": "The rich build temples for Shiva",
+   "kn": "ಉಳ್ಳವರು ಶಿವಾಲಯ ಮಾಡುವರು",
+   "tcy": "ಉಳ್ಳವರು ಶಿವಾಲಯ ಮಾಡುವರು"
+  },
+  "S66": {
+   "w": "SINGER",
+   "en": "What can a poor man like me build?",
+   "kn": "ನಾನೇನ ಮಾಡಲಿ ಬಡವನಯ್ಯ",
+   "tcy": "ನಾನೇನ ಮಾಡಲಿ ಬಡವನಯ್ಯ"
+  },
+  "S67": {
+   "w": "SINGER",
+   "en": "My legs are the pillars, my body the shrine",
+   "kn": "ಎನ್ನ ಕಾಲೇ ಕಂಬ ದೇಹವೇ ದೇಗುಲ",
+   "tcy": "ಎನ್ನ ಕಾಲೇ ಕಂಬ ದೇಹವೇ ದೇಗುಲ"
+  },
+  "S68": {
+   "w": "SINGER",
+   "en": "My head is the golden pinnacle",
+   "kn": "ಶಿರವೇ ಹೊನ್ನ ಕಳಸವಯ್ಯ",
+   "tcy": "ಶಿರವೇ ಹೊನ್ನ ಕಳಸವಯ್ಯ"
+  },
+  "R06": {
+   "w": "DJ",
+   "en": "Dasara Pada FM. Songs older than the town clock, free for everyone.",
+   "kn": "ದಾಸರ ಪದ ಎಫ್‌ಎಂ. ಊರ ಗಡಿಯಾರಕ್ಕಿಂತ ಹಳೆಯ ಹಾಡುಗಳು, ಎಲ್ಲರಿಗೂ ಉಚಿತ.",
+   "tcy": "ದಾಸರ ಪದ ಎಫ್‌ಎಂ. ಊರ ಗಡಿಯಾರೊಡ್ದು ಪರಬು ಪೊರ್ಲುದ ಪಾತೆರ್ಲು, ಎಲ್ಲೆರೆಗ್ ಉಚಿತ."
   }
  },
  "chatter": {

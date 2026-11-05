@@ -57,7 +57,7 @@ export function singLine(st, bus, t0, text, bars, step, deg, o = {}) {
     const dur = total * w[i] / W, last = i === sy.length - 1;
     // contour: climb through the first half, come down in the second, finish on endDeg
     const half = i < sy.length / 2; const stepD = r() < 0.55 ? 0 : (r() < 0.5 ? 1 : 2) * (half ? (r() < 0.75 ? 1 : -1) : (r() < 0.75 ? -1 : 1));
-    d = last ? end : Math.max(0, Math.min(top, d + stepD));
+    d = o.notes ? o.notes[Math.min(o.notes.length - 1, Math.round(i / Math.max(1, sy.length - 1) * (o.notes.length - 1)))] : last ? end : Math.max(0, Math.min(top, d + stepD));
     note(st, bus, t, deg(d), Math.max(0.12, dur * 0.95), o.vel ?? 1, x, { ...o, slide: (i > 0 && r() < 0.35) ? 1.05 : 0 });
     t += dur;
   });

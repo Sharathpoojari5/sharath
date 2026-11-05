@@ -204,6 +204,63 @@ export const SONGS = {
     }),
     lyrics: LY(["S49", "S50", "S51", "S52"]),
   },
+  /* =============================================================== public-domain devotional songs (Dasara Pada FM) */
+  bhagyada: {
+    id: 'bhagyada', vox: { vel: 1.05, vib: 0.016, wet: 0.5, startDeg: 3 }, voxOct: 2, title: "Bhagyada Lakshmi Baramma", artist: "Purandara Dasa (c. 1540), new arrangement", bpm: 88, swing: 0.1, root: 146.83, scale: 'madhyamavathi', seed: 81,
+    prog: [0, 0, 2, 0], lead: 'flute', leadOct: 4, counter: 'pluck', counterOct: 4, padKind: 'harmonium', padRetrig: true, fill: 'chenda', bass: 'sub',
+    pat: { tabla: 'x...t...g...t.t.', jhanj: 'x.x.x.x.x.x.x.xO', bass: 'x.......x.......', bassLen: 3 },
+    hooks: {
+      A: N([[0,3,2],[2,4,2],[4,5,4],[8,4,2],[10,3,2],[12,2,4],[16,3,2],[18,2,2],[20,1,4],[24,2,2],[26,3,2],[28,2,4]]),
+      B: N([[0,5,2],[2,5,2],[4,4,2],[6,3,2],[8,4,4],[12,3,2],[14,2,2],[16,3,4],[20,2,2],[22,1,2],[24,2,4],[28,0,4]]),
+    },
+    sections: sections({
+      intro: ['drone', 'pad', 'hook', 'tabla'], verse: ['drone', 'pad', 'tabla', 'bass', 'hook'], hook: ['drone', 'pad', 'tabla', 'bass', 'hook', 'counter', 'choir'],
+      brk: ['drone', 'pad', 'tabla', 'hook'], hook2: ['drone', 'pad', 'tabla', 'bass', 'hook', 'counter', 'choir', 'jhanj'], outro: ['drone', 'pad', 'hook'],
+    }),
+    lyrics: [[4, "S53", 2, {"notes": [1, 2, 3, 3, 2, 1, 2, 3, 3, 2, 1, 0]}], [6, "S54", 2, {"notes": [2, 3, 3, 4, 3, 2, 1, 2, 3, 2, 1, 0]}], [8, "S53", 2, {"notes": [1, 2, 3, 3, 2, 1, 2, 3, 3, 2, 1, 0]}], [10, "S54", 2, {"notes": [2, 3, 3, 4, 3, 2, 1, 2, 3, 2, 1, 0]}], [12, "S55", 2, {"notes": [3, 3, 4, 5, 5, 4, 3, 4, 3, 2], "startDeg": 3}], [14, "S56", 2, {"notes": [2, 2, 3, 4, 4, 3, 2, 1, 2, 3, 2, 1, 0]}], [16, "S55", 2, {"notes": [3, 3, 4, 5, 5, 4, 3, 4, 3, 2]}], [18, "S56", 2, {"notes": [2, 2, 3, 4, 4, 3, 2, 1, 2, 3, 2, 1, 0]}], [24, "S55", 2, {"notes": [3, 3, 4, 5, 5, 4, 3, 4, 3, 2]}], [26, "S56", 2, {"notes": [2, 2, 3, 4, 4, 3, 2, 1, 2, 3, 2, 1, 0]}], [28, "S55", 2, {"notes": [3, 3, 4, 5, 5, 4, 3, 4, 3, 2]}], [30, "S56", 2, {"notes": [2, 2, 3, 4, 4, 3, 2, 1, 2, 3, 2, 1, 0]}], [32, "S56", 3, {"notes": [2, 2, 3, 4, 4, 3, 2, 1, 2, 3, 2, 1, 0]}]],
+  },
+  baagilanu: {
+    id: 'baagilanu', vox: { vel: 1.05, vib: 0.016, wet: 0.5, startDeg: 3 }, voxOct: 2, title: "Baagilanu Teredu", artist: "Kanaka Dasa (c. 1550), new arrangement", bpm: 80, swing: 0.1, root: 130.81, scale: 'madhyamavathi', seed: 83,
+    prog: [0, 0, 2, 0], lead: 'flute', leadOct: 4, counter: 'pluck', counterOct: 4, padKind: 'harmonium', padRetrig: true, fill: 'chenda', bass: 'sub',
+    pat: { tabla: 'x...t...g...t.t.', jhanj: 'x.x.x.x.x.x.x.xO', bass: 'x.......x.......', bassLen: 3 },
+    hooks: {
+      A: N([[0,2,4],[4,3,2],[6,4,2],[8,3,4],[12,2,2],[14,1,2],[16,2,4],[20,3,2],[22,2,2],[24,1,4],[28,0,4]]),
+      B: N([[0,4,2],[2,5,2],[4,4,4],[8,3,2],[10,4,2],[12,3,4],[16,2,2],[18,3,2],[20,2,4],[24,1,4],[28,2,4]]),
+    },
+    sections: sections({
+      intro: ['drone', 'pad', 'hook', 'tabla'], verse: ['drone', 'pad', 'tabla', 'bass', 'hook'], hook: ['drone', 'pad', 'tabla', 'bass', 'hook', 'counter', 'choir'],
+      brk: ['drone', 'pad', 'tabla', 'hook'], hook2: ['drone', 'pad', 'tabla', 'bass', 'hook', 'counter', 'choir', 'jhanj'], outro: ['drone', 'pad', 'hook'],
+    }),
+    lyrics: [[4, "S57", 2, {"notes": [1, 2, 3, 3, 2, 1, 2, 3, 3, 2, 1, 0]}], [6, "S58", 2, {"notes": [2, 3, 3, 4, 3, 2, 1, 2, 3, 2, 1, 0]}], [8, "S57", 2, {"notes": [1, 2, 3, 3, 2, 1, 2, 3, 3, 2, 1, 0]}], [10, "S58", 2, {"notes": [2, 3, 3, 4, 3, 2, 1, 2, 3, 2, 1, 0]}], [12, "S59", 2, {"notes": [3, 3, 4, 5, 5, 4, 3, 4, 3, 2], "startDeg": 3}], [14, "S60", 2, {"notes": [2, 2, 3, 4, 4, 3, 2, 1, 2, 3, 2, 1, 0]}], [16, "S59", 2, {"notes": [3, 3, 4, 5, 5, 4, 3, 4, 3, 2]}], [18, "S60", 2, {"notes": [2, 2, 3, 4, 4, 3, 2, 1, 2, 3, 2, 1, 0]}], [24, "S59", 2, {"notes": [3, 3, 4, 5, 5, 4, 3, 4, 3, 2]}], [26, "S60", 2, {"notes": [2, 2, 3, 4, 4, 3, 2, 1, 2, 3, 2, 1, 0]}], [28, "S59", 2, {"notes": [3, 3, 4, 5, 5, 4, 3, 4, 3, 2]}], [30, "S60", 2, {"notes": [2, 2, 3, 4, 4, 3, 2, 1, 2, 3, 2, 1, 0]}], [32, "S60", 3, {"notes": [2, 2, 3, 4, 4, 3, 2, 1, 2, 3, 2, 1, 0]}]],
+  },
+  kallu: {
+    id: 'kallu', vox: { vel: 1.05, vib: 0.016, wet: 0.5, startDeg: 3 }, voxOct: 2, title: "Kallu Sakkare KollirO", artist: "Purandara Dasa (c. 1540), new arrangement", bpm: 104, swing: 0.1, root: 138.59, scale: 'madhyamavathi', seed: 85,
+    prog: [0, 0, 2, 0], lead: 'pluck', leadOct: 4, counter: 'pluck', counterOct: 4, padKind: 'harmonium', padRetrig: true, fill: 'chenda', bass: 'sub',
+    pat: { tabla: 'x...t...g...t.t.', jhanj: 'x.x.x.x.x.x.x.xO', bass: 'x.......x.......', bassLen: 3 },
+    hooks: {
+      A: N([[0,4,2],[2,4,2],[4,3,2],[6,4,2],[8,5,4],[12,4,2],[14,3,2],[16,2,2],[18,3,2],[20,4,4],[24,3,2],[26,2,2],[28,1,4]]),
+      B: N([[0,5,2],[2,5,2],[4,4,2],[6,5,2],[8,5,2],[10,4,2],[12,3,4],[16,4,2],[18,3,2],[20,2,2],[22,3,2],[24,2,4],[28,0,4]]),
+    },
+    sections: sections({
+      intro: ['drone', 'pad', 'hook', 'tabla'], verse: ['drone', 'pad', 'tabla', 'bass', 'hook', 'clap'], hook: ['drone', 'pad', 'tabla', 'bass', 'hook', 'counter', 'choir', 'clap'],
+      brk: ['drone', 'pad', 'tabla', 'hook'], hook2: ['drone', 'pad', 'tabla', 'bass', 'hook', 'counter', 'choir', 'jhanj', 'clap'], outro: ['drone', 'pad', 'hook'],
+    }),
+    lyrics: [[4, "S61", 2, {"notes": [1, 2, 3, 3, 2, 1, 2, 3, 3, 2, 1, 0]}], [6, "S62", 2, {"notes": [2, 3, 3, 4, 3, 2, 1, 2, 3, 2, 1, 0]}], [8, "S61", 2, {"notes": [1, 2, 3, 3, 2, 1, 2, 3, 3, 2, 1, 0]}], [10, "S62", 2, {"notes": [2, 3, 3, 4, 3, 2, 1, 2, 3, 2, 1, 0]}], [12, "S63", 2, {"notes": [3, 3, 4, 5, 5, 4, 3, 4, 3, 2], "startDeg": 3}], [14, "S64", 2, {"notes": [2, 2, 3, 4, 4, 3, 2, 1, 2, 3, 2, 1, 0]}], [16, "S63", 2, {"notes": [3, 3, 4, 5, 5, 4, 3, 4, 3, 2]}], [18, "S64", 2, {"notes": [2, 2, 3, 4, 4, 3, 2, 1, 2, 3, 2, 1, 0]}], [24, "S63", 2, {"notes": [3, 3, 4, 5, 5, 4, 3, 4, 3, 2]}], [26, "S64", 2, {"notes": [2, 2, 3, 4, 4, 3, 2, 1, 2, 3, 2, 1, 0]}], [28, "S63", 2, {"notes": [3, 3, 4, 5, 5, 4, 3, 4, 3, 2]}], [30, "S64", 2, {"notes": [2, 2, 3, 4, 4, 3, 2, 1, 2, 3, 2, 1, 0]}], [32, "S64", 3, {"notes": [2, 2, 3, 4, 4, 3, 2, 1, 2, 3, 2, 1, 0]}]],
+  },
+  ulluvaru: {
+    id: 'ulluvaru', vox: { vel: 1.05, vib: 0.016, wet: 0.5, startDeg: 3 }, voxOct: 2, title: "Ulluvaru Shivalaya", artist: "Basavanna (12th c. vachana), new arrangement", bpm: 72, swing: 0.1, root: 146.83, scale: 'madhyamavathi', seed: 87,
+    prog: [0, 0, 2, 0], lead: 'flute', leadOct: 4, counter: 'pluck', counterOct: 4, padKind: 'harmonium', padRetrig: true, fill: 'chenda', bass: 'sub',
+    pat: { tabla: 'x...t...g...t.t.', jhanj: 'x.x.x.x.x.x.x.xO', bass: 'x.......x.......', bassLen: 3 },
+    hooks: {
+      A: N([[0,3,4],[4,2,4],[8,3,2],[10,4,2],[12,3,4],[16,2,4],[20,1,4],[24,0,8]]),
+      B: N([[0,5,4],[4,4,4],[8,3,4],[12,4,2],[14,3,2],[16,2,4],[20,3,4],[24,0,8]]),
+    },
+    sections: sections({
+      intro: ['drone', 'pad', 'hook', 'tabla'], verse: ['drone', 'pad', 'tabla', 'bass', 'hook'], hook: ['drone', 'pad', 'tabla', 'bass', 'hook', 'counter', 'choir'],
+      brk: ['drone', 'pad', 'tabla', 'hook'], hook2: ['drone', 'pad', 'tabla', 'bass', 'hook', 'counter', 'choir', 'jhanj'], outro: ['drone', 'pad', 'hook'],
+    }),
+    lyrics: [[4, "S65", 2, {"notes": [1, 2, 3, 3, 2, 1, 2, 3, 3, 2, 1, 0]}], [6, "S66", 2, {"notes": [2, 3, 3, 4, 3, 2, 1, 2, 3, 2, 1, 0]}], [8, "S65", 2, {"notes": [1, 2, 3, 3, 2, 1, 2, 3, 3, 2, 1, 0]}], [10, "S66", 2, {"notes": [2, 3, 3, 4, 3, 2, 1, 2, 3, 2, 1, 0]}], [12, "S67", 2, {"notes": [3, 3, 4, 5, 5, 4, 3, 4, 3, 2], "startDeg": 3}], [14, "S68", 2, {"notes": [2, 2, 3, 4, 4, 3, 2, 1, 2, 3, 2, 1, 0]}], [16, "S67", 2, {"notes": [3, 3, 4, 5, 5, 4, 3, 4, 3, 2]}], [18, "S68", 2, {"notes": [2, 2, 3, 4, 4, 3, 2, 1, 2, 3, 2, 1, 0]}], [24, "S67", 2, {"notes": [3, 3, 4, 5, 5, 4, 3, 4, 3, 2]}], [26, "S68", 2, {"notes": [2, 2, 3, 4, 4, 3, 2, 1, 2, 3, 2, 1, 0]}], [28, "S67", 2, {"notes": [3, 3, 4, 5, 5, 4, 3, 4, 3, 2]}], [30, "S68", 2, {"notes": [2, 2, 3, 4, 4, 3, 2, 1, 2, 3, 2, 1, 0]}], [32, "S68", 3, {"notes": [2, 2, 3, 4, 4, 3, 2, 1, 2, 3, 2, 1, 0]}]],
+  },
   /* =============================================================== game score */
   theme: {
     id: 'theme', vox: { vel: 0.9, startDeg: 3 }, title: 'Namma Karkala', artist: 'Game theme', bpm: 100, swing: 0.08, root: 146.83, scale: 'mohanam', seed: 61,
@@ -245,6 +302,7 @@ export const STATIONS = [
   { id: 'pili', name: 'Pili Beats FM', tag: 'Tiger-dance bass', color: '#f97316', songs: ['pili', 'tigerdrop'], ident: 'R02' },
   { id: 'retro', name: 'Sandalwood Retro', tag: 'Golden Kannada hits', color: '#a78bfa', songs: ['mallige', 'kanasu'], ident: 'R03' },
   { id: 'paddana', name: 'Tulu Paddana FM 94.5', tag: 'Bhajane, Yakshagana, paddana', color: '#ef4444', songs: ['paddana', 'bhajane', 'yaksha'], ident: 'R05' },
+  { id: 'dasara', name: 'Dasara Pada FM 101.3', tag: 'Purandara Dasa, Kanaka Dasa, Basavanna', color: '#22c55e', songs: ['bhagyada', 'baagilanu', 'kallu', 'ulluvaru'], ident: 'R06' },
   { id: 'kere', name: 'Kere FM', tag: 'Lake-side chill', color: '#38bdf8', songs: ['kere', 'malnad'], ident: 'R04' },
 ];
 

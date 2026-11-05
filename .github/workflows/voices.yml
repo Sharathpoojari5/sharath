@@ -33,9 +33,12 @@ jobs:
       - name: Install ffmpeg and Python packages
         run: |
           sudo apt-get update -y && sudo apt-get install -y ffmpeg
-          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install torch==2.4.1 torchaudio==2.4.1 --index-url https://download.pytorch.org/whl/cpu
           pip install soundfile librosa numpy
           pip install git+https://github.com/huggingface/parler-tts.git
+          # parler-tts can pull a different torchaudio build; put the matching CPU pair back
+          pip install --force-reinstall --no-deps torch==2.4.1 torchaudio==2.4.1 --index-url https://download.pytorch.org/whl/cpu
+          python -c "import torch, torchaudio, parler_tts; print('torch', torch.__version__, 'torchaudio', torchaudio.__version__)"
       - uses: actions/cache@v4
         with:
           path: ~/.cache/huggingface
