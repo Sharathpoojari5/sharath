@@ -54,13 +54,21 @@ export class Game {
   makeSky() {
     const g = new THREE.SphereGeometry(800, 32, 16);
     this.skyMat = new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, fog: false,
-      uniforms: { top: { value: new THREE.Color('#5aa0e6') }, bot: { value: new THREE.Color('#d8e6f0') }, sunDir: { value: new THREE.Vector3(0, 1, 0) }, sunCol: { value: new THREE.Color('#fff3c4') }, night: { value: 0 } },
+      uniforms: { top: { value: new THREE.Color('#5aa0e6') }, bot: { value: new THREE.Color('#d8e6f0') }, sunDir: { value: new THREE.Vector3(0, 1, 0) }, sunCol: { value: new THREE.Color('#fff3c4') }, night: { value: 0 },
+        uTime: { value: 0 }, cover: { value: 0.45 }, cloudCol: { value: new THREE.Color('#ffffff') } },
       vertexShader: 'varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.); }',
-      fragmentShader: `uniform vec3 top, bot, sunCol, sunDir; uniform float night; varying vec3 vP;
+      fragmentShader: `uniform vec3 top, bot, sunCol, sunDir, cloudCol; uniform float night, uTime, cover; varying vec3 vP;
         float h(vec3 p){ return fract(sin(dot(p, vec3(12.9898,78.233,45.164)))*43758.5453); }
+        float h2(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }
+        float n2(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.-2.*f); return mix(mix(h2(i), h2(i+vec2(1,0)), f.x), mix(h2(i+vec2(0,1)), h2(i+vec2(1,1)), f.x), f.y); }
+        float fbm(vec2 p){ float v = 0., a = .5; for (int i = 0; i < 5; i++){ v += a*n2(p); p = p*2.03 + 17.; a *= .5; } return v; }
         void main(){ float y = clamp(vP.y,0.,1.); vec3 c = mix(bot, top, pow(y, .55));
           float s = max(dot(vP, normalize(sunDir)), 0.); c += sunCol * (pow(s, 900.)*3. + pow(s, 12.)*.35);
-          vec3 q = floor(vP*240.); float st = step(.9965, h(q)) * night * smoothstep(.05,.4,y); c += vec3(st);
+          vec3 q = floor(vP*240.); float st = step(.9965, h(q)) * night * smoothstep(.05,.4,y) * (1. - cover); c += vec3(st);
+          vec2 uv = vP.xz / (vP.y + .18) * 1.6 + vec2(uTime * .006, uTime * .002);
+          float cl = smoothstep(1. - cover - .15, 1. - cover + .25, fbm(uv)) * smoothstep(.0, .2, vP.y);
+          vec3 cc = cloudCol * (0.75 + 0.35 * fbm(uv * 2. + 3.)) + sunCol * pow(s, 6.) * .4;
+          c = mix(c, cc, cl * .92);
           gl_FragColor = vec4(c, 1.); }` });
     this.sky = new THREE.Mesh(g, this.skyMat); this.sky.renderOrder = -1; this.scene.add(this.sky);
   }
@@ -83,11 +91,11 @@ export class Game {
     if (rd) { const s = new Vehicle(this, 'scooter', rd.x - rd.dirz * (rd.w / 2 + 0.8), rd.z + rd.dirx * (rd.w / 2 + 0.8), Math.atan2(rd.dirx, rd.dirz), { color: '#b91c1c', tag: 'ajja' }); s.parked = true; this.vehicles.push(s); this.ajja = s; }
     // scattered parked two-wheelers and cars
     const nodes = w.bigNodes.length ? w.bigNodes : w.nodes;
-    for (let i = 0; i < 26; i++) {
+    for (let i = 0; i < 40; i++) {
       const n = pick(nodes), e = pick(n.adj), dx = e.n.x - n.x, dz = e.n.z - n.z, L = Math.hypot(dx, dz) || 1, t = rnd(0.3, 0.7), s = Math.random() < 0.5 ? 1 : -1;
       const x = n.x + dx * t + (-dz / L) * (e.w / 2 + 1) * s, z = n.z + dz * t + (dx / L) * (e.w / 2 + 1) * s;
       if (w.blocked(x, z, 1)) continue;
-      const v = new Vehicle(this, pick(['scooter', 'scooter', 'bike', 'car', 'auto']), x, z, Math.atan2(dx, dz)); v.parked = true; this.vehicles.push(v);
+      const v = new Vehicle(this, pick(['scooter', 'scooter', 'bike', 'car', 'auto', 'cycle', 'omni', 'suv']), x, z, Math.atan2(dx, dz)); v.parked = true; this.vehicles.push(v);
     }
   }
 
@@ -136,6 +144,7 @@ export class Game {
       paisa: ['+₹10,000 (not real, sadly)', () => { this.addMoney(10000, true); }], policeilla: ['Police forgot about you', () => { this.heat = 0; }],
       golibaje: ['Full health. Goli baje fixes everything.', () => { this.player.hp = 100; }], bahubali: ['Bahubali jump', () => { this.cheats.moon = !this.cheats.moon; }],
       busbeku: ['A bus appears', () => this.spawnNear('bus')], autobeku: ['Pom pom! An auto', () => this.spawnNear('auto')], bullet: ['A motorbike', () => this.spawnNear('bike')],
+      lorry: ['HORN OK PLEASE', () => this.spawnNear('lorry')], tractor: ['A tractor', () => this.spawnNear('tractor')], ambulance: ['108 is here', () => this.spawnNear('ambulance')], cycle: ['A bicycle', () => this.spawnNear('cycle')], ksrtc: ['A state bus', () => this.spawnNear('ksrtc')],
       jorr: ['Super sprint', () => { this.cheats.fast = !this.cheats.fast; }],
     };
     for (const [code, [msg, fn]] of Object.entries(C)) if (this.cbuf.endsWith(code)) { fn(); this.toast('CHEAT', msg); this.cbuf = ''; this.save.cheated = true; this.audio.coin(); }
@@ -188,7 +197,8 @@ export class Game {
       const near = w.nodesNear(p.x, p.z, 380).filter(n => Math.hypot(n.x - p.x, n.z - p.z) > 110 && n.adj.length);
       for (let k = 0; k < 4 && near.length; k++) {
         const n = pick(near), e = pick(n.adj); if (e.w < 6 && Math.random() < 0.6) continue;
-        const kind = e.w >= 9 ? pick(['scooter', 'scooter', 'bike', 'auto', 'auto', 'car', 'car', 'bus', 'tempo']) : pick(['scooter', 'scooter', 'bike', 'auto', 'car']);
+        const kind = e.w >= 9 ? pick(['scooter', 'scooter', 'scooter', 'bike', 'bike', 'auto', 'auto', 'car', 'car', 'suv', 'omni', 'bus', 'bus', 'ksrtc', 'schoolbus', 'tempo', 'lorry', 'tanker', 'tractor', 'cycle', 'ambulance'])
+          : pick(['scooter', 'scooter', 'bike', 'cycle', 'auto', 'car', 'omni', 'tractor']);
         const h = Math.atan2(e.n.x - n.x, e.n.z - n.z), L = Math.hypot(e.n.x - n.x, e.n.z - n.z) || 1, lo = e.w / 4 + 0.2;
         const x = n.x + ((e.n.z - n.z) / L) * lo, z = n.z - ((e.n.x - n.x) / L) * lo;
         if (this.vehicles.some(v => Math.hypot(v.x - x, v.z - z) < 12)) continue;
@@ -438,10 +448,15 @@ export class Game {
     const bot = new THREE.Color('#1a2236').lerp(new THREE.Color('#d9e8f3'), day).lerp(new THREE.Color('#ff9c5a'), dusk * 0.65).lerp(new THREE.Color('#8b939c'), rain * 0.8);
     this.skyMat.uniforms.top.value.copy(top); this.skyMat.uniforms.bot.value.copy(bot); this.skyMat.uniforms.sunDir.value.copy(sd); this.skyMat.uniforms.night.value = 1 - day;
     this.skyMat.uniforms.sunCol.value.set(day > 0.1 ? '#fff1c2' : '#000'); this.skyMat.uniforms.sunCol.value.multiplyScalar(1 - rain);
+    const U = this.skyMat.uniforms; U.uTime.value = this.now; U.cover.value = 0.38 + rain * 0.55;
+    U.cloudCol.value.set('#ffffff').lerp(new THREE.Color('#ffb48a'), dusk * 0.7).multiplyScalar(0.12 + 0.88 * day).lerp(new THREE.Color('#6b7280'), rain * 0.7 * day);
+    // sky reflections for glass, paint and water: re-baked every few game minutes
+    this.envT = (this.envT || 0) - dt;
+    if (this.envT <= 0) { this.envT = 20; this.bakeEnv(); }
     this.scene.fog.color.copy(bot); this.scene.fog.far = lerp(560, 260, rain); this.scene.fog.near = lerp(140, 40, rain);
     this.sun.intensity = (0.15 + 2.3 * day) * (1 - rain * 0.7); this.sun.color.set(dusk > 0.3 ? '#ffb27a' : '#fff1d6');
     if (day < 0.05) { this.sun.color.set('#9fb4ff'); this.sun.intensity = 0.35; }
-    this.hemi.intensity = 0.35 + 1.25 * day; this.hemi.color.set(day > 0.2 ? '#cfe4ff' : '#5266a8');
+    this.hemi.intensity = 0.35 + 1.15 * day; this.hemi.color.set(day > 0.2 ? '#cfe4ff' : '#5266a8');
     this.renderer.toneMappingExposure = 0.95 + 0.25 * (1 - day);
     this.world.setNight(1 - day); this.world.setWet(rain);
     // weather: Karkala rains often
@@ -460,6 +475,13 @@ export class Game {
     if (day > 0.6 && Math.random() < dt * 0.05) this.audio.crow();
   }
 
+  bakeEnv() {
+    if (!this.pmrem) { this.pmrem = new THREE.PMREMGenerator(this.renderer); this.envScene = new THREE.Scene(); }
+    const sky = this.sky; this.scene.remove(sky); this.envScene.add(sky); const p = sky.position.clone(); sky.position.set(0, 0, 0);
+    const rt = this.pmrem.fromScene(this.envScene, 0, 1, 1000); this.envScene.remove(sky); this.scene.add(sky); sky.position.copy(p);
+    if (this.envRT) this.envRT.dispose(); this.envRT = rt;
+    for (const [m, k] of [[M.MAT.shiny, 0.9], [M.GLASS, 1.2], [this.world.waterMat, 0.35]]) { m.envMap = rt.texture; m.envMapIntensity = k; m.needsUpdate = !m.userData.envSet; m.userData.envSet = true; }
+  }
   /* ====================================================================== main loop */
   start() {
     this.started = true; this.audio.init(); this.audio.resume(); this.clock = new THREE.Clock();
@@ -468,14 +490,15 @@ export class Game {
     if (this.save.done.length) this.toast('WELCOME BACK', `₹${this.save.money.toLocaleString('en-IN')} in your pocket`);
   }
   frame() {
-    const raw = this.clock.getDelta(), dt = Math.min(0.05, raw); this.now += dt;
+    if (this.freezeFrame) return;            // used by automated screenshot tests
+    const raw = this.clock.getDelta(), dt = Math.min(0.05, raw); this.now += dt; this.dtLast = dt;
     this.adaptQuality(raw);
     if (!this.paused && !this.photo) this.update(dt); else if (this.photo) this.updateSky(0);
     this.updateCamera(dt); this.renderer.render(this.scene, this.cam);
     if (!this.paused && !this.photo) this.hudUpdate(dt);
   }
   /** Debug/testing: advance the simulation without rendering. */
-  step(n = 1, dt = 1 / 30) { for (let i = 0; i < n; i++) { this.now += dt; this.update(dt); } this.updateCamera(dt); }
+  step(n = 1, dt = 1 / 30) { this.dtLast = dt; for (let i = 0; i < n; i++) { this.now += dt; this.update(dt); } this.updateCamera(dt); }
   /** Lower resolution, then shadow quality, on slow laptops (checked every 4 seconds). */
   adaptQuality(raw) {
     this.qT = (this.qT || 0) + raw; this.qN = (this.qN || 0) + 1;
@@ -495,7 +518,7 @@ export class Game {
     if (this.car) {
       const c = this.car, steer = inp.x, thr = inp.y;
       const impact = c.physics(dt, { thr, steer, hand: inp.hand, boost: inp.boost });
-      if (impact > 6) { this.audio.thud(impact); this.shake = Math.min(0.6, impact * 0.04); if (c.def.two && impact > 9) { this.exitVehicle(); p.down = 1.6; p.hp -= impact * 2; this.say('Ayyo! Off the scooter!', 2); } }
+      if (impact > 6) { this.audio.thud(impact); this.shake = Math.min(0.6, impact * 0.04); if (c.def.two && impact > 12) { this.exitVehicle(); p.down = 1.6; p.hp -= impact * 2; this.say('Ayyo! Off the scooter!', 2); } }
       c.sync(); if (this.car) { p.x = c.x; p.z = c.z; }
       this.audio.engine(c.kind, c.v, thr);
       if (w.inWater(c.x, c.z) && !this.sinking) { this.sinking = 1; this.audio.splash(); this.say(c.kind === 'bus' ? 'You drove a bus into the kere. Pramod will hear about this.' : 'Splash! Into the kere.', 3); }
@@ -523,7 +546,7 @@ export class Game {
       if (this.car && c.hit <= 0 && Math.abs(this.car.v) > 4 && this.rayHit(this.car, c.x, c.z, 0.9)) { c.hit = 3; c.h = this.car.h; this.audio.thud(9); this.offence(2); this.say(pick(COWHIT), 3); this.car.v *= 0.2; }
     }
     if (this.mission) this.missionUpdate(dt); else if (this.job) this.jobUpdate(dt); else this.missionUpdate(dt);
-    this.updateSky(dt);
+    this.updateSky(dt); this.world.update(dt);
     this.marker.rotation.y += dt; if (this.marker.arrow) this.marker.arrow.position.y = 4 + Math.sin(this.now * 3) * 0.4;
     this.startMarker.rotation.y -= dt;
   }

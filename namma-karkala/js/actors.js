@@ -12,8 +12,8 @@ const pickW = (items) => { let s = 0; for (const [, w] of items) s += w; let r =
 export class Vehicle {
   constructor(g, kind, x, z, h, o = {}) {
     this.g = g; this.kind = kind;
-    const { group, def } = M.vehicle(kind, o);
-    this.mesh = group; this.def = def; g.scene.add(group);
+    const { group, def, wheels, flash } = M.vehicle(kind, o);
+    this.mesh = group; this.def = def; this.wheels = wheels; this.flash = flash; this.spin = 0; g.scene.add(group);
     this.x = x; this.z = z; this.h = h; this.v = 0; this.st = 0; this.y = g.world.groundH(x, z);
     this.driver = o.driver || null;      // 'player' | 'ai' | 'police' | 'thief' | null (parked)
     this.r = def.W / 2 + 0.15; this.hp = 100; this.tag = o.tag || null;
@@ -22,11 +22,12 @@ export class Vehicle {
     this.sync();
   }
   addDriverModel(isPlayer = false) {
-    if (this.dm || this.kind === 'bus' || this.kind === 'car' || this.kind === 'jeep' || this.kind === 'tempo') return;
+    if (this.dm || !this.def.open) return;
     const p = isPlayer ? M.person({ kind: 'shirt', shirt: '#0ea5e9', pants: '#1e293b', skin: '#8d5a3b' })
       : M.person({ kind: 'shirt', shirt: this.driver === 'thief' ? '#111827' : undefined, cap: this.driver === 'thief' ? '#dc2626' : undefined });
     p.position.set(...this.def.seat); p.position.y += this.def.two ? -0.25 : -0.4;
     if (p.legL) { p.legL.rotation.x = -1.2; p.legR.rotation.x = -1.2; }
+    if (this.kind === 'cycle') p.position.y += 0.12;
     this.mesh.add(p); this.dm = p;
   }
   removeDriverModel() { if (this.dm) { this.mesh.remove(this.dm); this.dm = null; } }
@@ -80,6 +81,9 @@ export class Vehicle {
   }
   sync() {
     const m = this.mesh; m.position.set(this.x, this.y + (this.sink || 0), this.z);
+    if (this.wheels) { this.spin += (this.v / this.def.wr) * (this.g.dtLast || 0.016); for (const w of this.wheels) w.rotation.x = this.spin; }
+    if (this.flash) this.flash.visible = (this.driver === 'police' && this.g.level >= 1) || (this.kind === 'ambulance' && this.driver) ? ((this.g.now * 3) | 0) % 2 === 0 : false;
+    if (this.dm && this.kind === 'cycle' && this.dm.legL) { const ph = this.spin * 0.8; this.dm.legL.rotation.x = -1.0 + Math.sin(ph) * 0.5; this.dm.legR.rotation.x = -1.0 - Math.sin(ph) * 0.5; }
     m.rotation.order = 'YXZ'; m.rotation.y = this.h; m.rotation.x = this.pitch || 0;
     m.rotation.z = this.def.two ? -this.st * clamp(Math.abs(this.v) / 10, 0, 1) * 0.38 : 0;
   }
@@ -87,7 +91,7 @@ export class Vehicle {
   /* ------------------------------ traffic AI: drive on the left along the road graph */
   aiInit(from, to) { this.a = from; this.b = to; this.edgeW = (from.adj.find(e => e.n === to) || { w: 6 }).w; }
   aiNext() {
-    const opts = this.b.adj.filter(e => e.n !== this.a && (this.kind !== 'bus' || e.w >= 7));
+    const opts = this.b.adj.filter(e => e.n !== this.a && (!this.def.big || e.w >= 7));
     const list = opts.length ? opts : this.b.adj;
     const e = pickW(list.map(e => [e, e.w >= 9 ? 3 : e.w >= 7 ? 1.6 : 1]));
     this.a = this.b; this.b = e.n; this.edgeW = e.w;
@@ -101,7 +105,7 @@ export class Vehicle {
     let [tx, tz] = this.aiTarget();
     if (Math.hypot(tx - this.x, tz - this.z) < 3.5 + Math.abs(this.v) * 0.25) { this.aiNext(); [tx, tz] = this.aiTarget(); }
     const want = Math.atan2(tx - this.x, tz - this.z), diff = wrap(want - this.h);
-    const base = this.kind === 'bus' ? 10 : this.edgeW >= 9 ? 12.5 : this.edgeW >= 7 ? 9.5 : 7;
+    const base = this.def.big ? 10 : this.edgeW >= 9 ? 12.5 : this.edgeW >= 7 ? 9.5 : 7;
     let target = Math.min(base, this.def.maxV * 0.8) * (1 - 0.65 * clamp(Math.abs(diff) / 1.2, 0, 1));
     const block = this.g.obstacleAhead(this, 5 + Math.abs(this.v) * 1.3);
     if (block) { target = block < 4 ? -1 : Math.min(target, (block - 4) * 0.8); if (this.g.now - this.honkT > 4 && block < 8) { this.honkT = this.g.now + Math.random() * 3; this.g.honked(this); } }

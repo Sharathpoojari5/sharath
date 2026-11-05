@@ -15,22 +15,25 @@ export const cone = (r, h, n = 8) => new THREE.ConeGeometry(r, h, n);
 
 /** Merge pieces into one BufferGeometry with a colour attribute. */
 export function merge(parts) {
-  const pos = [], nor = [], col = [];
+  const pos = [], nor = [], col = [], uv = [];
   for (const p of parts) {
     const g = p.geo.index ? p.geo.toNonIndexed() : p.geo.clone();
-    _e.set(p.rot[0], p.rot[1], p.rot[2]); _q.setFromEuler(_e);
+    _e.set(p.rot[0], p.rot[1], p.rot[2], p.rot[3] || 'XYZ'); _q.setFromEuler(_e);
     _m.compose(new THREE.Vector3(...p.pos), _q, new THREE.Vector3(...p.scl));
     g.applyMatrix4(_m);
     _c.set(p.color);
     const a = g.attributes.position.array, n = g.attributes.normal.array;
     for (let i = 0; i < a.length; i++) { pos.push(a[i]); nor.push(n[i]); }
     for (let i = 0; i < a.length / 3; i++) col.push(_c.r, _c.g, _c.b);
+    const u = g.attributes.uv ? g.attributes.uv.array : null;
+    for (let i = 0; i < a.length / 3; i++) uv.push(u ? u[i * 2] : 0, u ? u[i * 2 + 1] : 0);
     g.dispose();
   }
   const out = new THREE.BufferGeometry();
   out.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   out.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
   out.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  out.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
   out.computeBoundingSphere();
   return out;
 }
@@ -105,94 +108,185 @@ export function person(o = {}) {
 }
 
 /* ------------------------------------------------------------------ vehicles */
-const wheel = (r, w, x, y, z) => P(cyl(r, r, w, 12), '#111111', [x, y, z], [0, 0, Math.PI / 2]);
-
 export const VEHICLES = {
-  scooter: { L: 1.8, W: 0.75, H: 1.2, maxV: 17, acc: 7, steer: 2.5, two: true, seat: [0, 0.55, -0.15], cam: 5.5, label: 'Scooter' },
-  bike: { L: 2.1, W: 0.8, H: 1.2, maxV: 24, acc: 8.5, steer: 2.3, two: true, seat: [0, 0.62, -0.2], cam: 6, label: 'Motorbike' },
-  auto: { L: 2.7, W: 1.4, H: 1.85, maxV: 13, acc: 4.2, steer: 2.0, seat: [0, 0.45, 0.35], cam: 7, label: 'Auto rickshaw' },
-  car: { L: 3.8, W: 1.65, H: 1.45, maxV: 27, acc: 7, steer: 1.8, seat: [-0.35, 0.3, 0.1], cam: 8, label: 'Car' },
-  jeep: { L: 4.1, W: 1.85, H: 1.95, maxV: 26, acc: 7.5, steer: 1.8, seat: [-0.4, 0.45, 0], cam: 8.5, label: 'Police jeep' },
-  tempo: { L: 4.3, W: 1.75, H: 2.2, maxV: 18, acc: 4.5, steer: 1.6, seat: [-0.35, 0.55, 1.2], cam: 9, label: 'Tempo' },
-  bus: { L: 10.6, W: 2.5, H: 3.25, maxV: 17, acc: 2.8, steer: 1.05, seat: [-0.8, 1.0, 4.4], cam: 15, label: 'Private bus' },
+  cycle: { L: 1.75, W: 0.6, H: 1.1, maxV: 7.5, acc: 2.6, steer: 2.6, two: true, open: true, seat: [0, 0.55, -0.15], cam: 5, label: 'Bicycle', wr: 0.33 },
+  scooter: { L: 1.8, W: 0.75, H: 1.2, maxV: 17, acc: 7, steer: 2.5, two: true, open: true, seat: [0, 0.55, -0.15], cam: 5.5, label: 'Scooter', wr: 0.27 },
+  bike: { L: 2.1, W: 0.8, H: 1.2, maxV: 24, acc: 8.5, steer: 2.3, two: true, open: true, seat: [0, 0.62, -0.2], cam: 6, label: 'Motorbike', wr: 0.32 },
+  auto: { L: 2.7, W: 1.4, H: 1.85, maxV: 13, acc: 4.2, steer: 2.0, open: true, seat: [0, 0.45, 0.35], cam: 7, label: 'Auto rickshaw', wr: 0.25 },
+  car: { L: 3.8, W: 1.65, H: 1.45, maxV: 27, acc: 7, steer: 1.8, seat: [-0.35, 0.3, 0.1], cam: 8, label: 'Car', wr: 0.31 },
+  omni: { L: 3.5, W: 1.45, H: 1.85, maxV: 21, acc: 5.2, steer: 1.9, seat: [-0.35, 0.4, 0.9], cam: 8, label: 'Omni van', wr: 0.28 },
+  suv: { L: 4.6, W: 1.85, H: 1.85, maxV: 27, acc: 6.8, steer: 1.7, seat: [-0.4, 0.45, 0.3], cam: 9, label: 'SUV', wr: 0.38 },
+  jeep: { L: 4.1, W: 1.85, H: 1.95, maxV: 26, acc: 7.5, steer: 1.8, seat: [-0.4, 0.45, 0], cam: 8.5, label: 'Police jeep', wr: 0.38 },
+  ambulance: { L: 4.9, W: 1.95, H: 2.45, maxV: 25, acc: 5.8, steer: 1.6, seat: [-0.45, 0.6, 1.5], cam: 10, label: 'Ambulance', wr: 0.38 },
+  tempo: { L: 4.3, W: 1.75, H: 2.2, maxV: 18, acc: 4.5, steer: 1.6, seat: [-0.35, 0.55, 1.2], cam: 9, label: 'Tempo', wr: 0.33 },
+  lorry: { L: 7.4, W: 2.35, H: 3.0, maxV: 16, acc: 2.6, steer: 1.15, seat: [-0.6, 1.3, 2.7], cam: 13, label: 'Lorry', wr: 0.5, big: true },
+  tanker: { L: 7.4, W: 2.35, H: 3.0, maxV: 15, acc: 2.4, steer: 1.15, seat: [-0.6, 1.3, 2.7], cam: 13, label: 'Water tanker', wr: 0.5, big: true },
+  tractor: { L: 3.7, W: 1.9, H: 2.6, maxV: 9, acc: 3, steer: 1.7, open: true, seat: [0, 1.25, -0.55], cam: 8, label: 'Tractor', wr: 0.7 },
+  bus: { L: 10.6, W: 2.5, H: 3.25, maxV: 17, acc: 2.8, steer: 1.05, seat: [-0.8, 1.0, 4.4], cam: 15, label: 'Private bus', wr: 0.5, big: true },
+  ksrtc: { L: 11.0, W: 2.6, H: 3.3, maxV: 17, acc: 2.7, steer: 1.0, seat: [-0.8, 1.0, 4.6], cam: 15, label: 'State bus', wr: 0.52, big: true },
+  schoolbus: { L: 8.6, W: 2.35, H: 3.0, maxV: 15, acc: 2.8, steer: 1.15, seat: [-0.75, 0.95, 3.4], cam: 13, label: 'School bus', wr: 0.46, big: true },
 };
 
-const BUS_NAMES = ['SRI DURGA', 'MAHALAXMI', 'SHREE GANESH', 'BHARATH', 'ANNAPOORNA', 'VIJAYA', 'SURYA', 'JAI HANUMAN', 'NAVARATNA', 'KADRI', 'SRI KRISHNA'];
+const BUS_NAMES = ['SRI DURGA', 'MAHALAXMI', 'SHREE GANESH', 'BHARATH', 'ANNAPOORNA', 'VIJAYA', 'SURYA', 'JAI HANUMAN', 'NAVARATNA', 'KADRI', 'SRI KRISHNA', 'MOOKAMBIKA', 'SHAMBHAVI'];
 const BUS_COLS = [['#dc2626', '#facc15'], ['#2563eb', '#f8fafc'], ['#16a34a', '#fde047'], ['#7c3aed', '#fb923c'], ['#ea580c', '#f8fafc'], ['#0f766e', '#facc15'], ['#be123c', '#38bdf8']];
-const CAR_COLS = ['#f8fafc', '#e5e7eb', '#9ca3af', '#1f2937', '#b91c1c', '#1d4ed8', '#a16207', '#065f46'];
+const CAR_COLS = ['#f8fafc', '#e5e7eb', '#9ca3af', '#1f2937', '#b91c1c', '#1d4ed8', '#a16207', '#065f46', '#7f1d1d', '#334155'];
+export const GLASS = new THREE.MeshStandardMaterial({ color: '#1b2a3a', roughness: 0.08, metalness: 0.6 });
+const RIM = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.5, metalness: 0.4 });
 
-/** Build a vehicle model facing +z, wheels on y=0. Returns {group, def}. */
+/** A box whose top face is narrower / shifted: cabins, bonnets, windscreens. */
+export function taper(wb, db, wt, dt, h, shiftZ = 0) {
+  const g = new THREE.BoxGeometry(1, 1, 1), p = g.attributes.position;
+  for (let i = 0; i < p.count; i++) { const top = p.getY(i) > 0; p.setXYZ(i, p.getX(i) * (top ? wt : wb), p.getY(i) * h, p.getZ(i) * (top ? dt : db) + (top ? shiftZ : 0)); }
+  g.computeVertexNormals(); return g;
+}
+const wheelGeoCache = new Map();
+function wheelGeo(r, w, spokes) {
+  const k = r + '|' + w + '|' + spokes; if (wheelGeoCache.has(k)) return wheelGeoCache.get(k);
+  const parts = [P(cyl(r, r, w, 16), '#121212', [0, 0, 0], [0, 0, Math.PI / 2]), P(cyl(r * 0.62, r * 0.62, w + 0.02, 12), spokes ? '#9ca3af' : '#b8bec7', [0, 0, 0], [0, 0, Math.PI / 2]),
+    P(cyl(r * 0.2, r * 0.2, w + 0.04, 8), '#4b5563', [0, 0, 0], [0, 0, Math.PI / 2])];
+  if (spokes) for (let i = 0; i < 6; i++) parts.push(P(box(w * 0.6, r * 1.6, 0.03), '#d1d5db', [0, 0, 0], [i * Math.PI / 6, 0, 0]));
+  else for (let i = 0; i < 5; i++) parts.push(P(box(w + 0.03, r * 0.9, 0.06), '#e5e7eb', [0, 0, 0], [i * Math.PI / 5 * 2, 0, 0]));
+  const g = merge(parts); wheelGeoCache.set(k, g); return g;
+}
+const PLATES = [];
+function plate(yellow) {
+  const want = yellow ? 1 : 0; const pool = PLATES.filter(p => p.y === want);
+  if (pool.length < 6) { const L = 'ABCDEFGHJKMNPRSTUVWXYZ', t = `KA 20 ${L[Math.random() * L.length | 0]}${L[Math.random() * L.length | 0]} ${1000 + (Math.random() * 8999 | 0)}`; const tex = signTexture([t], { bg: yellow ? '#facc15' : '#f8fafc', fg: '#111', edge: '#111', w: 256, h: 64 }); PLATES.push({ y: want, tex }); return tex; }
+  return pool[Math.random() * pool.length | 0].tex;
+}
+function plateMesh(g, tex, x, y, z, ry, w = 0.5) { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, w / 4), new THREE.MeshBasicMaterial({ map: tex, toneMapped: true })); m.position.set(x, y, z); m.rotation.y = ry; g.add(m); }
+
+/** Build a vehicle model facing +z, wheels on y=0. Returns {group, def, wheels, flash}. */
 export function vehicle(kind, o = {}) {
-  const d = VEHICLES[kind], g = new THREE.Group(), parts = [], glow = [];
-  const L = d.L, W = d.W, H = d.H;
-  if (kind === 'scooter' || kind === 'bike') {
-    const c = o.color || (kind === 'bike' ? pick(['#111827', '#7f1d1d', '#1e3a8a']) : pick(['#b91c1c', '#1d4ed8', '#f8fafc', '#4d7c0f', '#6b7280', '#facc15']));
-    parts.push(wheel(0.28, 0.12, 0, 0.28, L / 2 - 0.3), wheel(0.28, 0.12, 0, 0.28, -L / 2 + 0.3));
+  const d = VEHICLES[kind], g = new THREE.Group(), parts = [], glass = [], glow = [], wheels = [], flash = [];
+  const L = d.L, W = d.W, H = d.H, wr = d.wr;
+  const wheel = (x, z, r = wr, w = 0.22, spokes = false) => { const m = new THREE.Mesh(wheelGeo(r, w, spokes), RIM); m.position.set(x, r, z); m.castShadow = true; g.add(m); wheels.push(m); };
+  const lights = (y, hw, z, rz, col = '#fff7cc', sz = [0.3, 0.16]) => { glow.push(P(box(sz[0], sz[1], 0.04), col, [hw, y, z]), P(box(sz[0], sz[1], 0.04), col, [-hw, y, z])); glow.push(P(box(0.26, 0.12, 0.04), '#ff2020', [hw, y, rz]), P(box(0.26, 0.12, 0.04), '#ff2020', [-hw, y, rz])); };
+  let yellowPlate = ['auto', 'tempo', 'lorry', 'tanker', 'bus', 'ksrtc', 'schoolbus', 'tractor'].includes(kind) || (kind === 'car' && Math.random() < 0.25);
+  if (kind === 'cycle') {
+    const c = o.color || pick(['#111827', '#b91c1c', '#1d4ed8', '#15803d']);
+    wheel(0, 0.62, 0.33, 0.05, true); wheel(0, -0.62, 0.33, 0.05, true);
+    parts.push(P(box(0.05, 0.05, 1.0), c, [0, 0.62, 0.05], [0.25, 0, 0]), P(box(0.05, 0.6, 0.05), c, [0, 0.62, -0.25], [-0.25, 0, 0]), P(box(0.05, 0.55, 0.05), c, [0, 0.55, 0.45], [0.35, 0, 0]),
+      P(box(0.05, 0.05, 0.7), c, [0, 0.36, -0.3]), P(box(0.22, 0.06, 0.28), '#111', [0, 0.95, -0.3]), P(box(0.56, 0.04, 0.04), '#444', [0, 1.02, 0.58]), P(box(0.06, 0.06, 0.06), '#9ca3af', [0, 0.36, 0]),
+      P(box(0.35, 0.03, 0.3), '#9ca3af', [0, 0.72, -0.72]));
+    yellowPlate = null;
+  } else if (kind === 'scooter' || kind === 'bike') {
+    const c = o.color || (kind === 'bike' ? pick(['#111827', '#7f1d1d', '#1e3a8a', '#4b5563']) : pick(['#b91c1c', '#1d4ed8', '#f8fafc', '#4d7c0f', '#6b7280', '#facc15', '#0e7490', '#111827']));
+    wheel(0, L / 2 - 0.3, wr, 0.12); wheel(0, -L / 2 + 0.3, wr, 0.12);
     if (kind === 'scooter') {
-      parts.push(P(box(0.5, 0.35, 0.9), c, [0, 0.55, -0.25]), P(box(0.44, 0.75, 0.22), c, [0, 0.72, 0.5]), P(box(0.42, 0.12, 0.7), '#1f2937', [0, 0.78, -0.25]),
-        P(box(0.6, 0.06, 0.06), '#374151', [0, 1.12, 0.55]), P(box(0.08, 0.4, 0.08), '#374151', [0, 0.95, 0.58]), P(box(0.36, 0.2, 0.5), c, [0, 0.4, 0.1]));
+      parts.push(P(taper(0.48, 0.95, 0.4, 0.75, 0.42, -0.05), c, [0, 0.62, -0.3]), P(taper(0.46, 0.2, 0.4, 0.16, 0.75), c, [0, 0.72, 0.52], [0.18, 0, 0]),
+        P(box(0.4, 0.06, 0.55), '#374151', [0, 0.34, 0.15]), P(box(0.38, 0.11, 0.72), '#1f2937', [0, 0.88, -0.28]), P(box(0.62, 0.06, 0.06), '#374151', [0, 1.14, 0.58]),
+        P(box(0.08, 0.42, 0.08), '#374151', [0, 0.95, 0.6]), P(box(0.34, 0.18, 0.2), c, [0, 1.12, 0.6]), P(box(0.05, 0.22, 0.05), '#111', [0.3, 1.26, 0.56]), P(box(0.05, 0.22, 0.05), '#111', [-0.3, 1.26, 0.56]),
+        P(box(0.16, 0.1, 0.06), '#d1d5db', [0.3, 1.38, 0.56]), P(box(0.16, 0.1, 0.06), '#d1d5db', [-0.3, 1.38, 0.56]), P(box(0.28, 0.16, 0.5), '#9ca3af', [0.12, 0.34, -0.45]));
     } else {
-      parts.push(P(box(0.32, 0.28, 0.6), c, [0, 0.82, 0.25]), P(box(0.3, 0.12, 0.7), '#111', [0, 0.86, -0.35]), P(box(0.25, 0.3, 0.5), '#9ca3af', [0, 0.5, 0]),
-        P(box(0.7, 0.05, 0.05), '#9ca3af', [0, 1.1, 0.62]), P(box(0.07, 0.6, 0.07), '#6b7280', [0, 0.65, 0.75], [0.35, 0, 0]), P(box(0.12, 0.12, 0.9), '#d1d5db', [0.2, 0.35, -0.3]));
+      parts.push(P(taper(0.34, 0.62, 0.28, 0.5, 0.26), c, [0, 0.86, 0.2]), P(box(0.3, 0.12, 0.7), '#111', [0, 0.88, -0.38]), P(box(0.3, 0.34, 0.45), '#6b7280', [0, 0.52, 0.02]),
+        P(box(0.72, 0.05, 0.05), '#9ca3af', [0, 1.12, 0.62]), P(box(0.07, 0.62, 0.07), '#6b7280', [0.08, 0.66, 0.74], [0.35, 0, 0]), P(box(0.07, 0.62, 0.07), '#6b7280', [-0.08, 0.66, 0.74], [0.35, 0, 0]),
+        P(cyl(0.06, 0.07, 0.9, 8), '#d1d5db', [0.2, 0.36, -0.32], [Math.PI / 2 - 0.1, 0, 0]), P(cyl(0.12, 0.12, 0.08, 12), '#d1d5db', [0, 1.0, 0.74], [Math.PI / 2, 0, 0]),
+        P(box(0.32, 0.06, 0.55), c, [0, 0.62, -0.75]), P(box(0.3, 0.06, 0.35), c, [0, 0.68, 0.82]));
     }
-    glow.push(P(box(0.16, 0.12, 0.04), '#fff7cc', [0, kind === 'bike' ? 1.0 : 0.95, L / 2 - 0.12]), P(box(0.14, 0.08, 0.04), '#ff2020', [0, 0.85, -L / 2 + 0.05]));
+    glow.push(P(box(0.16, 0.12, 0.04), '#fff7cc', [0, kind === 'bike' ? 1.0 : 1.12, L / 2 - (kind === 'bike' ? 0.22 : 0.18)]), P(box(0.14, 0.08, 0.04), '#ff2020', [0, 0.86, -L / 2 + 0.05]));
+    plateMesh(g, plate(false), 0, 0.62, -L / 2 + 0.02, Math.PI, 0.28);
   } else if (kind === 'auto') {
-    const top = o.top || '#facc15', body = o.body || '#15803d';
-    parts.push(wheel(0.25, 0.16, 0, 0.25, 1.05), wheel(0.25, 0.16, -0.62, 0.25, -0.75), wheel(0.25, 0.16, 0.62, 0.25, -0.75));
-    parts.push(P(box(1.35, 0.55, 1.7), body, [0, 0.62, -0.35]), P(box(0.95, 0.75, 0.7), body, [0, 0.75, 0.9]),
-      P(box(1.42, 0.08, 2.2), top, [0, 1.82, -0.1]), P(box(1.36, 0.95, 0.08), top, [0, 1.35, -1.2]),
-      P(box(0.06, 0.95, 0.06), '#111', [0.62, 1.35, 0.95]), P(box(0.06, 0.95, 0.06), '#111', [-0.62, 1.35, 0.95]),
-      P(box(1.2, 0.6, 0.04), '#9ec5d6', [0, 1.42, 1.0], [-0.15, 0, 0]), P(box(1.1, 0.35, 0.5), '#111827', [0, 1.0, -0.7]),
-      P(box(1.36, 0.08, 1.7), '#0f172a', [0, 0.92, -0.35]));
-    glow.push(P(box(0.2, 0.15, 0.04), '#fff7cc', [0, 0.95, 1.26]), P(box(0.14, 0.1, 0.04), '#ff2020', [0.5, 0.55, -1.22]), P(box(0.14, 0.1, 0.04), '#ff2020', [-0.5, 0.55, -1.22]));
-  } else if (kind === 'car' || kind === 'jeep') {
-    const c = kind === 'jeep' ? '#f1f5f9' : (o.color || pick(CAR_COLS));
-    const wr = kind === 'jeep' ? 0.38 : 0.32, hx = W / 2 - 0.05, fz = L / 2 - 0.75;
-    parts.push(wheel(wr, 0.22, hx, wr, fz), wheel(wr, 0.22, -hx, wr, fz), wheel(wr, 0.22, hx, wr, -fz), wheel(wr, 0.22, -hx, wr, -fz));
-    parts.push(P(box(W, 0.62, L), c, [0, wr + 0.32, 0]));
+    const top = o.top || '#facc15', body = o.body || pick(['#15803d', '#15803d', '#166534', '#0f766e']);
+    wheel(0, 1.05); wheel(-0.62, -0.75); wheel(0.62, -0.75);
+    parts.push(P(taper(1.36, 1.7, 1.3, 1.6, 0.6), body, [0, 0.62, -0.35]), P(taper(0.95, 0.75, 0.7, 0.55, 0.8, 0.05), body, [0, 0.78, 0.9]),
+      P(box(1.44, 0.1, 2.25), top, [0, 1.85, -0.12]), P(box(1.36, 0.95, 0.08), top, [0, 1.36, -1.22]), P(box(1.38, 0.18, 2.2), '#111', [0, 1.74, -0.12]),
+      P(box(0.06, 0.95, 0.06), '#111', [0.62, 1.36, 0.95]), P(box(0.06, 0.95, 0.06), '#111', [-0.62, 1.36, 0.95]),
+      P(box(1.1, 0.35, 0.55), '#1f2937', [0, 1.0, -0.72]), P(box(1.36, 0.08, 1.7), '#0f172a', [0, 0.92, -0.35]),
+      P(box(0.5, 0.05, 0.05), '#9ca3af', [0, 1.25, 0.95]), P(box(0.18, 0.18, 0.1), '#111', [0.25, 1.08, 0.9]), P(box(1.4, 0.06, 0.05), '#d1d5db', [0, 0.95, 0.4]));
+    glass.push(P(box(1.18, 0.62, 0.04), '#000', [0, 1.42, 1.0], [-0.15, 0, 0]));
+    glow.push(P(cyl(0.11, 0.11, 0.05, 10), '#fff7cc', [0, 1.0, 1.27], [Math.PI / 2, 0, 0]), P(box(0.14, 0.1, 0.04), '#ff2020', [0.5, 0.55, -1.22]), P(box(0.14, 0.1, 0.04), '#ff2020', [-0.5, 0.55, -1.22]));
+    plateMesh(g, plate(true), 0, 0.5, -1.24, Math.PI, 0.4);
+  } else if (['car', 'omni', 'suv', 'jeep', 'ambulance'].includes(kind)) {
+    const c = kind === 'jeep' ? '#f1f5f9' : kind === 'ambulance' ? '#f8fafc' : (o.color || pick(CAR_COLS));
+    const hx = W / 2 - 0.08, fz = L / 2 - (kind === 'omni' ? 0.55 : 0.8);
+    wheel(hx, fz); wheel(-hx, fz); wheel(hx, -fz); wheel(-hx, -fz);
+    const y0 = wr + 0.05;
     if (kind === 'car') {
-      parts.push(P(box(W - 0.12, 0.55, L * 0.52), c, [0, wr + 0.9, -0.2]), P(box(W - 0.1, 0.45, 0.05), '#1e293b', [0, wr + 0.9, L * 0.06 + 0.05], [-0.35, 0, 0]),
-        P(box(W - 0.06, 0.4, L * 0.5), '#1e293b', [0, wr + 0.92, -0.2]), P(box(W + 0.02, 0.12, 0.2), '#475569', [0, wr + 0.12, L / 2]), P(box(W + 0.02, 0.12, 0.2), '#475569', [0, wr + 0.12, -L / 2]));
+      parts.push(P(taper(W, L, W - 0.05, L - 0.15, 0.55), c, [0, y0 + 0.3, 0]), P(taper(W - 0.08, L * 0.56, W - 0.32, L * 0.36, 0.55, -0.12), c, [0, y0 + 0.85, -0.25]),
+        P(box(W + 0.04, 0.12, 0.2), '#374151', [0, y0 + 0.12, L / 2]), P(box(W + 0.04, 0.12, 0.2), '#374151', [0, y0 + 0.12, -L / 2]), P(box(0.12, 0.08, 0.1), '#111', [W / 2 + 0.04, y0 + 0.75, 0.55]), P(box(0.12, 0.08, 0.1), '#111', [-W / 2 - 0.04, y0 + 0.75, 0.55]));
+      glass.push(P(taper(W - 0.06, L * 0.55, W - 0.34, L * 0.35, 0.42, -0.12), '#000', [0, y0 + 0.9, -0.25]));
+      lights(y0 + 0.42, W / 2 - 0.3, L / 2 + 0.01, -L / 2 - 0.01);
+    } else if (kind === 'omni') {
+      parts.push(P(taper(W, L, W - 0.04, L - 0.2, 1.4, -0.05), c, [0, y0 + 0.75, 0]), P(box(W + 0.03, 0.1, L * 0.7), '#374151', [0, y0 + 0.45, -0.2]), P(box(W + 0.02, 0.12, 0.15), '#374151', [0, y0 + 0.12, L / 2]));
+      glass.push(P(box(W - 0.1, 0.55, 0.05), '#000', [0, y0 + 1.1, L / 2 - 0.12], [-0.12, 0, 0]), P(box(W + 0.02, 0.42, L * 0.62), '#000', [0, y0 + 1.15, -0.25]));
+      lights(y0 + 0.4, W / 2 - 0.25, L / 2 - 0.05, -L / 2 + 0.09);
     } else {
-      parts.push(P(box(W - 0.05, 0.85, L * 0.6), '#f1f5f9', [0, wr + 1.05, -0.4]), P(box(W - 0.02, 0.5, L * 0.58), '#1e293b', [0, wr + 1.1, -0.4]),
-        P(box(W + 0.01, 0.2, L * 0.98), '#1d4ed8', [0, wr + 0.5, 0]), P(box(0.5, 0.12, 0.25), '#ef4444', [-0.3, wr + 1.55, 0]), P(box(0.5, 0.12, 0.25), '#3b82f6', [0.3, wr + 1.55, 0]));
+      const top = kind === 'ambulance' ? 1.65 : kind === 'jeep' ? 0.95 : 0.8;
+      parts.push(P(taper(W, L, W - 0.04, L - 0.1, 0.75), c, [0, y0 + 0.4, 0]), P(taper(W - 0.05, L * (kind === 'ambulance' ? 0.78 : 0.68), W - 0.18, L * (kind === 'ambulance' ? 0.74 : 0.58), top, -0.1), c, [0, y0 + 0.78 + top / 2, -0.35]),
+        P(box(W + 0.04, 0.16, 0.22), '#374151', [0, y0 + 0.14, L / 2]), P(box(W + 0.04, 0.16, 0.22), '#374151', [0, y0 + 0.14, -L / 2]));
+      glass.push(P(box(W - 0.12, 0.5, 0.05), '#000', [0, y0 + 1.1 + (kind === 'ambulance' ? 0.15 : 0), L * 0.5 - (kind === 'ambulance' ? 1.0 : 1.25)], [-0.3, 0, 0]),
+        P(box(W - 0.02, 0.4, L * (kind === 'ambulance' ? 0.2 : 0.42)), '#000', [0, y0 + 1.15 + (kind === 'ambulance' ? 0.15 : 0), kind === 'ambulance' ? 0.9 : -0.35]));
+      if (kind === 'jeep') { parts.push(P(box(W + 0.01, 0.2, L * 0.98), '#1d4ed8', [0, y0 + 0.55, 0]), P(box(1.1, 0.12, 0.3), '#1f2937', [0, y0 + 1.8, -0.2])); flash.push(P(box(0.45, 0.14, 0.26), '#ef4444', [-0.28, y0 + 1.92, -0.2]), P(box(0.45, 0.14, 0.26), '#3b82f6', [0.28, y0 + 1.92, -0.2])); }
+      if (kind === 'ambulance') { parts.push(P(box(W + 0.01, 0.25, L * 0.98), '#dc2626', [0, y0 + 0.95, 0]), P(box(W - 0.4, 0.12, 0.5), '#1f2937', [0, y0 + 2.48, 1.0])); flash.push(P(box(0.5, 0.16, 0.4), '#ef4444', [-0.3, y0 + 2.6, 1.0]), P(box(0.5, 0.16, 0.4), '#3b82f6', [0.3, y0 + 2.6, 1.0])); }
+      if (kind === 'suv') parts.push(P(box(W - 0.2, 0.06, L * 0.5), '#111', [0, y0 + 1.97, -0.35]));
+      lights(y0 + 0.5, W / 2 - 0.3, L / 2 + 0.01, -L / 2 - 0.01);
     }
-    glow.push(P(box(0.3, 0.14, 0.04), '#fff7cc', [W / 2 - 0.3, wr + 0.45, L / 2 + 0.01]), P(box(0.3, 0.14, 0.04), '#fff7cc', [-W / 2 + 0.3, wr + 0.45, L / 2 + 0.01]),
-      P(box(0.28, 0.12, 0.04), '#ff2020', [W / 2 - 0.25, wr + 0.45, -L / 2 - 0.01]), P(box(0.28, 0.12, 0.04), '#ff2020', [-W / 2 + 0.25, wr + 0.45, -L / 2 - 0.01]));
+    plateMesh(g, plate(yellowPlate), 0, y0 + 0.2, L / 2 + 0.12, 0); plateMesh(g, plate(yellowPlate), 0, y0 + 0.2, -L / 2 - 0.12, Math.PI);
   } else if (kind === 'tempo') {
     const c = o.color || pick(['#f8fafc', '#facc15', '#0ea5e9']);
-    parts.push(wheel(0.33, 0.2, 0.75, 0.33, 1.3), wheel(0.33, 0.2, -0.75, 0.33, 1.3), wheel(0.33, 0.2, 0.75, 0.33, -1.3), wheel(0.33, 0.2, -0.75, 0.33, -1.3));
-    parts.push(P(box(W, 1.35, 1.2), c, [0, 1.1, 1.45]), P(box(W - 0.1, 0.55, 0.05), '#1e293b', [0, 1.45, 2.06]), P(box(W, 0.2, 3.0), '#334155', [0, 0.62, -0.6]),
-      P(box(0.08, 0.55, 3.0), '#64748b', [W / 2 - 0.04, 0.98, -0.6]), P(box(0.08, 0.55, 3.0), '#64748b', [-W / 2 + 0.04, 0.98, -0.6]),
-      P(box(W - 0.2, 0.7, 2.6), pick(['#fb923c', '#a3e635', '#fde047', '#f87171']), [0, 1.08, -0.7]));
-    glow.push(P(box(0.25, 0.14, 0.04), '#fff7cc', [0.6, 0.8, 2.06]), P(box(0.25, 0.14, 0.04), '#fff7cc', [-0.6, 0.8, 2.06]));
-  } else if (kind === 'bus') {
-    const [c1, c2] = o.cols || pick(BUS_COLS);
+    wheel(0.75, 1.3); wheel(-0.75, 1.3); wheel(0.75, -1.3); wheel(-0.75, -1.3);
+    parts.push(P(taper(W, 1.2, W - 0.1, 1.0, 1.35, -0.08), c, [0, 1.1, 1.45]), P(box(W, 0.2, 3.0), '#334155', [0, 0.62, -0.6]),
+      P(box(0.08, 0.55, 3.0), '#64748b', [W / 2 - 0.04, 0.98, -0.6]), P(box(0.08, 0.55, 3.0), '#64748b', [-W / 2 + 0.04, 0.98, -0.6]), P(box(W, 0.55, 0.08), '#64748b', [0, 0.98, -2.08]));
+    for (let i = 0; i < 6; i++) parts.push(P(box(0.5, 0.45, 0.5), pick(['#fb923c', '#a3e635', '#fde047', '#f87171', '#84cc16']), [-0.45 + (i % 2) * 0.9, 0.95, -0.2 - Math.floor(i / 2) * 0.8]));
+    glass.push(P(box(W - 0.15, 0.55, 0.05), '#000', [0, 1.45, 2.04], [-0.1, 0, 0]));
+    lights(0.8, 0.6, 2.06, -2.12);
+    plateMesh(g, plate(true), 0, 0.55, 2.07, 0, 0.4);
+  } else if (kind === 'lorry' || kind === 'tanker') {
+    const cab = o.color || pick(['#ea580c', '#facc15', '#0284c7', '#dc2626']);
+    for (const z of [2.4, -1.6, -2.7]) { wheel(1.0, z); wheel(-1.0, z); }
+    parts.push(P(taper(W, 1.9, W - 0.1, 1.7, 1.7, -0.1), cab, [0, 1.75, 2.6]), P(box(W, 0.35, 1.9), '#111827', [0, 0.82, 2.6]), P(box(W - 0.3, 0.3, 0.12), '#d1d5db', [0, 1.1, 3.58]),
+      P(box(W + 0.04, 0.12, 0.5), '#1f2937', [0, 2.7, 2.7]), P(box(W, 0.3, 5.0), '#1f2937', [0, 0.85, -1.2]));
+    if (kind === 'lorry') {
+      parts.push(P(box(W, 1.6, 5.0), pick(['#b45309', '#15803d', '#1d4ed8']), [0, 1.85, -1.2]), P(box(W + 0.02, 0.15, 5.02), '#facc15', [0, 2.6, -1.2]));
+      const back = signMesh(['HORN OK PLEASE', 'Use Dipper at Night'], 2.1, 0.9, { bg: '#facc15', fg: '#b91c1c', border: false, w: 512, h: 220 }); back.position.set(0, 1.9, -3.72); back.rotation.y = Math.PI; g.add(back);
+    } else {
+      parts.push(P(cyl(1.05, 1.05, 4.8, 18), '#1d4ed8', [0, 2.0, -1.2], [Math.PI / 2, 0, 0]), P(cyl(0.35, 0.35, 0.25, 10), '#1e3a8a', [0, 3.1, -1.2]));
+      const sg = signMesh(['DRINKING WATER', 'ಕುಡಿಯುವ ನೀರು'], 3.4, 0.7, { bg: '#1d4ed8', fg: '#fff', border: false, w: 512, h: 112 }); sg.position.set(W / 2 + 0.03, 2.0, -1.2); sg.rotation.y = Math.PI / 2; g.add(sg);
+      const sg2 = sg.clone(); sg2.position.x = -W / 2 - 0.03; sg2.rotation.y = -Math.PI / 2; g.add(sg2);
+    }
+    glass.push(P(box(W - 0.2, 0.7, 0.05), '#000', [0, 2.15, 3.56], [-0.08, 0, 0]));
+    lights(1.0, W / 2 - 0.35, 3.58, -3.72);
+    plateMesh(g, plate(true), 0, 0.8, 3.6, 0, 0.5);
+  } else if (kind === 'tractor') {
+    const c = o.color || pick(['#dc2626', '#1d4ed8', '#16a34a']);
+    const back = new THREE.Mesh(wheelGeo(0.75, 0.42, false), RIM); back.position.set(0.85, 0.75, -0.7); g.add(back); wheels.push(back);
+    const back2 = back.clone(); back2.position.x = -0.85; g.add(back2); wheels.push(back2);
+    wheel(0.6, 1.2, 0.38, 0.22); wheel(-0.6, 1.2, 0.38, 0.22);
+    parts.push(P(taper(0.85, 2.0, 0.75, 1.9, 0.8), c, [0, 1.1, 0.6]), P(box(0.9, 0.5, 0.6), '#374151', [0, 0.75, 1.6]), P(box(0.5, 0.15, 0.5), '#111', [0, 1.6, -0.6]),
+      P(box(1.9, 0.12, 0.9), c, [0, 1.55, -0.7]), P(cyl(0.06, 0.07, 1.1, 8), '#111', [0.25, 2.0, 1.2]), P(box(0.06, 0.45, 0.06), '#111', [0, 1.75, 0.1]), P(box(0.45, 0.06, 0.06), '#111', [0, 1.98, 0.1]));
+    glow.push(P(box(0.2, 0.14, 0.04), '#fff7cc', [0.3, 1.25, 1.62]), P(box(0.2, 0.14, 0.04), '#fff7cc', [-0.3, 1.25, 1.62]));
+  } else if (kind === 'bus' || kind === 'ksrtc' || kind === 'schoolbus') {
+    const [c1, c2] = kind === 'ksrtc' ? ['#b91c1c', '#f8fafc'] : kind === 'schoolbus' ? ['#facc15', '#facc15'] : (o.cols || pick(BUS_COLS));
     const wz = L / 2 - 1.7;
-    parts.push(wheel(0.5, 0.3, 1.1, 0.5, wz), wheel(0.5, 0.3, -1.1, 0.5, wz), wheel(0.5, 0.3, 1.1, 0.5, -wz + 0.6), wheel(0.5, 0.3, -1.1, 0.5, -wz + 0.6));
-    parts.push(P(box(W, 1.3, L), c1, [0, 1.15, 0]), P(box(W, 1.0, L), c2, [0, 2.3, 0]), P(box(W + 0.02, 0.75, L - 1.2), '#1e293b', [0, 2.25, -0.4]),
-      P(box(W - 0.1, 0.9, 0.05), '#1e293b', [0, 2.2, L / 2 + 0.01]), P(box(W, 0.16, L), c1, [0, 2.86, 0]), P(box(W - 0.3, 0.2, L - 1), '#475569', [0, 3.05, 0]),
+    wheel(1.1, wz); wheel(-1.1, wz); wheel(1.1, -wz + 0.6); wheel(-1.1, -wz + 0.6);
+    parts.push(P(box(W, 1.3, L), c1, [0, 1.15, 0]), P(box(W, 1.0, L), c2, [0, 2.3, 0]), P(box(W, 0.16, L), c1, [0, 2.86, 0]), P(box(W - 0.3, 0.22, L - 1), '#475569', [0, 3.05, 0]),
       P(box(0.04, 1.7, 0.9), '#0f172a', [W / 2 + 0.01, 1.6, L / 2 - 1.2]), P(box(0.04, 1.7, 0.9), '#0f172a', [W / 2 + 0.01, 1.6, -L / 2 + 1.6]),
-      P(box(W + 0.03, 0.12, L), '#f8fafc', [0, 1.78, 0]));
-    for (let i = 0; i < 7; i++) parts.push(P(box(W + 0.03, 0.06, 0.06), '#e2e8f0', [0, 2.25, -L / 2 + 1.0 + i * 1.3]));
-    glow.push(P(box(0.35, 0.18, 0.04), '#fff7cc', [0.85, 0.9, L / 2 + 0.01]), P(box(0.35, 0.18, 0.04), '#fff7cc', [-0.85, 0.9, L / 2 + 0.01]),
-      P(box(0.3, 0.2, 0.04), '#ff2020', [0.9, 0.9, -L / 2 - 0.01]), P(box(0.3, 0.2, 0.04), '#ff2020', [-0.9, 0.9, -L / 2 - 0.01]));
-    const name = o.name || pick(BUS_NAMES);
-    const s = signMesh([name], 2.2, 0.42, { bg: '#111827', fg: '#fde047', border: false, w: 512, h: 96 });
+      P(box(W + 0.03, 0.12, L), kind === 'schoolbus' ? '#111' : '#f8fafc', [0, 1.78, 0]), P(box(W + 0.05, 0.3, 0.22), '#374151', [0, 0.55, L / 2]), P(box(W + 0.05, 0.3, 0.22), '#374151', [0, 0.55, -L / 2]),
+      P(box(0.08, 0.6, 0.08), '#111', [W / 2 + 0.2, 2.3, L / 2 - 0.1]), P(box(0.08, 0.6, 0.08), '#111', [-W / 2 - 0.2, 2.3, L / 2 - 0.1]));
+    for (let i = 0; i < Math.floor(L / 1.35); i++) parts.push(P(box(W + 0.03, 0.75, 0.07), c2 === c1 ? '#111' : c2, [0, 2.25, -L / 2 + 0.9 + i * 1.35]));
+    glass.push(P(box(W + 0.02, 0.72, L - 1.2), '#000', [0, 2.25, -0.4]), P(box(W - 0.1, 0.95, 0.05), '#000', [0, 2.2, L / 2 + 0.01]));
+    lights(0.9, 0.85, L / 2 + 0.01, -L / 2 - 0.01, '#fff7cc', [0.35, 0.18]);
+    const name = kind === 'ksrtc' ? 'KARUNADU SARIGE' : kind === 'schoolbus' ? 'SCHOOL BUS' : (o.name || pick(BUS_NAMES));
+    const s = signMesh([name], 2.2, 0.42, { bg: '#111827', fg: kind === 'ksrtc' ? '#f8fafc' : '#fde047', border: false, w: 512, h: 96 });
     s.position.set(0, 2.98, L / 2 + 0.03); g.add(s);
-    const side = signMesh([name, 'KARKALA - UDUPI'], 4.5, 0.75, { bg: c2, fg: c1, border: false, w: 768, h: 128 });
+    const sideText = kind === 'ksrtc' ? ['KARUNADU SARIGE', 'KARKALA · UDUPI · MANGALURU'] : kind === 'schoolbus' ? ['VIDYA NIKETHAN SCHOOL', 'KARKALA'] : [name, 'KARKALA - UDUPI'];
+    const side = signMesh(sideText, 4.5, 0.75, { bg: kind === 'schoolbus' ? '#facc15' : c2, fg: kind === 'schoolbus' ? '#111' : c1, border: false, w: 768, h: 128 });
     side.position.set(W / 2 + 0.03, 1.15, 0.6); side.rotation.y = Math.PI / 2; g.add(side);
     const side2 = side.clone(); side2.position.x = -W / 2 - 0.03; side2.rotation.y = -Math.PI / 2; g.add(side2);
     g.userData.busName = name;
+    plateMesh(g, plate(true), 0, 0.55, L / 2 + 0.13, 0, 0.55); plateMesh(g, plate(true), 0, 0.55, -L / 2 - 0.13, Math.PI, 0.55);
   }
-  g.add(mesh(merge(parts), kind === 'car' || kind === 'jeep' ? MAT.shiny : MAT.solid));
-  if (glow.length) { const gm = mesh(merge(glow), MAT.glow, false); g.add(gm); }
-  if (kind === 'jeep') {
-    const s = signMesh(['POLICE'], 1.4, 0.3, { bg: '#1d4ed8', fg: '#fff', border: false, w: 256, h: 64 });
-    s.position.set(W / 2 + 0.02, 1.0, 0.5); s.rotation.y = Math.PI / 2; g.add(s);
+  const body = new THREE.Mesh(merge(parts), ['car', 'jeep', 'suv', 'omni', 'ambulance'].includes(kind) ? MAT.shiny : MAT.solid); body.castShadow = true; g.add(body);
+  if (glass.length) { const gm = new THREE.Mesh(merge(glass), GLASS); g.add(gm); }
+  if (glow.length) g.add(new THREE.Mesh(merge(glow), MAT.glow));
+  let flashMesh = null; if (flash.length) { flashMesh = new THREE.Mesh(merge(flash), MAT.glow); g.add(flashMesh); }
+  if (kind === 'jeep' || kind === 'ambulance') {
+    const s = signMesh([kind === 'jeep' ? 'POLICE' : '108 AMBULANCE'], kind === 'jeep' ? 1.4 : 2.4, 0.32, { bg: kind === 'jeep' ? '#1d4ed8' : '#dc2626', fg: '#fff', border: false, w: 384, h: 72 });
+    s.position.set(W / 2 + 0.02, kind === 'jeep' ? 1.0 : 1.75, kind === 'jeep' ? 0.5 : -0.4); s.rotation.y = Math.PI / 2; g.add(s);
     const s2 = s.clone(); s2.position.x = -W / 2 - 0.02; s2.rotation.y = -Math.PI / 2; g.add(s2);
   }
-  return { group: g, def: d };
+  return { group: g, def: d, wheels, flash: flashMesh };
 }
 
 /* ------------------------------------------------------------------ animals & props */
@@ -208,17 +302,38 @@ export function cow() {
   return g;
 }
 
-/** Coconut palm (trunk + crown) geometries for instancing. Height ~10 m. */
-export function palmGeos() {
-  const trunk = merge([P(cyl(0.16, 0.24, 9.5, 7), '#8b7355', [0, 4.75, 0])]);
-  const fr = [];
-  for (let i = 0; i < 9; i++) {
-    const a = (i / 9) * Math.PI * 2;
-    fr.push(P(box(0.55, 0.05, 3.4), i % 2 ? '#3f7d2c' : '#4d8f32', [Math.sin(a) * 1.5, 9.4, Math.cos(a) * 1.5], [0.5, a, 0]));
+/** Chain of boxes forming a drooping frond starting at (x,y,z) heading yaw a; segs: [[len, pitch], ...]. */
+function frond(parts, x, y, z, a, segs, w, col) {
+  let px = x, py = y, pz = z;
+  for (const [len, pitch] of segs) {
+    const dx = Math.sin(a) * Math.cos(pitch), dy = -Math.sin(pitch), dz = Math.cos(a) * Math.cos(pitch);
+    parts.push(P(box(w, 0.04, len), col, [px + dx * len / 2, py + dy * len / 2, pz + dz * len / 2], [pitch, a, 0, 'YXZ']));
+    px += dx * len; py += dy * len; pz += dz * len; w *= 0.8;
   }
-  fr.push(P(sph(0.45, 6, 4), '#6b8e23', [0, 9.4, 0]));
+}
+/** Coconut palm (trunk + crown) geometries for instancing. Height ~10 m, slightly curved trunk. */
+export function palmGeos() {
+  const tp = [];
+  for (let i = 0; i < 6; i++) tp.push(P(cyl(0.17 - i * 0.012, 0.19 - i * 0.012, 1.65, 7), i % 2 ? '#8b7355' : '#7d6a4f', [Math.sin(i * 0.35) * 0.25, 0.83 + i * 1.6, 0], [0, 0, Math.cos(i * 0.4) * 0.05]));
+  const trunk = merge(tp), fr = [];
+  for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2 + (i % 2) * 0.2; frond(fr, 0.3, 9.6, 0, a, [[1.3, -0.45], [1.3, 0.15], [1.2, 0.6], [0.9, 1.0]], 0.75, i % 3 ? '#4d8f32' : '#3d7a2a'); }
+  fr.push(P(sph(0.5, 7, 5), '#6b8e23', [0.3, 9.5, 0]));
+  for (let i = 0; i < 5; i++) { const a = i * 1.26; fr.push(P(sph(0.17, 6, 4), '#8a6d1f', [0.3 + Math.sin(a) * 0.35, 9.2, Math.cos(a) * 0.35])); }
   return { trunk, crown: merge(fr) };
 }
+/** Areca (supari) palm: very thin, very tall, small crown. */
+export function arecaGeos() {
+  const trunk = merge([P(cyl(0.09, 0.12, 12.5, 6), '#9a9080', [0, 6.25, 0]), P(cyl(0.13, 0.13, 1.4, 6), '#5b8a2e', [0, 12.9, 0])]);
+  const fr = []; for (let i = 0; i < 8; i++) frond(fr, 0, 13.5, 0, (i / 8) * Math.PI * 2, [[1.0, -0.6], [0.9, 0.2], [0.7, 0.8]], 0.45, i % 2 ? '#4f8f2f' : '#5fa03a');
+  return { trunk, crown: merge(fr) };
+}
+/** Banana plant. */
+export function bananaGeos() {
+  const trunk = merge([P(cyl(0.13, 0.18, 2.2, 7), '#6b8f3a', [0, 1.1, 0])]);
+  const fr = []; for (let i = 0; i < 7; i++) frond(fr, 0, 2.2, 0, (i / 7) * Math.PI * 2 + 0.3, [[1.0, -0.9], [0.9, -0.1], [0.8, 0.6]], 0.75, i % 3 ? '#65a30d' : '#84cc16');
+  return { trunk, crown: merge(fr) };
+}
+export function bushGeo() { return merge([P(new THREE.IcosahedronGeometry(0.9, 0), '#3f7a2e', [0, 0.6, 0], [0, 0, 0], [1.2, 0.8, 1.1]), P(new THREE.IcosahedronGeometry(0.6, 0), '#4d8c36', [0.6, 0.6, 0.2])]); }
 export function treeGeos() {
   const trunk = merge([P(cyl(0.25, 0.4, 3.2, 7), '#6b4f3a', [0, 1.6, 0])]);
   const crown = merge([P(new THREE.IcosahedronGeometry(3.1, 0), '#2f6b2a', [0, 4.6, 0]), P(new THREE.IcosahedronGeometry(2.3, 0), '#3a7d32', [1.4, 5.6, 0.6]), P(new THREE.IcosahedronGeometry(2.0, 0), '#2a5f25', [-1.3, 5.3, -0.7])]);
@@ -226,28 +341,96 @@ export function treeGeos() {
 }
 
 /* ------------------------------------------------------------------ landmarks */
-/** Gomateshwara-style monolithic standing figure, ~13 m tall, faces +z. Stylised, granite grey. */
+/* ------------------------------------------------------------------ Gommata (Bahubali) */
+const _up = new THREE.Vector3(0, 1, 0);
+/** A tapered cylinder from point a to b (radius ra at a, rb at b) with a ball joint at a. */
+function limb(parts, a, b, ra, rb, col, seg = 16, joint = true) {
+  const A = new THREE.Vector3(...a), B = new THREE.Vector3(...b), d = B.clone().sub(A), L = d.length();
+  const q = new THREE.Quaternion().setFromUnitVectors(_up, d.normalize()), e = new THREE.Euler().setFromQuaternion(q);
+  parts.push(P(new THREE.CylinderGeometry(rb, ra, L, seg, 3), col, A.clone().add(B).multiplyScalar(0.5).toArray(), [e.x, e.y, e.z]));
+  if (joint) parts.push(P(sph(ra, seg, 10), col, a));
+}
+/** A creeper (madhavi lata) winding up a limb: tube + leaves. */
+function creeper(parts, a, b, ra, rb, turns, phase, front = 1) {
+  const pts = [];
+  for (let i = 0; i <= 40; i++) {
+    const t = i / 40, ang = phase + t * turns * Math.PI * 2, r = (ra + (rb - ra) * t) + 0.06;
+    pts.push(new THREE.Vector3(a[0] + (b[0] - a[0]) * t + Math.cos(ang) * r, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t + Math.sin(ang) * r * 0.95));
+  }
+  const curve = new THREE.CatmullRomCurve3(pts);
+  parts.push(P(new THREE.TubeGeometry(curve, 80, 0.065, 6, false), '#7b8f5c'));
+  for (let i = 2; i < 40; i += 3) {
+    const p = pts[i], n = pts[i + 1].clone().sub(p);
+    parts.push(P(sph(0.17, 6, 4), i % 2 ? '#8ea56a' : '#71885a', p.toArray(), [0.4, Math.atan2(n.x, n.z) + 1.2, 0.3], [1, 0.32, 0.62]));
+  }
+}
+function granite() {
+  const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d');
+  x.fillStyle = '#d9d2c3'; x.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 5000; i++) { const v = Math.random(); x.fillStyle = v < 0.45 ? '#9e978a' : v < 0.8 ? '#efe9dc' : '#6e685d'; x.globalAlpha = 0.35; x.fillRect(Math.random() * 256, Math.random() * 256, 1 + Math.random() * 2, 1 + Math.random() * 2); }
+  for (let i = 0; i < 26; i++) { const xx = Math.random() * 256, g = x.createLinearGradient(0, 0, 0, 256); g.addColorStop(0, 'rgba(60,55,48,0)'); g.addColorStop(0.5, 'rgba(60,55,48,.22)'); g.addColorStop(1, 'rgba(60,55,48,0)'); x.globalAlpha = 1; x.fillStyle = g; x.fillRect(xx, 0, 2 + Math.random() * 5, 256); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+/**
+ * Gommata (Bahubali): monolith in kayotsarga, standing straight, arms hanging to the knees,
+ * long ear lobes, ringlets of hair, creepers climbing the legs and arms, anthills by the feet,
+ * on a lotus pedestal. Faces +z. Feet at y≈1.1, crown at ≈13.4 m (Karkala's is 42 ft).
+ */
 export function statue() {
-  const s = '#bdb6a6', d = '#a39c8c', v = '#6f8f4e', g = new THREE.Group();
-  const p = [
-    P(box(5.4, 1.2, 5.4), '#8c877d', [0, 0.6, 0]), P(box(3.8, 0.7, 3.4), d, [0, 1.55, 0]),
-    P(box(0.8, 0.45, 1.4), s, [-0.55, 2.1, 0.2]), P(box(0.8, 0.45, 1.4), s, [0.55, 2.1, 0.2]),
-    P(box(0.72, 3.2, 0.82), s, [-0.55, 3.9, 0]), P(box(0.72, 3.2, 0.82), s, [0.55, 3.9, 0]),
-    P(box(0.92, 2.7, 1.0), s, [-0.55, 6.8, 0]), P(box(0.92, 2.7, 1.0), s, [0.55, 6.8, 0]),
-    P(box(2.0, 1.1, 1.1), s, [0, 8.5, 0]), P(box(1.85, 1.2, 1.05), s, [0, 9.5, 0]),
-    P(box(2.6, 1.7, 1.25), s, [0, 10.8, 0]), P(box(3.3, 0.75, 1.2), s, [0, 11.9, 0]),
-    P(box(0.62, 2.5, 0.66), s, [-1.62, 10.6, 0]), P(box(0.62, 2.5, 0.66), s, [1.62, 10.6, 0]),
-    P(box(0.56, 2.7, 0.6), s, [-1.66, 8.1, 0.02]), P(box(0.56, 2.7, 0.6), s, [1.66, 8.1, 0.02]),
-    P(box(0.5, 0.9, 0.5), s, [-1.66, 6.3, 0.05]), P(box(0.5, 0.9, 0.5), s, [1.66, 6.3, 0.05]),
-    P(box(0.62, 0.5, 0.6), s, [0, 12.5, 0]), P(box(1.25, 1.5, 1.3), s, [0, 13.45, 0.02]),
-    P(box(1.36, 0.55, 1.4), '#7d776b', [0, 14.35, 0]), P(box(0.95, 0.3, 1.0), '#7d776b', [0, 14.7, 0]),
-    P(box(0.2, 1.05, 0.35), s, [-0.72, 13.2, 0]), P(box(0.2, 1.05, 0.35), s, [0.72, 13.2, 0]),
-    P(box(0.5, 0.12, 0.1), '#8a8476', [0, 13.15, 0.67]), P(box(0.18, 0.08, 0.06), '#5c574d', [-0.25, 13.6, 0.68]), P(box(0.18, 0.08, 0.06), '#5c574d', [0.25, 13.6, 0.68]),
-    P(box(1.2, 4.0, 1.0), '#8c877d', [-2.6, 3.2, -0.3]), P(box(1.2, 4.0, 1.0), '#8c877d', [2.6, 3.2, -0.3]),   // ant-hill rocks either side
-  ];
-  for (let i = 0; i < 9; i++) { const y = 2.6 + i * 0.68; p.push(P(box(0.86, 0.13, 0.95), v, [-0.55, y, 0], [0, 0, i % 2 ? 0.45 : -0.45]), P(box(0.86, 0.13, 0.95), v, [0.55, y + 0.3, 0], [0, 0, i % 2 ? -0.45 : 0.45])); }
-  for (let i = 0; i < 6; i++) { const y = 7.0 + i * 0.75; p.push(P(box(0.7, 0.11, 0.72), v, [-1.64, y, 0], [0, 0, 0.5]), P(box(0.7, 0.11, 0.72), v, [1.64, y + 0.35, 0], [0, 0, -0.5])); }
-  g.add(mesh(merge(p), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, emissive: '#57524a', emissiveIntensity: 0.55 }))); return g;
+  const S = '#ece5d6', D = '#b9b2a3', HAIR = '#8a8478', parts = [];
+  // lotus pedestal
+  parts.push(P(cyl(2.7, 2.9, 0.7, 28), D, [0, 0.35, 0]), P(cyl(2.35, 2.5, 0.35, 28), S, [0, 0.88, 0]));
+  for (let i = 0; i < 18; i++) { const a = (i / 18) * Math.PI * 2; parts.push(P(sph(0.62, 10, 6), S, [Math.sin(a) * 2.45, 0.78, Math.cos(a) * 2.45], [0, a, 0], [0.75, 0.42, 1.25])); }
+  // feet
+  for (const sx of [-1, 1]) parts.push(P(sph(0.5, 14, 8), S, [sx * 0.5, 1.28, 0.32], [0, 0, 0], [0.95, 0.42, 1.85]));
+  // legs: ankle -> knee -> hip
+  for (const sx of [-1, 1]) { limb(parts, [sx * 0.5, 1.45, 0], [sx * 0.53, 4.6, 0.02], 0.36, 0.47, S); limb(parts, [sx * 0.53, 4.6, 0.02], [sx * 0.6, 7.55, 0], 0.49, 0.68, S); }
+  parts.push(P(sph(1.0, 20, 12), S, [0, 7.75, 0], [0, 0, 0], [1.2, 0.82, 0.74]));
+  // torso: lathe profile hip -> waist -> chest -> shoulders, flattened front-to-back
+  const prof = [[0.96, 0], [0.9, 0.6], [0.84, 1.2], [0.98, 1.9], [1.2, 2.65], [1.3, 3.25], [1.18, 3.65], [0.72, 3.98], [0.36, 4.15]].map(([r, y]) => new THREE.Vector2(r, y));
+  parts.push(P(new THREE.LatheGeometry(prof, 24), S, [0, 7.6, 0], [0, 0, 0], [1, 1, 0.62]));
+  for (const sx of [-1, 1]) parts.push(P(sph(0.5, 12, 8), S, [sx * 0.48, 10.2, 0.42], [0, 0, 0], [1.05, 0.55, 0.32]));
+  parts.push(P(sph(0.08, 6, 4), D, [0, 8.85, 0.58]));
+  // shoulders and arms, hanging straight, hands near the knees
+  for (const sx of [-1, 1]) {
+    parts.push(P(sph(0.5, 14, 10), S, [sx * 1.12, 11.0, 0], [0, 0, 0], [1.1, 0.8, 0.85]));
+    limb(parts, [sx * 1.28, 10.85, 0], [sx * 1.36, 8.5, 0.04], 0.4, 0.34, S, 14, false);
+    limb(parts, [sx * 1.36, 8.5, 0.04], [sx * 1.32, 6.25, 0.08], 0.33, 0.26, S, 14);
+    parts.push(P(sph(0.3, 12, 8), S, [sx * 1.3, 5.85, 0.1], [0, 0, 0], [0.7, 1.55, 0.55]));
+    for (let f = 0; f < 4; f++) parts.push(P(cyl(0.06, 0.055, 0.6, 6), S, [sx * 1.28, 5.25, -0.1 + f * 0.085], [0, 0, 0]));
+  }
+  // neck, head, face
+  limb(parts, [0, 11.3, 0], [0, 12.0, 0.02], 0.5, 0.42, S);
+  parts.push(P(sph(0.72, 22, 16), S, [0, 12.55, 0.05], [0, 0, 0], [0.9, 1.15, 0.95]));
+  parts.push(P(box(0.17, 0.42, 0.22), S, [0, 12.5, 0.7], [-0.15, 0, 0]), P(box(0.92, 0.08, 0.14), D, [0, 12.83, 0.63]),
+    P(box(0.26, 0.05, 0.05), '#6e685d', [-0.25, 12.68, 0.69]), P(box(0.26, 0.05, 0.05), '#6e685d', [0.25, 12.68, 0.69]),
+    P(box(0.34, 0.07, 0.06), D, [0, 12.16, 0.66]));
+  for (const sx of [-1, 1]) limb(parts, [sx * 0.64, 12.72, -0.05], [sx * 0.66, 12.0, -0.02], 0.09, 0.13, S, 10);
+  // ringlets of hair
+  for (let r = 0; r < 7; r++) {
+    const phi = 0.12 + r * 0.19, n = Math.max(1, Math.round(Math.sin(phi) * 22));
+    for (let k = 0; k < n; k++) {
+      const th = (k / n) * Math.PI * 2 + r * 0.3, z = Math.sin(phi) * Math.cos(th);
+      if (phi > 1.0 && z > 0.25) continue;                    // keep the forehead clear
+      parts.push(P(sph(0.13, 6, 5), HAIR, [Math.sin(phi) * Math.sin(th) * 0.66, 12.6 + Math.cos(phi) * 0.84, 0.05 + z * 0.7]));
+    }
+  }
+  // creepers up both legs and both arms
+  for (const sx of [-1, 1]) {
+    creeper(parts, [sx * 0.5, 1.5, 0], [sx * 0.6, 7.3, 0], 0.4, 0.66, 3.2, sx > 0 ? 0 : Math.PI);
+    creeper(parts, [sx * 1.32, 6.3, 0.08], [sx * 1.3, 10.7, 0], 0.28, 0.4, 2.4, sx > 0 ? 1 : 2.5);
+  }
+  // anthills with snakes beside the legs
+  for (const sx of [-1, 1]) {
+    const g = new THREE.ConeGeometry(0.9, 2.9, 12, 8), pa = g.attributes.position;
+    for (let i = 0; i < pa.count; i++) { const y = pa.getY(i), k = 1 + Math.sin(y * 3.1 + pa.getX(i) * 4) * 0.12 + Math.cos(pa.getZ(i) * 5) * 0.08; pa.setX(i, pa.getX(i) * k); pa.setZ(i, pa.getZ(i) * k); }
+    g.computeVertexNormals();
+    parts.push(P(g, '#a89c88', [sx * 2.0, 2.45, -0.4]));
+    parts.push(P(sph(0.15, 8, 6), '#6f675b', [sx * 1.9, 3.95, -0.25], [0, 0, 0], [1, 0.8, 1.6]), P(cyl(0.08, 0.1, 0.7, 6), '#6f675b', [sx * 1.95, 3.6, -0.35], [0.4, 0, sx * 0.3]));
+  }
+  const mat = new THREE.MeshStandardMaterial({ map: granite(), vertexColors: true, roughness: 0.88, emissive: '#3c3934', emissiveIntensity: 0.4 });
+  const m = new THREE.Mesh(merge(parts), mat); m.castShadow = true; m.receiveShadow = true;
+  const g = new THREE.Group(); g.add(m); return g;
 }
 
 /** Chaturmukha (four-faced) basadi: granite hall with pillared porches on all four sides. */

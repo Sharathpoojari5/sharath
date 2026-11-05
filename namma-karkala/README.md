@@ -20,10 +20,10 @@ Best on a laptop with a keyboard (Chrome, Edge, Safari or Firefox).
 
 | | |
 |---|---|
-| **The town** | Real Karkala road network (OpenStreetMap), squeezed to 55% so it fits a game: Bahubali Betta with the Gomateshwara statue, Ramasamudra and Aanekere (with the basadi in the lake), Chaturmukha Basadi, Venkataramana Temple, the bus stand, Market Road stalls, Gandhi Maidan, Bhuvanendra College, the police station. ~1,600 procedural houses and shops with Mangalore-tile roofs, ~4,000 coconut and mango trees, street lights. |
+| **The town** | Real Karkala road network (OpenStreetMap), squeezed to 55% so it fits a game: Bahubali Betta with a sculpted Gommata (kayotsarga pose, creepers, anthills, lotus pedestal) inside a stone enclosure, Ramasamudra and Aanekere (with the basadi in the lake), Chaturmukha Basadi, Venkataramana Temple, the bus stand, Market Road stalls, Gandhi Maidan, Bhuvanendra College, the police station. ~1,600 procedural houses and shops: Mangalore-tile roofs, windows that light up at night, balconies, black water tanks, compound walls, verandas, shop signboards. Coconut and areca palms, banana plants, mango trees. Laterite road shoulders, black-and-yellow kerbs, electric poles with wires, bus shelters, flex banners, a petrol bunk, clouds and rippling kere water. |
 | **Story** | Six missions: *Welcome Home*, *Goli Baje Express*, *Conductor Saab*, *The Mallige Thief*, *Kere Evening*, *Bahubali Calling*. |
 | **Side jobs (J)** | Oota Express deliveries on two-wheelers, auto-meter fares in autos and cars, bus rounds. Rain pays 30% extra. |
-| **Vehicles** | Scooter, motorbike, auto rickshaw, car, tempo, private bus (named like film heroes), police jeep. Every one is drivable. Traffic drives on the left. |
+| **Vehicles** | Bicycle, scooter, motorbike, auto rickshaw, car, Omni van, SUV, tempo, lorry (HORN OK PLEASE), water tanker, tractor, 108 ambulance, private bus, state bus, school bus, police jeep. Spinning wheels, KA-20 number plates. Every one is drivable. Traffic drives on the left. |
 | **The street** | Pedestrians who shout at you in Kannada, cows that block the road, honking traffic. |
 | **Wanted meter** | Gossip → Fine → Jeep chase → Checkpost → Front page. Police jeeps chase you from 2 stars. |
 | **World** | Day/night cycle (1 real second = 1 game minute), Karkala's frequent rain, wet roads, night lights. |
@@ -38,7 +38,7 @@ Best on a laptop with a keyboard (Chrome, Edge, Safari or Firefox).
 
 `BARSA` rain · `SURYA` clear sky · `IRULU` night · `BELAKU` morning · `PAISA` money ·
 `POLICEILLA` clear wanted · `GOLIBAJE` health · `BAHUBALI` moon jump · `JORR` super sprint ·
-`BUSBEKU` / `AUTOBEKU` / `BULLET` spawn a bus / auto / bike.
+`BUSBEKU` / `AUTOBEKU` / `BULLET` / `LORRY` / `TRACTOR` / `AMBULANCE` / `CYCLE` / `KSRTC` spawn that vehicle.
 
 ## Files
 
@@ -47,7 +47,8 @@ Best on a laptop with a keyboard (Chrome, Edge, Safari or Firefox).
 | `index.html` | page, HUD and menus |
 | `js/main.js` | loading screen and boot |
 | `js/game.js` | loop, camera, input, missions, jobs, police, weather, HUD, saving |
-| `js/world.js` | builds the town from the map data; collisions, roads, places |
+| `js/world.js` | builds the town from the map data; collisions, roads, places, building shader |
+| `js/infra.js` | road shoulders, kerbs, electric poles and wires, bus shelters, banners, petrol bunk |
 | `js/actors.js` | player, vehicles and traffic AI, pedestrians, cows |
 | `js/models.js` | procedural low-poly models (vehicles, people, statue, temples, bus stand) |
 | `js/audio.js` | all sound, synthesised (no audio files) |
