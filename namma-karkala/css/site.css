@@ -85,5 +85,5 @@ footer{padding:46px 0 60px;border-top:1px solid var(--line);color:var(--dim);fon
 .toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,40px);background:#000d;color:#fff;border:1px solid var(--gold);border-radius:12px;padding:12px 18px;opacity:0;transition:.3s;z-index:60;max-width:90vw}.toast.show{opacity:1;transform:translate(-50%,0)}
 .bus{position:fixed;bottom:12vh;left:-340px;z-index:40;font-size:90px;transition:left 4.5s linear;pointer-events:none}
 .doc{padding:130px 0 60px}.doc h1{font-size:clamp(40px,6vw,76px);margin-bottom:16px}.doc h2{font-size:34px;margin:34px 0 8px}.doc p,.doc li{color:var(--dim);max-width:70ch}.doc kbd{font:700 13px monospace;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:2px 7px;color:var(--ink)}
-.reveal{opacity:0;transform:translateY(20px);transition:opacity .7s,transform .7s}.reveal.in{opacity:1;transform:none}
+.reveal{opacity:1}
 @media (prefers-reduced-motion:reduce){.hero>img.bg{animation:none}.reveal{opacity:1;transform:none;transition:none}html{scroll-behavior:auto}}

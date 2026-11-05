@@ -177,7 +177,7 @@ export class Studio {
     if (L.has('pluck')) mel(S.hooks[hookKey || 'A'], 'pluck', (S.leadOct || 2) * 2, 0.7, false);
     // sung lyrics: [bar, lineId, bars?, opts?] - the singer takes the words from `lyricText(id)`
     if (s === 0 && S.lyrics && this.lyricText && !this.noVocals) {
-      for (const [lb, id, span = 2, vo] of S.lyrics) if (lb === bar) { const text = this.lyricText(id); if (text) singLine(this, bus, t, text, span, dur, (d2) => this.degFreq(d2, S.voxOct || 2), { ...(S.vox || {}), ...(vo || {}), vel: (S.vox && S.vox.vel || 1) }); }
+      for (const [lb, id, span = 2, vo] of S.lyrics) if (lb === bar) { const text = this.lyricText(id); if (text) singLine(this, bus, t, text, span, dur, (d2) => this.degFreq(d2, S.voxOct || 2), { ...(S.vox || {}), ...(vo || {}), vel: 0.8 * (S.vox && S.vox.vel || 1) }); }
     }
     // lyric / HUD events
     if (s === 0 && this.onBar) this.onBar(bar, sec.name, i);

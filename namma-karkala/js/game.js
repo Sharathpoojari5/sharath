@@ -30,15 +30,15 @@ export class Game {
   constructor(map, onProgress) {
     this.map = map; this.audio = new Audio(); this.now = 0; this.keys = new Set(); this.cheats = {}; this.paused = false; this.photo = false;
     const R = this.renderer = new THREE.WebGLRenderer({ canvas: $('view'), antialias: true, powerPreference: 'high-performance' });
-    R.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5)); R.setSize(innerWidth, innerHeight);
-    R.shadowMap.enabled = true; R.shadowMap.type = THREE.PCFSoftShadowMap; R.toneMapping = THREE.ACESFilmicToneMapping; R.toneMappingExposure = 1.05;
+    R.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25)); R.setSize(innerWidth, innerHeight);
+    R.shadowMap.enabled = true; R.shadowMap.type = THREE.PCFShadowMap; R.toneMapping = THREE.ACESFilmicToneMapping; R.toneMappingExposure = 1.05;
     R.outputColorSpace = THREE.SRGBColorSpace;
     const S = this.scene = new THREE.Scene();
     S.fog = new THREE.Fog('#c9d8e6', 140, 560);
     this.cam = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.3, 900);
     this.hemi = new THREE.HemisphereLight('#cfe4ff', '#5b6b3a', 0.9); S.add(this.hemi);
     const sun = this.sun = new THREE.DirectionalLight('#fff1d6', 2.2); sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -75, right: 75, top: 75, bottom: -75, near: 1, far: 400 }); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.04;
+    sun.shadow.mapSize.set(1536, 1536); Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, near: 1, far: 400 }); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.04;
     S.add(sun); S.add(sun.target);
     this.headlight = new THREE.SpotLight('#fff3cc', 0, 70, 0.55, 0.5, 1.2); S.add(this.headlight); S.add(this.headlight.target);
     this.makeSky(); this.makeRain();
@@ -147,6 +147,10 @@ export class Game {
     $('resume').onclick = () => this.togglePause();
     $('music').onclick = () => { this.audio.setMusic(!this.audio.musicOn); $('music').textContent = this.audio.musicOn ? 'Music: on' : 'Music: off'; };
     $('voices').onclick = () => { Voice.enabled = !Voice.enabled; if (!Voice.enabled) Voice.stop(); $('voices').textContent = Voice.enabled ? 'Voices: on' : 'Voices: off'; };
+    const GN = ['Graphics: auto', 'Graphics: low', 'Graphics: lowest']; try { this.gfx = parseInt(localStorage.getItem('nk-gfx') || '0', 10) || 0; } catch (e) { this.gfx = 0; } if (new URLSearchParams(location.search).has('low')) this.gfx = 1; $('gfx').textContent = GN[this.gfx]; if (this.gfx) this.setGraphics(this.gfx);
+    $('gfx').onclick = () => { this.setGraphics((this.gfx + 1) % 3); $('gfx').textContent = GN[this.gfx]; };
+    let vox = true; try { vox = localStorage.getItem('nk-vocals') !== '0'; } catch (e) { } this.audio.setVocals(vox); $('vocals').textContent = vox ? 'Song vocals: on' : 'Song vocals: off';
+    $('vocals').onclick = () => { const on = !this.audio.vocalsOn; this.audio.setVocals(on); try { localStorage.setItem('nk-vocals', on ? '1' : '0'); } catch (e) { } $('vocals').textContent = on ? 'Song vocals: on' : 'Song vocals: off'; };
     $('lang').onclick = () => { Voice.nextLang(); $('lang').textContent = 'Voice: ' + LANG_NAME[Voice.lang]; };
     $('lang').textContent = 'Voice: ' + LANG_NAME[Voice.lang];
     $('replay').onclick = () => { this.togglePause(); this.playTrailer(); };
@@ -690,10 +694,24 @@ export class Game {
   /** Debug/testing: advance the simulation without rendering. */
   step(n = 1, dt = 1 / 30) { this.dtLast = dt; for (let i = 0; i < n; i++) { this.now += dt; this.update(dt); } this.updateCamera(dt); }
   /** Lower resolution, then shadow quality, on slow laptops (checked every 4 seconds). */
+  /** Hide city tiles that are further than the fog distance: they are fully fogged anyway and cost draw calls. */
+  cullFar() {
+    if (!this.tiles) { this.tiles = this.scene.children.filter(o => o.isInstancedMesh); for (const t of this.tiles) if (!t.boundingSphere) t.computeBoundingSphere(); }
+    const c = this.cam.position, far = this.scene.fog.far + 30;
+    for (const t of this.tiles) { const s = t.boundingSphere, d = Math.hypot(s.center.x - c.x, s.center.y - c.y, s.center.z - c.z); t.visible = d - s.radius < far; }
+  }
+  setGraphics(level) {          // 0 auto, 1 low, 2 lowest
+    this.gfx = level; try { localStorage.setItem('nk-gfx', String(level)); } catch (e) { }
+    const R = this.renderer; if (level === 0) { R.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25)); R.shadowMap.enabled = true; this.qLevel = 0; }
+    else if (level === 1) { R.setPixelRatio(1); R.shadowMap.enabled = true; this.qLevel = 2; this.sun.shadow.mapSize.set(1024, 1024); this.sun.shadow.map?.dispose(); this.sun.shadow.map = null; }
+    else { R.setPixelRatio(0.75); R.shadowMap.enabled = false; this.qLevel = 9; }
+    this.scene.traverse(o => { if (o.material) o.material.needsUpdate = true; }); R.setSize(innerWidth, innerHeight);
+  }
   adaptQuality(raw) {
+    if (this.gfx) return;
     this.qT = (this.qT || 0) + raw; this.qN = (this.qN || 0) + 1;
-    if (this.qT < 4) return; const fps = this.qN / this.qT; this.qT = 0; this.qN = 0; this.fps = fps;
-    if (this.paused || this.photo || fps > 32) return;
+    if (this.qT < 2.5) return; const fps = this.qN / this.qT; this.qT = 0; this.qN = 0; this.fps = fps;
+    if (this.paused || this.photo || fps > 42) return;
     this.qLevel = (this.qLevel || 0) + 1; const R = this.renderer;
     if (this.qLevel === 1) R.setPixelRatio(1);
     else if (this.qLevel === 2) { this.sun.shadow.mapSize.set(1024, 1024); this.sun.shadow.map?.dispose(); this.sun.shadow.map = null; }
@@ -705,6 +723,7 @@ export class Game {
     const inp = this.input(), p = this.player, w = this.world;
     this.popT = (this.popT || 0) - dt; if (this.popT < 0) { this.popT = 0.4; this.populate(); }
     const cin = this.cine.active;
+    if ((this.cullT = (this.cullT || 0) + 1) % 6 === 0) this.cullFar();
     this.updateNpcs(dt); this.culture.update(dt); this.food.update(dt); this.chatter.update(dt);
     // the player
     if (cin) { /* no player in the trailer */ } else if (this.car) {
