@@ -93,7 +93,7 @@ export class Game {
     for (let i = 0; i < n; i++) { const x = rnd(-40, 40), y = rnd(0, 30), z = rnd(-40, 40); pos.set([x, y, z, x + 0.05, y - 0.9, z + 0.05], i * 6); }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     this.rain = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: '#a9c3d8', transparent: true, opacity: 0.55 })); this.rain.visible = false; this.rain.frustumCulled = false; this.scene.add(this.rain);
-    this.raining = 0; this.rainOn = false;
+    this.raining = 0; this.rainOn = false; this.wxT = 300;      // the first few minutes of a morning are dry
   }
   setupParked() {
     const w = this.world, st = w.busStand;
@@ -151,8 +151,8 @@ export class Game {
     $('resume').onclick = () => this.togglePause();
     $('music').onclick = () => { this.audio.setMusic(!this.audio.musicOn); $('music').textContent = this.audio.musicOn ? 'Music: on' : 'Music: off'; };
     $('voices').onclick = () => { Voice.enabled = !Voice.enabled; if (!Voice.enabled) Voice.stop(); $('voices').textContent = Voice.enabled ? 'Voices: on' : 'Voices: off'; };
-    try { this.live = localStorage.getItem('nk-live') !== '0'; } catch (e) { this.live = true; } $('timemode').textContent = this.live ? 'Time: Karkala live' : 'Time: game clock';
-    $('timemode').onclick = () => { this.live = !this.live; this.cheatWeather = !this.live ? this.cheatWeather : false; try { localStorage.setItem('nk-live', this.live ? '1' : '0'); } catch (e) { } $('timemode').textContent = this.live ? 'Time: Karkala live' : 'Time: game clock'; this.toast(this.live ? 'LIVE' : 'GAME CLOCK', this.live ? 'Time and weather follow Karkala now.' : 'A game day takes two real hours. Type SANJE for evening, IRULU for night.'); };
+    try { this.live = localStorage.getItem('nk-live') === '1'; } catch (e) { this.live = false; } $('timemode').textContent = this.live ? 'Time: Karkala live' : 'Time: game clock (morning)';
+    $('timemode').onclick = () => { this.live = !this.live; this.cheatWeather = !this.live ? this.cheatWeather : false; try { localStorage.setItem('nk-live', this.live ? '1' : '0'); } catch (e) { } $('timemode').textContent = this.live ? 'Time: Karkala live' : 'Time: game clock (morning)'; this.toast(this.live ? 'LIVE' : 'GAME CLOCK', this.live ? 'Time and weather follow Karkala now.' : 'A game day takes two real hours. Type SANJE for evening, IRULU for night.'); };
     const GN = ['Graphics: auto', 'Graphics: low', 'Graphics: lowest']; try { this.gfx = parseInt(localStorage.getItem('nk-gfx') || '0', 10) || 0; } catch (e) { this.gfx = 0; } if (new URLSearchParams(location.search).has('low')) this.gfx = 1; $('gfx').textContent = GN[this.gfx]; if (this.gfx) this.setGraphics(this.gfx);
     $('gfx').onclick = () => { this.setGraphics((this.gfx + 1) % 3); $('gfx').textContent = GN[this.gfx]; };
     let vox = true; try { vox = localStorage.getItem('nk-vocals') !== '0'; } catch (e) { } this.audio.setVocals(vox); $('vocals').textContent = vox ? 'Song vocals: on' : 'Song vocals: off';
@@ -518,24 +518,25 @@ export class Game {
 
   /* ====================================================================== time, weather */
   updateSky(dt) {
-    if (!this.photo) { if (this.live && !this.cine.active && !this.endMode) this.time = ISTMIN(); else this.time = (this.time + dt * TIME_SCALE) % 1440; }      // game minutes per real second: a full day takes 2 real hours, a night about 35 minutes
+    if (!this.photo) { if (this.live && !this.cine.active && !this.endMode) this.time = ISTMIN(); else this.time = (this.time + dt * TIME_SCALE * ((this.time >= 330 && this.time < 600) ? 0.5 : 1)) % 1440; }      // game minutes per real second: a full day takes 2 real hours, a night about 35 minutes
     const t = this.time / 1440, el = Math.sin((t - 0.25) * Math.PI * 2), az = (t - 0.25) * Math.PI * 2;
     const day = clamp(el * 3 + 0.25, 0, 1), dusk = clamp(1 - Math.abs(el) * 4, 0, 1) * (el > -0.2 ? 1 : 0);
+    const hrs = this.time / 60, morn = clamp(1 - Math.abs(hrs - 7.0) / 2.6, 0, 1) * (1 - this.raining * 0.6); this.morn = morn;
     this.dayAmt = day; const p = this.carOrPlayer();
     const sd = new THREE.Vector3(Math.cos(az) * 0.8, Math.max(0.08, el), Math.sin(az) * 0.6).normalize();
     this.sun.position.set(p.x + sd.x * 150, sd.y * 150, p.z + sd.z * 150); this.sun.target.position.set(p.x, 0, p.z);
     const rain = this.raining;
     const top = new THREE.Color('#162552').lerp(new THREE.Color('#4f93dc'), day).lerp(new THREE.Color('#5b6675'), rain * 0.85);
-    const bot = new THREE.Color('#2b3d66').lerp(new THREE.Color('#d9e8f3'), day).lerp(new THREE.Color('#ff9c5a'), dusk * 0.65).lerp(new THREE.Color('#8b939c'), rain * 0.8);
+    const bot = new THREE.Color('#2b3d66').lerp(new THREE.Color('#d9e8f3'), day).lerp(new THREE.Color('#ff9c5a'), dusk * 0.65).lerp(new THREE.Color('#ffd0a0'), morn * 0.55).lerp(new THREE.Color('#8b939c'), rain * 0.8);
     this.skyMat.uniforms.top.value.copy(top); this.skyMat.uniforms.bot.value.copy(bot); this.skyMat.uniforms.sunDir.value.copy(sd); this.skyMat.uniforms.night.value = 1 - day;
     this.skyMat.uniforms.sunCol.value.set(day > 0.1 ? '#fff1c2' : '#000'); this.skyMat.uniforms.sunCol.value.multiplyScalar(1 - rain);
     const U = this.skyMat.uniforms; U.uTime.value = this.now; U.cover.value = (this.live && this.wx ? 0.15 + 0.6 * this.wx.cloud : 0.38) + rain * 0.55;
-    U.cloudCol.value.set('#ffffff').lerp(new THREE.Color('#ffb48a'), dusk * 0.7).multiplyScalar(0.12 + 0.88 * day).lerp(new THREE.Color('#6b7280'), rain * 0.7 * day);
+    U.cloudCol.value.set('#ffffff').lerp(new THREE.Color('#ffb48a'), dusk * 0.7).lerp(new THREE.Color('#ffe0c0'), morn * 0.5).multiplyScalar(0.12 + 0.88 * day).lerp(new THREE.Color('#6b7280'), rain * 0.7 * day);
     // sky reflections for glass, paint and water: re-baked every few game minutes
     this.envT = (this.envT || 0) - dt;
     if (this.envT <= 0) { this.envT = 20; this.bakeEnv(); }
-    this.scene.fog.color.copy(bot); this.scene.fog.far = lerp(560, 260, rain); this.scene.fog.near = lerp(140, 40, rain);
-    this.sun.intensity = (0.55 + 1.95 * day) * (1 - rain * 0.7); this.sun.color.set(dusk > 0.3 ? '#ffb27a' : '#fff1d6');
+    this.scene.fog.color.copy(bot); this.scene.fog.far = lerp(560, 260, rain) * (1 - morn * 0.3); this.scene.fog.near = lerp(140, 40, rain) * (1 - morn * 0.55);      // a little morning mist
+    this.sun.intensity = (0.55 + 1.95 * day) * (1 - rain * 0.7); this.sun.color.set(dusk > 0.3 ? '#ffb27a' : morn > 0.25 ? '#ffe2b4' : '#fff1d6');
     if (day < 0.05) { this.sun.color.set('#a9bdff'); this.sun.intensity = 1.1; }
     this.hemi.intensity = 1.0 + 0.5 * day; this.hemi.color.set(day > 0.2 ? '#cfe4ff' : '#7a90d0'); this.hemi.groundColor.set(day > 0.2 ? '#5b6b3a' : '#3d4a6a');
     this.renderer.toneMappingExposure = 0.95 + 0.4 * (1 - day);
@@ -680,7 +681,7 @@ export class Game {
     this.started = true; this.audio.init(); this.audio.resume(); this.hudShow(true);
     setInterval(() => this.store(), 15000);
     if (!this.save.seenIntro && !this.save.done.length) this.playTrailer({ onEnd: () => { } });
-    else if (this.save.done.length) this.toast('WELCOME BACK', `₹${this.save.money.toLocaleString('en-IN')} in your pocket`);
+    else if (this.save.done.length) this.toast(this.live ? 'WELCOME BACK' : 'SUPRABHATA, KARKALA', this.live ? `₹${this.save.money.toLocaleString('en-IN')} in your pocket` : `Good morning. Temple bells, birdsong and mist on the kere. ₹${this.save.money.toLocaleString('en-IN')} in your pocket.`);
   }
   frame() {
     if (this.freezeFrame) return;            // used by automated screenshot tests
@@ -698,7 +699,7 @@ export class Game {
       const rd = this.radio, pf = this.culture.near, lv = { song: rd.active && rd.song ? rd.song.id : null, vol: 1 };
       rd.live = pf && !rd.active && !this.cine.active ? { song: pf.site.def.song, name: pf.site.def.name, color: pf.site.def.color } : null;
       if (rd.live) { lv.song = rd.live.song; lv.vol = 0.3 + 0.7 * pf.vol; } else if (pf && lv.song) lv.vol = 1 - 0.55 * pf.vol;
-      const p = this.carOrPlayer(), t = this.world.temple;  this.audio.update(dt, { day: this.dayAmt ?? 1, rain: this.raining, templeDist: t ? Math.hypot(t[0] - p.x, t[1] - p.z) : 999, traffic: this.vehicles.reduce((a, v) => a + (v.driver === 'ai' && Math.hypot(v.x - p.x, v.z - p.z) < 80 ? 1 : 0), 0), chase: this.level >= 2, song: lv.song, vol: lv.vol, cheer: this.culture.cheer, intensity: this.car ? Math.min(1, Math.abs(this.car.v) / 22 + (this.level >= 2 ? 0.4 : 0)) : 0.25, scene: this.cine.active ? this.cine.list[this.cine.shot]?.music : this.endMode ? 'ending' : null });
+      const p = this.carOrPlayer(), t = this.world.temple;  this.audio.update(dt, { day: this.dayAmt ?? 1, rain: this.raining, templeDist: t ? Math.hypot(t[0] - p.x, t[1] - p.z) : 999, traffic: this.vehicles.reduce((a, v) => a + (v.driver === 'ai' && Math.hypot(v.x - p.x, v.z - p.z) < 80 ? 1 : 0), 0), chase: this.level >= 2, song: lv.song, vol: lv.vol, morning: this.morn || 0, cheer: this.culture.cheer, intensity: this.car ? Math.min(1, Math.abs(this.car.v) / 22 + (this.level >= 2 ? 0.4 : 0)) : 0.25, scene: this.cine.active ? this.cine.list[this.cine.shot]?.music : this.endMode ? 'ending' : null });
     }
   }
   /** Debug/testing: advance the simulation without rendering. */
@@ -808,6 +809,7 @@ export class Game {
     let s = null; try { s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); } catch (e) { }
     this.save = Object.assign({ money: 500, done: [], time: 16.5 * 60, pos: null }, s || {});
     this.time = this.save.time;
+    { let liveOn = false; try { liveOn = localStorage.getItem('nk-live') === '1'; } catch (e) { } if (!liveOn && !(this.time >= 5.5 * 60 && this.time <= 10 * 60)) this.time = 7.2 * 60; }      // the game starts on a fresh Karkala morning
   }
   store() {
     const p = this.carOrPlayer(); this.save.time = this.time; this.save.pos = this.save.done.length ? [p.x, p.z] : null;

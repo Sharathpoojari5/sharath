@@ -50,8 +50,8 @@ export class Audio {
     this.hum.gain.setTargetAtTime(Math.min(0.1, (info.traffic || 0) * 0.012) * quiet, t, 0.6);
     this.ambT = (this.ambT || 0) - dt;
     if (this.ambT <= 0) {
-      this.ambT = 1.2 + Math.random() * 3;
-      if (day > 0.5 && info.rain < 0.3 && !info.scene) this.music.chirp(t + 0.02, 0.03 + Math.random() * 0.03);
+      const mo = info.morning || 0; this.ambT = (1.2 + Math.random() * 3) * (1 - 0.7 * mo);      // dawn chorus: far more birds in the morning
+      if (day > 0.5 && info.rain < 0.3 && !info.scene) { this.music.chirp(t + 0.02, (0.03 + Math.random() * 0.03) * (1 + mo)); if (mo > 0.4 && Math.random() < 0.5) this.music.chirp(t + 0.18, 0.04 + Math.random() * 0.03); }
       if (info.templeDist < 140 && !info.scene && Math.random() < 0.6) { const v = 0.1 * (1 - info.templeDist / 140); this.music.bell(t + 0.05, 560 + Math.random() * 90, v); this.bellT = 0; }
     }
   }
