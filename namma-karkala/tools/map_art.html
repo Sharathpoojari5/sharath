@@ -1,0 +1,23 @@
+<!doctype html><meta charset="utf-8"><body style="margin:0;background:#0f1a10"><canvas id="c" width="1600" height="1000"></canvas>
+<script>
+fetch('/data/karkala.json').then(r=>r.json()).then(d=>{
+  const c=document.getElementById('c'),x=c.getContext('2d');
+  // fit the core of the town (not the far outskirts)
+  const X0=-420,X1=1120,Z0=-420,Z1=700; const W=1600,H=1000,s=Math.min(W/(X1-X0),H/(Z1-Z0)),ox=(W-(X1-X0)*s)/2,oz=(H-(Z1-Z0)*s)/2;
+  const P=(p)=>[ox+(p[0]-X0)*s, oz+(p[1]-Z0)*s];
+  const g=x.createLinearGradient(0,0,0,H); g.addColorStop(0,'#16301a'); g.addColorStop(1,'#10200f'); x.fillStyle=g; x.fillRect(0,0,W,H);
+  const poly=(pts,fill)=>{x.beginPath(); pts.forEach((p,i)=>{const q=P(p); i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]);}); x.closePath(); x.fillStyle=fill; x.fill();};
+  d.green.forEach(a=>poly(a.pts,'#1f4a22')); d.buildings.forEach(a=>poly(a.pts,'#3b2a1f'));
+  d.water.forEach(a=>poly(a.pts,'#1d4ed8')); x.strokeStyle='#2563eb'; x.lineWidth=3; d.rivers.forEach(a=>{x.beginPath(); a.pts.forEach((p,i)=>{const q=P(p); i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]);}); x.stroke();});
+  const wd={motorway:7,trunk:7,primary:6,secondary:5,tertiary:4}; x.lineCap='round'; x.lineJoin='round';
+  for (const pass of [1,0]) d.roads.forEach(r=>{ const pts=r.pts||r.p; if(!pts) return; x.beginPath(); pts.forEach((p,i)=>{const q=P(p); i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]);}); x.strokeStyle=pass?'#2a1c12':(r.cls==='secondary'||r.cls==='primary'||r.cls==='trunk'?'#fbbf24':'#e7d9c4'); x.lineWidth=(wd[r.cls]||2.5)*(pass?1.7:1)*(s*1.7); x.stroke(); });
+  const label=(p,t,col,r)=>{const q=P(p); x.beginPath(); x.arc(q[0],q[1],r||7,0,7); x.fillStyle=col; x.fill(); x.lineWidth=3; x.strokeStyle='#000a'; x.stroke(); x.font='800 22px system-ui,sans-serif'; x.textBaseline='middle'; x.lineWidth=5; x.strokeStyle='#000c'; x.strokeText(t,q[0]+13,q[1]); x.fillStyle='#fff7ed'; x.fillText(t,q[0]+13,q[1]);};
+  const poi=n=>(d.pois.find(p=>p.name===n)||{}).p;
+  label(poi('Karkala Gomateshwara Statue')||poi('Karkala Gomateshwara'),'Bahubali Betta','#fbbf24',11);
+  [['Aanekere','Aanekere','#60a5fa'],['Karkala Bus Stand','Bus stand','#f97316'],['Sri Venkataramana Temple','Venkataramana Temple','#fb7185'],['Sri Bhuvanendra College','Bhuvanendra College','#a78bfa'],['Chaturmakha Basadi','Chaturmukha Basadi','#34d399'],['Rama Samudra','Rama Samudra','#60a5fa']].forEach(a=>{const p=poi(a[0]); if(p) label(p,a[1],a[2]);});
+  label([728,130],'Pili Vesha','#f97316',9); label([-234,-12],'Yakshagana','#ef4444',9); label([-197,-172],'Bhajane','#fbbf24',9); label([157,315],'Kambala','#a16207',9);
+  x.font='900 54px "Big Shoulders Display",Impact,sans-serif'; x.fillStyle='#fff7ed'; x.strokeStyle='#000b'; x.lineWidth=8; x.strokeText('KARKALA',30,60); x.fillText('KARKALA',30,60);
+  x.font='700 16px system-ui'; x.fillStyle='#d6bfa3'; x.fillText('Map data © OpenStreetMap contributors',30,H-18);
+  document.title='ready';
+});
+</script>

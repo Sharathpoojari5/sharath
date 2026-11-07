@@ -1,0 +1,77 @@
+# Generates the Kannada (and Tulu) voice-over for Namma Karkala with open-source models on GitHub's own runners
+# (they can reach huggingface.co). It writes namma-karkala/voice/<lang>/<id>.mp3 and voice/manifest.json to the branch.
+# Run it from the Actions tab (Run workflow) or by pushing a change to this file.
+name: Generate voices
+on:
+  workflow_dispatch:
+    inputs:
+      only_langs:
+        description: "Languages (space separated): kn tcy"
+        default: "kn tcy"
+permissions:
+  contents: write
+concurrency:
+  group: voices
+  cancel-in-progress: true
+jobs:
+  speak:
+    name: ${{ matrix.lang }} shard ${{ matrix.shard }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        lang: [kn, tcy]
+        shard: [0, 1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Install ffmpeg and Python packages
+        timeout-minutes: 15
+        run: |
+          sudo apt-get update -y && sudo apt-get install -y ffmpeg
+          pip install torch==2.4.1 torchaudio==2.4.1 --index-url https://download.pytorch.org/whl/cpu
+          pip install soundfile librosa numpy
+          pip install git+https://github.com/huggingface/parler-tts.git
+          # parler-tts can pull a different torchaudio build; put the matching CPU pair back
+          pip install --force-reinstall --no-deps torch==2.4.1 torchaudio==2.4.1 --index-url https://download.pytorch.org/whl/cpu
+          python -c "import torch, torchaudio, parler_tts; print('torch', torch.__version__, 'torchaudio', torchaudio.__version__)"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-voices-v1
+      - name: "Generate voices (sung lyrics are skipped, the in-game singer sings them)"
+        working-directory: namma-karkala/tools
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: python make_voices.py --script ../voice/script.json --out ../voice --langs ${{ matrix.lang }} --skip-prefix S --shard ${{ matrix.shard }}/4 --skip-existing
+      - uses: actions/upload-artifact@v4
+        with:
+          name: voice-${{ matrix.lang }}-${{ matrix.shard }}
+          path: namma-karkala/voice/${{ matrix.lang }}
+          if-no-files-found: error
+  publish:
+    needs: speak
+    if: always() && needs.speak.result != 'cancelled'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: "${{ github.ref_name }}" }
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: voice-*
+          path: artifacts
+      - name: Collect mp3 files and rebuild the manifest
+        run: |
+          for d in artifacts/voice-*; do
+            lang=$(echo "$d" | cut -d- -f2)
+            mkdir -p namma-karkala/voice/$lang && cp -n "$d"/*.mp3 namma-karkala/voice/$lang/ 2>/dev/null || true
+          done
+          pip install numpy soundfile
+          python3 namma-karkala/tools/make_voices.py --out namma-karkala/voice --rebuild-manifest
+      - name: Commit voices to the branch
+        run: |
+          git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add namma-karkala/voice
+          git diff --cached --quiet && echo "nothing to commit" || (git commit -m "Add generated Kannada and Tulu voice-over (Indic Parler-TTS)" && git pull --rebase origin ${{ github.ref_name }} && git push origin HEAD:${{ github.ref_name }})
