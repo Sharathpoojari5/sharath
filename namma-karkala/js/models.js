@@ -1,6 +1,7 @@
 // Procedural low-poly models. Every model is a few merged, vertex-coloured geometries so a whole
 // vehicle or building is one draw call.
 import * as THREE from './three.module.min.js';
+import { People } from './people.js';
 
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _e = new THREE.Euler(), _c = new THREE.Color();
 
@@ -167,6 +168,7 @@ function faceMat(f) {
 }
 
 export function person(o = {}) {
+  if (People.ready && o.real !== false && (o.real || (o.kind === undefined ? Math.random() < 0.7 : (o.kind === 'shirt' && !o.cap && !o.hair)))) return People.create(o);
   const skin = o.skin || pick(SKIN), g = new THREE.Group();
   const kind = o.kind || pick(['shirt', 'shirt', 'lungi', 'saree']);
   const older = o.age != null ? o.age > 0.6 : Math.random() < 0.22, shirt = o.shirt || pick(SHIRT), hair = o.hair || (older ? pick(['#9ca3af', '#d1d5db', '#6b7280']) : '#141414'), saree = o.saree || pick(SAREE);

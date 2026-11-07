@@ -29,6 +29,7 @@ async function boot() {
   const map = await (await fetch('data/karkala.json')).json();
   progress(0.1, 'Waking up the town');
   await new Promise(r => setTimeout(r, 30));
+  try { const { People } = await import('./people.js'); await People.load((f) => progress(0.1 + f * 0.04, 'Meeting the people')); } catch (e) { console.warn('people', e); }
   const game = new Game(map);
   await game.init(progress);
   window.__game = game;                                    // handy for debugging from the console

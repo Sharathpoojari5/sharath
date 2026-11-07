@@ -1,6 +1,7 @@
 // Street life: stray dogs you can pet, a gully-cricket match you can join, and B = record a 15 second clip.
 import * as THREE from './three.module.min.js';
 import * as M from './models.js';
+import { People } from './people.js';
 
 const { P, box, cyl, sph, merge, MAT } = M;
 const rnd = (a, b) => a + Math.random() * (b - a), pick = (a) => a[Math.floor(Math.random() * a.length)], clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -43,7 +44,7 @@ class Match {
     const mkKid = (z, shirt) => { const k = M.person({ kind: 'shirt', shirt, age: 0 }); k.scale.setScalar(0.78); k.position.set(0, 0, z); this.group.add(k); return k; };
     this.bat = mkKid(3.7, '#2563eb'); this.bowler = mkKid(-4.0, '#dc2626'); this.field = mkKid(9, '#16a34a'); this.field.position.x = 3;
     this.bat.rotation.y = Math.PI; this.field.rotation.y = Math.PI;
-    const bt = new THREE.Mesh(merge([P(box(0.1, 0.55, 0.02), '#b7791f', [0, 0, 0]), P(cyl(0.015, 0.015, 0.2, 5), '#4b5563', [0, 0.35, 0])]), MAT.solid); bt.position.set(0.3, -0.65, 0.2); this.bat.armR.add(bt);
+    const bt = new THREE.Mesh(merge([P(box(0.1, 0.55, 0.02), '#b7791f', [0, 0, 0]), P(cyl(0.015, 0.015, 0.2, 5), '#4b5563', [0, 0.35, 0])]), MAT.solid); const hand = People.bone(this.bat, 'Bip01_R_Hand'); if (hand) { bt.scale.setScalar(105); bt.position.set(6, 0, 4); bt.rotation.set(0, 0, 1.2); hand.add(bt); } else { bt.position.set(0.3, -0.65, 0.2); this.bat.armR.add(bt); }
     this.ball = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 6), new THREE.MeshStandardMaterial({ color: '#dc2626', roughness: 0.5 })); this.group.add(this.ball);
     this.t = 0; this.cycle = 3.4; this.runs = 0; this.shot = 0; this.hit = false; this.cool = 0;
   }

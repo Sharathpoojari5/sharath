@@ -62,7 +62,7 @@ function yakshaDancer(face, dress, trim) {
   sk.add(mk(merge(trimM), MAT.gold)); g.add(sk); g.skirt = sk;
   return g;
 }
-function seated(skin, shirt) { const g = M.person({ kind: pick(['shirt', 'lungi', 'saree']), skin: skin || pick(['#8d5a3b', '#a8703f', '#6e4428', '#b9814f']), shirt: shirt || pick(['#f8fafc', '#2563eb', '#dc2626', '#16a34a', '#f59e0b', '#7c3aed', '#0891b2']) }); g.scale.set(1, 0.68, 1); return g; }
+function seated(skin, shirt) { const g = M.person({ real: false, kind: pick(['shirt', 'lungi', 'saree']), skin: skin || pick(['#8d5a3b', '#a8703f', '#6e4428', '#b9814f']), shirt: shirt || pick(['#f8fafc', '#2563eb', '#dc2626', '#16a34a', '#f59e0b', '#7c3aed', '#0891b2']) }); g.scale.set(1, 0.68, 1); return g; }
 const standing = () => M.person({});
 
 /* ============================================================================ place finder */

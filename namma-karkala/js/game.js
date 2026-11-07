@@ -11,6 +11,7 @@ import { Radio } from './radio.js';
 import { Culture } from './culture.js';
 import { Food } from './food.js';
 import { Extras } from './extras.js';
+import { People } from './people.js';
 import { Chatter } from './chatter.js';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -755,7 +756,7 @@ export class Game {
     this.popT = (this.popT || 0) - dt; if (this.popT < 0) { this.popT = 0.4; this.populate(); }
     const cin = this.cine.active;
     if ((this.cullT = (this.cullT || 0) + 1) % 6 === 0) this.cullFar();
-    this.updateNpcs(dt); this.culture.update(dt); this.food.update(dt); this.extras.update(dt); this.chatter.update(dt);
+    this.updateNpcs(dt); People.update(dt, this.carOrPlayer().x, this.carOrPlayer().z); this.culture.update(dt); this.food.update(dt); this.extras.update(dt); this.chatter.update(dt);
     // the player
     if (cin) { /* no player in the trailer */ } else if (this.car) {
       const c = this.car, steer = inp.x, thr = inp.y;

@@ -23,7 +23,7 @@ export class Vehicle {
   }
   addDriverModel(isPlayer = false) {
     if (this.dm || !this.def.open) return;
-    const p = isPlayer ? M.person({ kind: 'shirt', shirt: '#0ea5e9', pants: '#1e293b', skin: '#8d5a3b' })
+    const p = isPlayer ? M.person({ kind: 'shirt', real: 'Male_Adult_08', shirt: '#0ea5e9', pants: '#1e293b', skin: '#8d5a3b' })
       : M.person({ kind: 'shirt', shirt: this.driver === 'thief' ? '#111827' : undefined, cap: this.driver === 'thief' ? '#dc2626' : undefined });
     p.position.set(...this.def.seat); p.position.y += this.def.two ? -0.25 : -0.4;
     if (p.legL) { p.legL.rotation.x = -1.2; p.legR.rotation.x = -1.2; }
@@ -196,7 +196,7 @@ export class Cow {
 /* ================================================================== the player on foot */
 export class Player {
   constructor(g, x, z) {
-    this.g = g; this.mesh = M.person({ kind: 'shirt', shirt: '#0ea5e9', pants: '#1e293b', skin: '#8d5a3b' }); g.scene.add(this.mesh);
+    this.g = g; this.mesh = M.person({ kind: 'shirt', real: 'Male_Adult_08', shirt: '#0ea5e9', pants: '#1e293b', skin: '#8d5a3b' }); g.scene.add(this.mesh);
     this.x = x; this.z = z; this.y = 0; this.vy = 0; this.h = Math.PI; this.hp = 100; this.phase = 0; this.down = 0; this.vehicle = null; this.lastHurt = -99;
   }
   update(dt, inp, camYaw) {
