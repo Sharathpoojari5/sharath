@@ -43,15 +43,15 @@ export function buildInfra(world) {
   const poleGeo = M.merge([M.P(M.box(0.24, 9, 0.24), '#b8b3a8', [0, 4.5, 0]), M.P(M.box(1.6, 0.12, 0.12), '#6b7280', [0, 8.6, 0]),
     M.P(M.box(0.1, 0.18, 0.1), '#e5e7eb', [-0.65, 8.75, 0]), M.P(M.box(0.1, 0.18, 0.1), '#e5e7eb', [0.65, 8.75, 0]), M.P(M.box(0.1, 0.18, 0.1), '#e5e7eb', [0, 8.75, 0]),
     M.P(M.box(0.5, 0.7, 0.35), '#4b5563', [0, 6.2, 0.2])]);
-  const poles = [], wire = [];
+  const poles = [], wire = []; world.poleSpots = [];
   for (const rd of roads) {
     let prev = null;
     walk(rd.pts, rd.w >= 9 ? 34 : 30, (x, z, dx, dz) => {
       const o = rd.w / 2 + 1.5, px = x + dz * o, pz = z - dx * o;            // right-hand side of the road's direction
-      if (world.blocked(px, pz, 0.35) || world.inWater(px, pz) || world.groundH(px, pz) > 2) { prev = null; return; }
+      if (world.blocked(px, pz, 0.35) || world.inWater(px, pz) || world.groundH(px, pz) > 2 || world.roadClearance(px, pz, 0) < 0.35) { prev = null; return; }      // never on a carriageway or a junction
       const r = Math.atan2(dx, dz), y0 = world.groundH(px, pz);
       poles.push({ x: px, z: pz, m: new THREE.Matrix4().compose(new THREE.Vector3(px, y0, pz), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), r + Math.PI / 2), new THREE.Vector3(1, 1, 1)) });
-      world.addObs({ x: px, z: pz, r: 0.25 });
+      world.addObs({ x: px, z: pz, r: 0.25 }); world.poleSpots.push({ x: px, z: pz, r, w: rd.w });
       const cur = { x: px, z: pz, y: y0, r };
       if (prev && Math.hypot(prev.x - px, prev.z - pz) < 45) {
         for (const off of [-0.65, 0, 0.65]) {

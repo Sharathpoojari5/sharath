@@ -3,6 +3,7 @@
 import * as THREE from './three.module.min.js';
 import * as M from './models.js';
 import { buildInfra, petrolBunk } from './infra.js';
+import { buildPosters } from './posters.js';
 
 let seed = 1337;
 export const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
@@ -188,7 +189,7 @@ export class World {
     this.buildWater(); this.buildHill(); onProgress(0.4, 'Building the town'); await tick();
     this.buildLandmarks(); this.buildOsmBuildings(); this.buildTown(); onProgress(0.7, 'Planting coconut trees'); await tick();
     this.buildTrees(); this.buildTufts(); this.buildLamps(); onProgress(0.8, 'Stringing the electric wires'); await tick();
-    buildInfra(this); onProgress(0.88, 'Drawing the map'); await tick();
+    buildInfra(this); try { this.posterStats = buildPosters(this); } catch (e) { console.warn('posters', e); } onProgress(0.88, 'Drawing the map'); await tick();
     this.minimap = this.drawMinimap(); onProgress(0.95, 'Almost there');
   }
 
@@ -524,12 +525,25 @@ export class World {
   }
 
   buildLamps() {
-    const spots = [];
-    for (const rd of this.map.roads) if (rd.w >= 9) walk(rd.pts, 38, (x, z, dx, dz) => { const s = spots.length % 2 ? 1 : -1; spots.push([x - dz * s * (rd.w / 2 + 0.8), z + dx * s * (rd.w / 2 + 0.8), Math.atan2(dz * s, -dx * s)]); });
+    // Poles stand on the verge, 0.8 m outside the road edge, arm reaching over the carriageway. A spot is dropped when it would sit
+    // on any other road (a junction), inside a building or in water, or too close to the previous pole.
+    const spots = [], kept = [];
+    const ok = (x, z) => this.roadClearance(x, z, 0) > 0.35 && !this.blocked(x, z, 0.5) && !this.inWater(x, z) && !kept.some(k => (k[0] - x) ** 2 + (k[1] - z) ** 2 < 100);
+    for (const rd of this.map.roads) if (rd.w >= 6) {
+      const step = rd.w >= 9 ? 36 : 62; let n = 0;
+      walk(rd.pts, step, (x, z, dx, dz) => {
+        const L = Math.hypot(dx, dz) || 1; dx /= L; dz /= L; n++;
+        for (const s of (rd.w >= 13 ? [1, -1] : [n % 2 ? 1 : -1, n % 2 ? -1 : 1])) {            // alternate sides; wide roads get both
+          const off = rd.w / 2 + 0.9, px = x - dz * s * off, pz = z + dx * s * off;
+          if (ok(px, pz)) { kept.push([px, pz]); spots.push([px, pz, Math.atan2(dz * s, -dx * s)]); break; }
+          if (rd.w >= 13) continue;
+        }
+      });
+    }
     const g = M.lampGeos(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), poles = [], pools = [];
     for (const [x, z, r] of spots) {
-      q.setFromAxisAngle(up, r + Math.PI / 2); poles.push({ x, z, m: new THREE.Matrix4().compose(new THREE.Vector3(x, 0, z), q, new THREE.Vector3(1, 1, 1)) });
-      const px = x + Math.sin(r + Math.PI / 2) * 1.5, pz = z + Math.cos(r + Math.PI / 2) * 1.5; pools.push({ x, z, m: new THREE.Matrix4().makeTranslation(px, 0.09, pz) }); this.addObs({ x, z, r: 0.2 });
+      q.setFromAxisAngle(up, r); poles.push({ x, z, m: new THREE.Matrix4().compose(new THREE.Vector3(x, 0, z), q, new THREE.Vector3(1, 1, 1)) });
+      const px = x + Math.sin(r) * 1.5, pz = z + Math.cos(r) * 1.5; pools.push({ x, z, m: new THREE.Matrix4().makeTranslation(px, 0.09, pz) }); this.addObs({ x, z, r: 0.2 });
     }
     tiled(this.scene, g.pole, M.MAT.solid, poles, { receive: false }); tiled(this.scene, g.lamp, M.MAT.glow, poles, { cast: false, receive: false });
     const poolMat = new THREE.MeshBasicMaterial({ color: '#ffd88a', transparent: true, opacity: 0.22, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false });
