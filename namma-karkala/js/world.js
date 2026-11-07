@@ -4,6 +4,7 @@ import * as THREE from './three.module.min.js';
 import * as M from './models.js';
 import { buildInfra, petrolBunk } from './infra.js';
 import { buildPosters } from './posters.js';
+import { buildFacades } from './facades.js';
 
 let seed = 1337;
 export const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
@@ -189,7 +190,7 @@ export class World {
     this.buildWater(); this.buildHill(); onProgress(0.4, 'Building the town'); await tick();
     this.buildLandmarks(); this.buildOsmBuildings(); this.buildTown(); onProgress(0.7, 'Planting coconut trees'); await tick();
     this.buildTrees(); this.buildTufts(); this.buildLamps(); onProgress(0.8, 'Stringing the electric wires'); await tick();
-    buildInfra(this); try { this.posterStats = buildPosters(this); } catch (e) { console.warn('posters', e); } onProgress(0.88, 'Drawing the map'); await tick();
+    buildInfra(this); try { this.facadeStats = buildFacades(this); } catch (e) { console.warn('facades', e); } try { this.posterStats = buildPosters(this); } catch (e) { console.warn('posters', e); } onProgress(0.88, 'Drawing the map'); await tick();
     this.minimap = this.drawMinimap(); onProgress(0.95, 'Almost there');
   }
 
