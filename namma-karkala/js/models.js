@@ -116,6 +116,56 @@ const SAREE = ['#db2777', '#f59e0b', '#16a34a', '#7c3aed', '#dc2626', '#0ea5e9',
 const pick = (a, r = Math.random) => a[Math.floor(r() * a.length)];
 
 /** A person facing +z, feet at y=0, ~1.7 m. Returns group with .legL/.legR for walking. */
+
+/* ---- painted faces: a 512x256 equirectangular skin texture wrapped on the head; the face sits around x=128 (front of the sphere) ---- */
+const HEAD_GEO = new THREE.SphereGeometry(1, 28, 20);
+const FACE_CACHE = new Map();
+function faceMat(f) {
+  const key = [f.skin, f.fem ? 1 : 0, f.older ? 1 : 0, f.stache ? 1 : 0, f.glasses ? 1 : 0, f.tilaka ? 1 : 0, f.v].join('|');
+  let m = FACE_CACHE.get(key); if (m) return m;
+  const c = document.createElement('canvas'); c.width = 512; c.height = 256; const x = c.getContext('2d');
+  const sk = new THREE.Color(f.skin), shade = (k) => '#' + sk.clone().multiplyScalar(k).convertLinearToSRGB().getHexString(), fx = 128, v = f.v;
+  x.fillStyle = f.skin; x.fillRect(0, 0, 512, 256);
+  const base = x.createRadialGradient(fx, 130, 6, fx, 130, 78); base.addColorStop(0, 'rgba(255,225,190,.20)'); base.addColorStop(0.7, 'rgba(255,225,190,.04)'); base.addColorStop(1, 'rgba(0,0,0,.12)'); x.fillStyle = base; x.fillRect(fx - 100, 40, 200, 200);
+  x.fillStyle = 'rgba(190,70,60,.16)'; for (const sx of [-1, 1]) { x.beginPath(); x.ellipse(fx + sx * 38, 142, 16, 11, 0, 0, 7); x.fill(); }                      // cheeks
+  const ey = 118 + (v === 2 ? 2 : 0), es = 31 + (v === 1 ? 3 : 0), ew = 13 + (v === 3 ? 2 : 0);
+  for (const sx of [-1, 1]) {
+    const cx = fx + sx * es;
+    x.fillStyle = shade(0.72); x.globalAlpha = 0.45; x.beginPath(); x.ellipse(cx, ey - 1, ew + 6, 9, 0, 0, 7); x.fill(); x.globalAlpha = 1;                                // socket shadow
+    x.fillStyle = '#f4efe8'; x.beginPath(); x.ellipse(cx, ey, ew, f.fem ? 7.6 : 6.6, 0, 0, 7); x.fill();
+    x.fillStyle = v === 3 ? '#4a3220' : '#2a1b10'; x.beginPath(); x.arc(cx + sx * -0.8, ey, 6.2, 0, 7); x.fill(); x.fillStyle = '#050403'; x.beginPath(); x.arc(cx + sx * -0.8, ey, 3, 0, 7); x.fill();
+    x.fillStyle = 'rgba(255,255,255,.9)'; x.beginPath(); x.arc(cx - 2, ey - 2.3, 1.7, 0, 7); x.fill();
+    x.strokeStyle = '#1a110b'; x.lineWidth = f.fem ? 2.4 : 2; x.beginPath(); x.ellipse(cx, ey, ew, f.fem ? 7.6 : 6.6, 0, Math.PI * 1.04, Math.PI * 1.96); x.stroke();                // upper lid
+    x.strokeStyle = shade(0.6); x.lineWidth = 1.4; x.beginPath(); x.ellipse(cx, ey - 2, ew - 1, 8.5, 0, Math.PI * 1.1, Math.PI * 1.9); x.stroke();                                // eyelid crease
+    if (f.fem) { x.strokeStyle = '#0a0705'; x.lineWidth = 1.4; for (let i = 0; i < 5; i++) { const a = Math.PI * (1.1 + i * 0.18); x.beginPath(); x.moveTo(cx + Math.cos(a) * ew, ey + Math.sin(a) * 7.6); x.lineTo(cx + Math.cos(a) * (ew + 3), ey + Math.sin(a) * 7.6 - 3); x.stroke(); } }
+    if (f.older) { x.strokeStyle = shade(0.62); x.lineWidth = 1; for (let i = 0; i < 3; i++) { x.beginPath(); x.moveTo(cx + sx * (ew + 3), ey - 3 + i * 4); x.lineTo(cx + sx * (ew + 11), ey - 6 + i * 6); x.stroke(); } }  // crow's feet
+    // brows
+    x.fillStyle = f.older ? '#c7ccd1' : (f.hair || '#141414'); const bt = f.fem ? 3 : 5 + (v === 0 ? 1.5 : 0), by = ey - 17 - (v === 2 ? 2 : 0);
+    x.beginPath(); x.moveTo(cx - sx * 14, by + 4); x.quadraticCurveTo(cx + sx * -1, by - (f.fem ? 6 : 3), cx + sx * 15, by + 1); x.lineTo(cx + sx * 15, by + 1 + bt * 0.7); x.quadraticCurveTo(cx - sx * 1, by - (f.fem ? 3 : 0) + bt, cx - sx * 14, by + 4 + bt); x.fill();
+  }
+  // nose: bridge highlight, side shadows, nostrils, tip
+  x.fillStyle = 'rgba(255,235,210,.22)'; x.fillRect(fx - 3, ey + 2, 6, 24);
+  x.strokeStyle = shade(0.6); x.lineWidth = 2; x.lineCap = 'round'; for (const sx of [-1, 1]) { x.beginPath(); x.moveTo(fx + sx * 6, ey + 10); x.quadraticCurveTo(fx + sx * 11, ey + 28, fx + sx * 9, ey + 33); x.stroke(); }
+  x.fillStyle = '#2a1710'; for (const sx of [-1, 1]) { x.beginPath(); x.ellipse(fx + sx * 5, ey + 34, 2.6, 1.8, 0, 0, 7); x.fill(); }
+  x.fillStyle = 'rgba(255,230,200,.3)'; x.beginPath(); x.ellipse(fx, ey + 31, 5, 3, 0, 0, 7); x.fill();
+  if (f.fem) { x.fillStyle = '#facc15'; x.beginPath(); x.arc(fx - 11, ey + 33, 1.8, 0, 7); x.fill(); }                                                                       // nose stud
+  // mouth
+  const my = ey + 52 + (v === 1 ? 2 : 0), lw = 15 + (v === 3 ? 2 : 0);
+  if (f.stache) { x.fillStyle = f.older ? '#cbd0d6' : '#0d0907'; x.beginPath(); x.moveTo(fx - lw - 5, my - 3); x.quadraticCurveTo(fx - 8, my - 12, fx, my - 8); x.quadraticCurveTo(fx + 8, my - 12, fx + lw + 5, my - 3); x.quadraticCurveTo(fx + 10, my - 3, fx, my - 2); x.quadraticCurveTo(fx - 10, my - 3, fx - lw - 5, my - 3); x.fill(); }
+  const lip = f.fem ? '#a31d3a' : shade(0.62);
+  x.fillStyle = lip; x.beginPath(); x.moveTo(fx - lw, my); x.quadraticCurveTo(fx - 6, my - 5, fx, my - 3); x.quadraticCurveTo(fx + 6, my - 5, fx + lw, my); x.quadraticCurveTo(fx, my + 3, fx - lw, my); x.fill();
+  x.fillStyle = f.fem ? '#c42a4c' : shade(0.7); x.beginPath(); x.moveTo(fx - lw + 1, my); x.quadraticCurveTo(fx, my + 12, fx + lw - 1, my); x.quadraticCurveTo(fx, my + 3, fx - lw + 1, my); x.fill();
+  x.strokeStyle = 'rgba(25,8,6,.8)'; x.lineWidth = 1.6; x.beginPath(); x.moveTo(fx - lw, my); x.quadraticCurveTo(fx, my + 3, fx + lw, my); x.stroke();
+  x.fillStyle = 'rgba(0,0,0,.14)'; x.beginPath(); x.ellipse(fx, my + 18, 12, 4, 0, 0, 7); x.fill();                                                                           // chin shadow
+  if (!f.fem && !f.stache && v < 2) { x.globalAlpha = 0.5; x.fillStyle = f.older ? '#9ca3af' : '#1b130e'; for (let i = 0; i < 260; i++) { const a = Math.random() * 6.28, r = 20 + Math.random() * 30, px = fx + Math.cos(a) * r * 1.2, py = my + 6 + Math.abs(Math.sin(a)) * r * 0.6; x.fillRect(px, py, 1.2, 1.2); } x.globalAlpha = 1; }   // stubble
+  if (f.older) { x.strokeStyle = shade(0.66); x.lineWidth = 1.2; for (let i = 0; i < 3; i++) { x.beginPath(); x.moveTo(fx - 30, 76 + i * 6); x.quadraticCurveTo(fx, 72 + i * 6, fx + 30, 76 + i * 6); x.stroke(); } for (const sx of [-1, 1]) { x.beginPath(); x.moveTo(fx + sx * 12, ey + 36); x.quadraticCurveTo(fx + sx * 20, my - 4, fx + sx * (lw + 6), my + 6); x.stroke(); } }
+  if (f.fem) { x.fillStyle = '#d4132a'; x.beginPath(); x.arc(fx, ey - 30, 3.4, 0, 7); x.fill(); }                                                                            // bindi
+  if (f.tilaka) { x.fillStyle = '#f59e0b'; x.fillRect(fx - 11, ey - 36, 22, 4); x.fillRect(fx - 10, ey - 30, 20, 3); x.fillStyle = '#dc2626'; x.beginPath(); x.arc(fx, ey - 24, 2.8, 0, 7); x.fill(); }
+  if (f.glasses) { x.strokeStyle = '#111'; x.lineWidth = 2.4; for (const sx of [-1, 1]) { x.beginPath(); x.roundRect(fx + sx * es - 17, ey - 10, 34, 22, 6); x.stroke(); x.fillStyle = 'rgba(180,210,240,.18)'; x.fill(); } x.beginPath(); x.moveTo(fx - es + 17, ey - 2); x.lineTo(fx + es - 17, ey - 2); x.stroke(); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+  m = new THREE.MeshStandardMaterial({ map: t, roughness: 0.72 }); FACE_CACHE.set(key, m); return m;
+}
+
 export function person(o = {}) {
   const skin = o.skin || pick(SKIN), g = new THREE.Group();
   const kind = o.kind || pick(['shirt', 'shirt', 'lungi', 'saree']);
@@ -126,12 +176,8 @@ export function person(o = {}) {
     P(cyl(0.2, 0.165, 0.64, 12), top, [0, 1.19, 0], [0, 0, 0], [1.12, 1, 0.76]), P(sph(0.205, 12, 6), top, [0, 1.47, 0], [0, 0, 0], [1.12, 0.4, 0.72]),
     P(cyl(0.052, 0.06, 0.11, 8), skin, [0, 1.56, 0]),
     // head: egg shape, ears, nose, eyes with whites, brows, mouth, hair cap
-    P(sph(0.125, 14, 10), skin, [0, 1.69, 0], [0, 0, 0], [0.94, 1.13, 1.0]), P(sph(0.03, 6, 4), skin, [-0.118, 1.69, 0], [0, 0, 0], [0.5, 1, 0.8]), P(sph(0.03, 6, 4), skin, [0.118, 1.69, 0], [0, 0, 0], [0.5, 1, 0.8]),
+    P(sph(0.03, 6, 4), skin, [-0.118, 1.69, 0], [0, 0, 0], [0.5, 1, 0.8]), P(sph(0.03, 6, 4), skin, [0.118, 1.69, 0], [0, 0, 0], [0.5, 1, 0.8]),
     P(cone(0.024, 0.055, 4), skin, [0, 1.665, 0.126], [Math.PI / 2, 0, 0]),
-    P(sph(0.019, 6, 4), '#f8fafc', [-0.046, 1.71, 0.112], [0, 0, 0], [1.2, 0.7, 0.5]), P(sph(0.019, 6, 4), '#f8fafc', [0.046, 1.71, 0.112], [0, 0, 0], [1.2, 0.7, 0.5]),
-    P(sph(0.0105, 6, 4), '#0b0b0b', [-0.046, 1.71, 0.121]), P(sph(0.0105, 6, 4), '#0b0b0b', [0.046, 1.71, 0.121]),
-    P(box(0.055, 0.011, 0.012), hair, [-0.046, 1.745, 0.115], [0, 0, 0.1]), P(box(0.055, 0.011, 0.012), hair, [0.046, 1.745, 0.115], [0, 0, -0.1]),
-    P(box(0.05, 0.011, 0.012), '#7a2e2a', [0, 1.625, 0.117]),
     P(new THREE.SphereGeometry(0.133, 12, 8, 0, TAU, 0, Math.PI * 0.56), hair, [0, 1.705, -0.012], [-0.32, 0, 0], [0.97, 1.08, 1.02]),
   ];
   if (o.beard) parts.push(P(sph(0.1, 8, 6), o.beard, [0, 1.62, 0.03], [0, 0, 0], [0.9, 0.55, 0.8]));
@@ -146,21 +192,17 @@ export function person(o = {}) {
     const style = o.style != null ? o.style : Math.floor(R() * 4);
     if (style === 0) parts.push(P(box(0.2, 0.03, 0.04), hcol, [0, 1.8, 0.07], [0.3, 0, 0]));                                                                          // front quiff
     if (style === 1) parts.push(P(sph(0.1, 8, 6), skin, [0, 1.78, -0.04], [0, 0, 0], [1.1, 0.35, 1.0]));                                                                // receding / balding crown
-    if (R() < 0.45) parts.push(P(box(0.1, 0.018, 0.02), older ? '#d1d5db' : '#0b0b0b', [0, 1.643, 0.122]), P(sph(0.012, 5, 4), older ? '#d1d5db' : '#0b0b0b', [-0.05, 1.64, 0.118]), P(sph(0.012, 5, 4), older ? '#d1d5db' : '#0b0b0b', [0.05, 1.64, 0.118]));   // moustache
-    if (R() < 0.18) parts.push(P(box(0.11, 0.012, 0.012), '#f59e0b', [0, 1.76, 0.12]), P(box(0.014, 0.034, 0.012), '#dc2626', [0, 1.757, 0.121]));                      // tilaka
-    if (R() < 0.16) parts.push(P(box(0.1, 0.02, 0.008), '#111', [-0.046, 1.705, 0.123]), P(box(0.1, 0.02, 0.008), '#111', [0.046, 1.705, 0.123]), P(box(0.025, 0.012, 0.008), '#111', [0, 1.71, 0.123]));      // spectacles
     if (kind === 'shirt') { for (let i = 0; i < 4; i++) parts.push(P(sph(0.011, 4, 3), '#e5e7eb', [0, 1.4 - i * 0.14, 0.1])); parts.push(P(box(0.07, 0.07, 0.03), top, [-0.07, 1.5, 0.108], [0, 0, 0.2]), P(box(0.07, 0.07, 0.03), top, [0.07, 1.5, 0.108], [0, 0, -0.2]), P(box(0.05, 0.06, 0.02), '#3a3a3a', [0.1, 1.33, 0.108])); }   // collar, buttons, pocket
     if (kind === 'lungi' || kind === 'shirt') parts.push(P(box(0.16, 0.03, 0.02), '#d4a017', [0, 0.93, 0.12]));                                                          // belt buckle
   } else {
-    parts.push(P(sph(0.013, 5, 4), '#dc2626', [0, 1.745, 0.121]));                                                                                                      // bindi
     parts.push(P(sph(0.1, 8, 6), hair, [0, 1.52, -0.12], [0, 0, 0], [0.9, 2.4, 0.6]), P(cyl(0.028, 0.02, 0.5, 6), hair, [0.02, 1.2, -0.15]));                          // thick plait down the back
     for (let i = 0; i < 6; i++) parts.push(P(sph(0.017, 4, 3), '#f8fafc', [-0.08 + i * 0.03, 1.62 - i * 0.07, -0.16]));                                                  // jasmine strand
     parts.push(P(sph(0.014, 5, 4), '#facc15', [-0.12, 1.66, 0.01]), P(sph(0.014, 5, 4), '#facc15', [0.12, 1.66, 0.01]));                                                // ear studs
     parts.push(P(cyl(0.062, 0.062, 0.012, 10), '#facc15', [0, 1.55, 0.015], [Math.PI / 2, 0, 0], [1, 1, 1.2]));                                                         // gold necklace
-    parts.push(P(box(0.052, 0.012, 0.012), '#9f1239', [0, 1.625, 0.119]));
   }
-  if (older) { parts.push(P(box(0.05, 0.008, 0.01), '#5b3a29', [-0.046, 1.678, 0.122]), P(box(0.05, 0.008, 0.01), '#5b3a29', [0.046, 1.678, 0.122])); }       // crow's feet
   const body = mesh(merge(parts)); g.add(body);
+  const face = { skin, fem, older, stache: !fem && R() < 0.45, glasses: !fem && R() < 0.16, tilaka: !fem && R() < 0.18, v: Math.floor(R() * 4), hair };
+  const head = new THREE.Mesh(HEAD_GEO, faceMat(face)); head.position.set(0, 1.69, 0); head.scale.set(0.125 * 0.94, 0.125 * 1.13, 0.125); head.castShadow = true; g.add(head); g.head = head;
   const legCol = kind === 'shirt' ? (o.pants || pick(['#1f2937', '#334155', '#78350f', '#1e3a8a'])) : skin;
   const legGeo = merge([P(cyl(0.085, 0.07, 0.86, 8), legCol, [0, -0.43, 0]), P(box(0.125, 0.07, 0.27), kind === 'shirt' ? '#111827' : '#292524', [0, -0.855, 0.05]), P(sph(0.07, 6, 4), legCol, [0, -0.43, 0.01], [0, 0, 0], [1, 0.4, 1])]);
   const legL = mesh(legGeo), legR = mesh(legGeo);
