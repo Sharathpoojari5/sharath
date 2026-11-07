@@ -88,7 +88,10 @@
   #credits h1{font-size:clamp(40px,7vw,84px);margin:0 0 10px;background:linear-gradient(180deg,#fde047 50%,#ef4444 50%);-webkit-background-clip:text;background-clip:text;color:transparent}
   #credits p{font-size:clamp(16px,2vw,22px);margin:6px 0;color:#e7dcc8}#credits h3{margin:34px 0 8px;color:var(--y);letter-spacing:.2em;font-size:15px}
   /* overlays */
-  .ov{position:fixed;inset:0;background:#0c0906e6;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:20}
+  .ov{position:fixed;inset:0;background:#0c0906e6;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:20;overflow-y:auto;padding:16px 0}
+  #pause{justify-content:flex-start}
+  #pause>*{flex-shrink:0}
+  #pause .logo{margin-top:auto}#pause .foot{margin-bottom:auto}
   .ov.show{display:flex}
   .btn{appearance:none;border:0;border-radius:10px;padding:14px 26px;font:900 18px inherit;letter-spacing:.06em;background:var(--y);color:#1c1406;cursor:pointer;min-width:220px}
   .btn.alt{background:#2a2016;color:var(--ink)}
@@ -118,7 +121,7 @@
   #phone{display:none;color:#fca5a5;font-weight:700;margin-top:10px}
   @media (hover:none) and (pointer:coarse){#phone{display:block}}
 </style>
-</head>
+<style>#menubtn{position:fixed;top:10px;left:50%;transform:translateX(-50%);pointer-events:auto;z-index:20;background:rgba(0,0,0,.55);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 16px;font:700 14px system-ui;cursor:pointer}#menubtn:hover{background:rgba(0,0,0,.8)}</style></head>
 <body>
 <canvas id="view" tabindex="0"></canvas>
 <div id="bars"><i class="t"></i><i class="b"></i></div>
@@ -126,6 +129,7 @@
 <div id="credits"><div class="in"><h1>KARKALA</h1><p>Chapter 1 complete</p><h3>STORY &amp; DESIGN</h3><p>Sharath Poojari</p><h3>BUILT WITH</h3><p>three.js · Web Audio · OpenStreetMap</p><h3>THE MAP</h3><p>Map data © OpenStreetMap contributors</p><h3>NAMMA KARKALA</h3><p>Ajja's scooter, Pramod's bus, Ajji's mallige,</p><p>and one very patient cow.</p><h3>THANK YOU FOR PLAYING</h3><p>ಧನ್ಯವಾದಗಳು</p></div></div>
 
 <div class="hud">
+  <button id="menubtn" title="Menu / free the mouse (Esc)">☰ Menu</button>
   <div id="miniwrap"><div id="hp"><div id="hpbar"></div></div><canvas id="mini" width="200" height="200"></canvas><div id="area">Karkala</div></div>
   <div id="tr"><div id="money">₹500</div><div id="clock">4:30 PM</div><div id="wx">☀ Clear</div><div id="wanted"><div id="stars"></div><div id="wlabel"></div></div></div>
   <div id="timer">0:00</div>
@@ -139,9 +143,9 @@
 <div class="ov" id="pause">
   <div class="logo" style="font-size:44px"><span class="b">PAUSED</span></div>
   <div id="progress" style="color:var(--dim);font-weight:700"></div>
-  <button class="btn" id="resume">Resume</button><button class="btn alt" id="mute">Sound: on</button><button class="btn alt" id="music">Music: on</button><button class="btn alt" id="voices">Voices: on</button><button class="btn alt" id="vocals">Song vocals: on</button><button class="btn alt" id="timemode">Time: Karkala live</button><button class="btn alt" id="gfx">Graphics: auto</button><button class="btn alt" id="lang">Voice: ಕನ್ನಡ</button><button class="btn alt" id="replay">Watch the trailer</button><button class="btn alt" id="reset">Start over</button>
+  <button class="btn" id="resume">Resume</button><button class="btn alt" id="mlock">Mouse: drag to look</button><button class="btn alt" id="mute">Sound: on</button><button class="btn alt" id="music">Music: on</button><button class="btn alt" id="voices">Voices: on</button><button class="btn alt" id="vocals">Song vocals: on</button><button class="btn alt" id="timemode">Time: Karkala live</button><button class="btn alt" id="gfx">Graphics: auto</button><button class="btn alt" id="lang">Voice: ಕನ್ನಡ</button><button class="btn alt" id="replay">Watch the trailer</button><button class="btn alt" id="reset">Start over</button>
   <div class="keys">
-    <kbd>W A S D</kbd><span>walk / drive · <kbd>Shift</kbd> run</span><kbd>Mouse</kbd><span>look around (click the game first)</span>
+    <kbd>W A S D</kbd><span>walk / drive · <kbd>Shift</kbd> run</span><kbd>Mouse</kbd><span>look around: hold left button and drag (lock optional in this menu)</span>
     <kbd>F</kbd><span>get on / off any vehicle</span><kbd>H</kbd><span>horn (compulsory)</span><kbd>Space</kbd><span>jump · handbrake</span>
     <kbd>J</kbd><span>side job: deliveries, auto fares, bus rounds</span><kbd>M</kbd><span>big map</span><kbd>O</kbd><span>photo mode</span><kbd>C</kbd><span>camera distance</span>
   </div>

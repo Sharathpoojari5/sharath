@@ -41,7 +41,7 @@ async function boot() {
   const hasSave = game.save.done.length > 0;
   $('play').textContent = hasSave ? 'Continue' : 'Play';
   $('play').disabled = false; $('trailer').disabled = false; $('trailerSave').disabled = !window.MediaRecorder;
-  $('play').onclick = () => { clearInterval(tipTimer); $('title').classList.add('gone'); game.start(); if (!game.cine.active) $('view').requestPointerLock?.(); };
+  $('play').onclick = () => { clearInterval(tipTimer); $('title').classList.add('gone'); game.start(); };
   const back = () => { $('title').classList.remove('gone'); };
   $('trailer').onclick = () => game.playTrailer({ onEnd: back });
   $('trailerSave').onclick = () => { $('trailerSave').textContent = 'Recording… (about a minute)'; game.playTrailer({ record: true, onEnd: back, onVideo: (blob) => {

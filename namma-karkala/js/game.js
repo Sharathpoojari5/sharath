@@ -142,7 +142,15 @@ export class Game {
     addEventListener('keyup', (e) => this.keys.delete(e.key.toLowerCase()));
     addEventListener('blur', () => this.keys.clear());
     addEventListener('mousedown', (e) => { if (this.dlg && !e.target.closest('button')) this.advanceTalk(); });
-    cv.addEventListener('click', () => { if (this.started && !this.paused && document.pointerLockElement !== cv) cv.requestPointerLock?.(); });
+    // Mouse look defaults to click-and-drag so the cursor is never trapped. Pointer lock is opt-in (pause menu) and always gives a way out.
+    try { this.mouseLock = localStorage.getItem('nk-mlock') === '1'; } catch (e) { this.mouseLock = false; }
+    cv.addEventListener('click', () => { if (this.mouseLock && this.started && !this.paused && document.pointerLockElement !== cv) cv.requestPointerLock?.(); });
+    document.addEventListener('pointerlockchange', () => { if (document.pointerLockElement !== cv && this.started && !this.paused && this.mouseLock && !this.photo && !this.cine.active) this.togglePause(); });   // Esc frees the cursor -> show the menu
+    const freeMouse = () => { if (document.pointerLockElement) document.exitPointerLock?.(); };
+    addEventListener('blur', freeMouse); document.addEventListener('visibilitychange', () => { if (document.hidden) freeMouse(); });
+    $('menubtn').onclick = (e) => { e.stopPropagation(); freeMouse(); if (!this.paused) this.togglePause(); };
+    const ML = () => { $('mlock').textContent = this.mouseLock ? 'Mouse: locked (Esc frees it)' : 'Mouse: drag to look'; };
+    $('mlock').onclick = () => { this.mouseLock = !this.mouseLock; try { localStorage.setItem('nk-mlock', this.mouseLock ? '1' : '0'); } catch (e) { } if (!this.mouseLock) freeMouse(); ML(); }; ML();
     addEventListener('mousemove', (e) => {
       if (document.pointerLockElement !== cv && !(e.buttons & 1)) return;
       this.camYaw -= e.movementX * 0.0028; this.camPitch = clamp(this.camPitch + e.movementY * 0.0022, -0.25, 1.25); this.lastMouse = this.now;
