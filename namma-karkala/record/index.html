@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Record the voices | Namma Karkala</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#140f0a">
+<style>
+:root{--bg:#140f0a;--card:#241810;--line:#ffffff1f;--ink:#fff7ed;--dim:#d6bfa3;--gold:#fbbf24;--red:#ef4444;--green:#22c55e}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Kannada",sans-serif}
+header{position:sticky;top:0;z-index:5;background:#140f0af2;backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:10px 14px}
+h1{margin:0 0 6px;font-size:20px}.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.bar{height:8px;background:#ffffff1a;border-radius:99px;overflow:hidden;flex:1;min-width:120px}.bar i{display:block;height:100%;width:0;background:var(--green);transition:width .3s}
+button,select{font:inherit;color:inherit}
+select{background:#2a1c12;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px;max-width:100%}
+.btn{border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;background:#ffffff1f}.btn.gold{background:var(--gold);color:#2a160b}.btn.red{background:var(--red);color:#fff}.btn.sm{padding:7px 10px;font-size:14px}
+.tabs button{padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:none;cursor:pointer;font-weight:700}.tabs button[aria-pressed=true]{background:var(--gold);color:#2a160b;border-color:var(--gold)}
+main{max-width:860px;margin:0 auto;padding:14px 14px 90px}
+details.tips{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:12px 0}details.tips summary{cursor:pointer;font-weight:700}
+details.tips li{color:var(--dim);margin:4px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:12px 0}.card.done{border-color:#22c55e66}
+.meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;color:var(--dim);margin-bottom:6px}.chip{background:#ffffff14;border-radius:99px;padding:2px 9px}.chip.who{background:#7c2d12;color:#fed7aa;font-weight:700}
+.kn{font-size:22px;line-height:1.5;margin:6px 0;white-space:pre-wrap}.en{font-size:14px;color:var(--dim);font-style:italic}.note{font-size:13px;color:#fcd34d;margin-top:4px}
+.ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}.dur{font-size:13px;color:var(--dim)}
+textarea{width:100%;margin-top:8px;background:#0006;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit;min-height:60px;display:none}
+.rec{animation:pulse 1s infinite}@keyframes pulse{50%{opacity:.6}}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#000d;border:1px solid var(--gold);border-radius:10px;padding:10px 16px;z-index:9;display:none;max-width:92vw}
+</style>
+</head>
+<body>
+<header>
+  <h1>Record the voices for Namma Karkala</h1>
+  <div class="row"><div class="tabs" id="langs"><button data-l="kn" aria-pressed="true">ಕನ್ನಡ Kannada</button><button data-l="tcy" aria-pressed="false">ತುಳು Tulu</button></div>
+    <select id="who" aria-label="Character"></select><select id="tier" aria-label="Which lines"><option value="1">Story lines first</option><option value="2">Story + fun extras</option><option value="3">Every line</option></select></div>
+  <div class="row" style="margin-top:8px"><div class="bar"><i id="prog"></i></div><span id="count" class="dur"></span><button class="btn gold sm" id="zip">Download my recordings</button></div>
+</header>
+<main>
+  <details class="tips" id="tips"><summary>How to record (1 minute)</summary><ul>
+    <li>Use a quiet room. Hold the phone or laptop about a hand's length from your mouth.</li>
+    <li>Press <b>Record</b>, wait a moment, say the line like the character would say it, then press <b>Stop</b>. Pauses at commas and full stops are good: that is what makes it sound human.</li>
+    <li>You can say it in your own natural words. If you change the words, tap <b>Edit the words</b> and type what you said, so the subtitles match your voice.</li>
+    <li>Different people can record different characters. Use the <b>Character</b> menu so each person does their own.</li>
+    <li>Your recordings stay on this device (the page keeps them even if you close it). Press <b>Download my recordings</b> when you want to send them: you get one file (a zip). Send it to me in the chat, or upload it to the <code>voice/incoming</code> folder on GitHub.</li>
+  </ul></details>
+  <div id="list"></div>
+</main>
+<div class="toast" id="toast"></div>
+<script>
+'use strict';
+const NOTES = {
+  RAJU: 'Raju, early thirties, just back from Bengaluru. Tired, warm, dry humour.', NARRATOR: 'Narrator: calm, a storyteller, a little slower.', AMMA: 'Amma: loving mother, warm and a bit fussy.', AJJI: 'Ajji: old grandmother, slow, affectionate.',
+  ARCHAKARU: 'Temple priest: calm, deep and gentle.', PRAMOD: 'Pramod, bus conductor: friendly, quick, loud.', OWNER: 'Hotel owner: businesslike but kind.', CANTEEN: 'Canteen anna: cheerful, busy.', SHWETHA: 'Shwetha: young, bright, confident.',
+  THIEF: 'Thief: nervous, fast, out of breath.', PEDESTRIAN: 'Passer-by: surprised or annoyed.', DJ: 'Radio host: energetic and smiling.', UNCLE: 'Uncle: everyday chat, relaxed.', AUNTY: 'Aunty: chatty, bargaining.', STUDENT: 'College student: casual, quick.',
+  FISHERMAN: 'Fisherman: slow, patient.', BOY: 'Boy: excited, playing cricket.', CONSTABLE: 'Police constable: relaxed.', VENDOR: 'Food seller: shouting to call customers.', DRIVER: 'Angry driver: loud and fast.'
+};
+const TIER = { L: 1, Q: 2, T: 2, E: 2, C: 3, V: 3, R: 3 };
+const $ = (s) => document.querySelector(s);
+let LINES = {}, lang = 'kn', db, recs = {}, edits = {}, cur = null;
+/*__SCRIPT__*/
+
+function idb() { return new Promise((res, rej) => { const r = indexedDB.open('nk-record', 1); r.onupgradeneeded = () => r.result.createObjectStore('rec'); r.onsuccess = () => res(r.result); r.onerror = rej; }); }
+const put = (k, v) => new Promise((res) => { const t = db.transaction('rec', 'readwrite'); t.objectStore('rec').put(v, k); t.oncomplete = res; });
+const del = (k) => new Promise((res) => { const t = db.transaction('rec', 'readwrite'); t.objectStore('rec').delete(k); t.oncomplete = res; });
+const all = () => new Promise((res) => { const o = {}, t = db.transaction('rec'); const c = t.objectStore('rec').openCursor(); c.onsuccess = () => { const x = c.result; if (x) { o[x.key] = x.value; x.continue(); } else res(o); }; });
+function toast(t) { const e = $('#toast'); e.textContent = t; e.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(() => e.style.display = 'none', 2600); }
+
+function ids() { const t = +$('#tier').value, w = $('#who').value; return Object.keys(LINES).filter(k => !k.startsWith('S') && (TIER[k[0]] || 3) <= t && (!w || LINES[k].w === w)); }
+function render() {
+  const box = $('#list'); box.innerHTML = '';
+  for (const id of ids()) {
+    const L = LINES[id], key = lang + '/' + id, have = recs[key], card = document.createElement('div'); card.className = 'card' + (have ? ' done' : ''); card.id = 'c-' + id;
+    const txt = (edits[key] ?? L[lang]);
+    card.innerHTML = `<div class="meta"><span class="chip">${id}</span><span class="chip who">${L.w}</span>${/[!]/.test(L.en) ? '<span class="chip">say it with energy</span>' : ''}</div>
+      <div class="kn"></div><div class="en"></div><div class="note">${NOTES[L.w] || ''}</div><textarea></textarea>
+      <div class="ctl"><button class="btn gold rb">● Record</button><button class="btn pb" ${have ? '' : 'disabled'}>▶ Play</button><button class="btn sm xb" ${have ? '' : 'disabled'}>Delete</button><button class="btn sm eb">Edit the words</button><span class="dur">${have ? (have.dur.toFixed(1) + ' s recorded') : ''}</span></div>`;
+    card.querySelector('.kn').textContent = txt; card.querySelector('.en').textContent = L.en; const ta = card.querySelector('textarea'); ta.value = txt;
+    card.querySelector('.eb').onclick = () => { ta.style.display = ta.style.display === 'block' ? 'none' : 'block'; if (ta.style.display === 'block') ta.focus(); };
+    ta.oninput = async () => { edits[key] = ta.value; card.querySelector('.kn').textContent = ta.value; await put('edit/' + key, ta.value); };
+    card.querySelector('.rb').onclick = (e) => toggle(id, card, e.target);
+    card.querySelector('.pb').onclick = () => { const a = new Audio(URL.createObjectURL(recs[key].blob)); a.play(); };
+    card.querySelector('.xb').onclick = async () => { if (confirm('Delete this recording?')) { await del(key); delete recs[key]; render(); stat(); } };
+    box.appendChild(card);
+  }
+  stat();
+}
+function stat() { const n = Object.keys(recs).filter(k => k.startsWith(lang + '/')).length, tot = Object.keys(LINES).filter(k => !k.startsWith('S')).length; $('#count').textContent = `${n} of ${tot} recorded (${lang === 'kn' ? 'Kannada' : 'Tulu'})`; $('#prog').style.width = (100 * n / tot) + '%'; }
+
+async function toggle(id, card, btn) {
+  const key = lang + '/' + id;
+  if (cur && cur.key === key) { cur.rec.stop(); return; }
+  if (cur) { toast('Stop the other recording first'); return; }
+  let stream; try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: true, channelCount: 1 } }); } catch (e) { toast('Please allow the microphone (and open this page over https)'); return; }
+  const type = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/ogg;codecs=opus', ''].find(t => !t || MediaRecorder.isTypeSupported(t));
+  const rec = new MediaRecorder(stream, type ? { mimeType: type } : {}), chunks = [], t0 = performance.now();
+  rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+  rec.onstop = async () => {
+    stream.getTracks().forEach(t => t.stop()); const blob = new Blob(chunks, { type: rec.mimeType || type || 'audio/webm' }), dur = (performance.now() - t0) / 1000;
+    cur = null; if (dur < 0.5) { toast('That was too short, try again'); render(); return; }
+    const v = { blob, dur, mime: blob.type }; recs[key] = v; await put(key, v); toast('Saved ' + id); render();
+  };
+  cur = { key, rec }; rec.start(); btn.textContent = '■ Stop'; btn.classList.remove('gold'); btn.classList.add('red', 'rec');
+}
+
+/* one zip with every recording, written without any library (store-only) */
+function crc32(u8) { let c, crc = -1; if (!crc32.t) { crc32.t = []; for (let n = 0; n < 256; n++) { c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; crc32.t[n] = c >>> 0; } } for (let i = 0; i < u8.length; i++) crc = (crc >>> 8) ^ crc32.t[(crc ^ u8[i]) & 255]; return (crc ^ -1) >>> 0; }
+async function makeZip(files) {
+  const enc = new TextEncoder(), parts = [], cd = []; let off = 0;
+  const u16 = (n) => new Uint8Array([n & 255, n >> 8 & 255]), u32 = (n) => new Uint8Array([n & 255, n >> 8 & 255, n >> 16 & 255, n >>> 24]);
+  for (const f of files) {
+    const name = enc.encode(f.name), data = new Uint8Array(await f.blob.arrayBuffer()), crc = crc32(data);
+    const head = [u32(0x04034b50), u16(20), u16(0x0800), u16(0), u16(0), u16(0x21), u32(crc), u32(data.length), u32(data.length), u16(name.length), u16(0), name];
+    parts.push(...head, data); const hl = 30 + name.length;
+    cd.push([u32(0x02014b50), u16(20), u16(20), u16(0x0800), u16(0), u16(0), u16(0x21), u32(crc), u32(data.length), u32(data.length), u16(name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(off), name]); off += hl + data.length;
+  }
+  const cdStart = off; let cdLen = 0; for (const e of cd) { parts.push(...e); cdLen += e.reduce((a, b) => a + b.length, 0); }
+  parts.push(u32(0x06054b50), u16(0), u16(0), u16(files.length), u16(files.length), u32(cdLen), u32(cdStart), u16(0));
+  return new Blob(parts, { type: 'application/zip' });
+}
+$('#zip').onclick = async () => {
+  const files = [], meta = { recorded: {}, edits: {}, when: new Date().toISOString() };
+  for (const [k, v] of Object.entries(recs)) { const ext = /mp4|aac/.test(v.mime) ? 'm4a' : /ogg/.test(v.mime) ? 'ogg' : /wav/.test(v.mime) ? 'wav' : 'webm'; files.push({ name: `${k}.${ext}`, blob: v.blob }); meta.recorded[k] = +v.dur.toFixed(2); }
+  for (const [k, v] of Object.entries(edits)) if (v && LINES[k.split('/')[1]] && v !== LINES[k.split('/')[1]][k.split('/')[0]]) meta.edits[k] = v;
+  if (!files.length) { toast('Nothing recorded yet'); return; }
+  files.push({ name: 'meta.json', blob: new Blob([JSON.stringify(meta, null, 1)], { type: 'application/json' }) });
+  const z = await makeZip(files), a = document.createElement('a'); a.href = URL.createObjectURL(z); a.download = 'namma-karkala-voices.zip'; a.click(); toast(`Saved ${files.length - 1} recordings in one zip`);
+};
+for (const b of document.querySelectorAll('#langs button')) b.onclick = () => { if (cur) return toast('Stop the recording first'); lang = b.dataset.l; document.querySelectorAll('#langs button').forEach(x => x.setAttribute('aria-pressed', x === b)); render(); };
+for (const s of ['#who', '#tier']) $(s).onchange = render;
+
+(async function () {
+  try { if (!localStorage.getItem('nk-rec-tips')) { $('#tips').open = true; localStorage.setItem('nk-rec-tips', '1'); } } catch (e) { $('#tips').open = true; }
+  if (!Object.keys(LINES).length) { try { LINES = (await (await fetch('/voice/script.json')).json()).lines; } catch (e) { document.body.insertAdjacentHTML('beforeend', '<p style="padding:20px">Could not load the script.</p>'); return; } }
+  const ws = [...new Set(Object.keys(LINES).filter(k => !k.startsWith('S')).map(k => LINES[k].w))]; $('#who').innerHTML = '<option value="">All characters</option>' + ws.map(w => `<option>${w}</option>`).join('');
+  try { db = await idb(); const x = await all(); for (const [k, v] of Object.entries(x)) { if (k.startsWith('edit/')) edits[k.slice(5)] = v; else recs[k] = v; } } catch (e) { db = { transaction: () => ({ objectStore: () => ({ put() { }, delete() { } }), set oncomplete(f) { f && f(); } }) }; toast('Recordings cannot be kept after you close this page in this browser mode'); }
+  render();
+})();
+</script>
+</body>
+</html>
