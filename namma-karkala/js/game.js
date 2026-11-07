@@ -722,7 +722,7 @@ export class Game {
   }
   setGraphics(level) {          // 0 auto, 1 low, 2 lowest
     this.gfx = level; try { localStorage.setItem('nk-gfx', String(level)); } catch (e) { }
-    const R = this.renderer; if (level === 0) { R.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25)); R.shadowMap.enabled = true; this.qLevel = 0; }
+    M.DETAIL.value = level >= 1 ? 0 : 1; const R = this.renderer; if (level === 0) { R.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25)); R.shadowMap.enabled = true; this.qLevel = 0; }
     else if (level === 1) { R.setPixelRatio(1); R.shadowMap.enabled = true; this.qLevel = 2; this.sun.shadow.mapSize.set(1024, 1024); this.sun.shadow.map?.dispose(); this.sun.shadow.map = null; }
     else { R.setPixelRatio(0.75); R.shadowMap.enabled = false; this.qLevel = 9; }
     this.scene.traverse(o => { if (o.material) o.material.needsUpdate = true; }); R.setSize(innerWidth, innerHeight);
@@ -732,7 +732,7 @@ export class Game {
     this.qT = (this.qT || 0) + raw; this.qN = (this.qN || 0) + 1;
     if (this.qT < 2.5) return; const fps = this.qN / this.qT; this.qT = 0; this.qN = 0; this.fps = fps;
     if (this.paused || this.photo || fps > 42) return;
-    this.qLevel = (this.qLevel || 0) + 1; const R = this.renderer;
+    this.qLevel = (this.qLevel || 0) + 1; const R = this.renderer; if (this.qLevel >= 2) M.DETAIL.value = 0;      // drop the weathering shaders on slow machines
     if (this.qLevel === 1) R.setPixelRatio(1);
     else if (this.qLevel === 2) { this.sun.shadow.mapSize.set(1024, 1024); this.sun.shadow.map?.dispose(); this.sun.shadow.map = null; }
     else if (this.qLevel === 3) { R.setPixelRatio(0.75); }

@@ -172,11 +172,14 @@ export class World {
     gGeo.setAttribute('color', new THREE.BufferAttribute(gc, 3));
     const ground = new THREE.Mesh(gGeo, new THREE.MeshStandardMaterial({ vertexColors: true, map: noiseTex('#d9e6c3', '#b7c99a', 256, 6), roughness: 1 }));
     ground.material.onBeforeCompile = (sh) => {      // patchy lush / dry grass, fine blades and soil speckle instead of one flat green
+      sh.uniforms.uDetail = M.DETAIL;
       sh.vertexShader = 'varying vec2 vGp;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vGp = position.xz;');
-      sh.fragmentShader = GLSL_NOISE + 'varying vec2 vGp;\n' + sh.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
+      sh.fragmentShader = GLSL_NOISE + 'uniform float uDetail; varying vec2 vGp;\n' + sh.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
+        if (uDetail > 0.5) {
         float pat = fbm(vGp * 0.011), clump = fbm(vGp * 0.12), fine = fbm(vGp * 1.1), blades = fbm(vec2(vGp.x * 4.0, vGp.y * 1.1));
         vec3 dry = vec3(1.2, 1.05, 0.7), lush = vec3(0.8, 1.04, 0.76);
-        diffuseColor.rgb *= mix(lush, dry, smoothstep(0.38, 0.72, pat)) * (0.82 + 0.34 * clump) * (0.88 + 0.24 * fine) * (0.93 + 0.14 * blades);`);
+        diffuseColor.rgb *= mix(lush, dry, smoothstep(0.38, 0.72, pat)) * (0.82 + 0.34 * clump) * (0.88 + 0.24 * fine) * (0.93 + 0.14 * blades);
+        }`);
     };
     ground.material.customProgramCacheKey = () => 'ground-v2';
     ground.material.map.repeat.set(W / 9, H / 9); ground.receiveShadow = true; S.add(ground); this.groundMat = ground.material;
@@ -222,7 +225,7 @@ export class World {
     const disc = [], dm = new THREE.Matrix4();
     for (const n of this.nodes) if (n.adj.length >= 3 || n.adj.length === 1) disc.push([n.x, n.z, Math.max(...n.adj.map(e => e.w)) / 2]);
     const dg = new THREE.CircleGeometry(1, 16); dg.rotateX(-Math.PI / 2);
-    const im = new THREE.InstancedMesh(dg, new THREE.MeshStandardMaterial({ color: '#4a4e54', roughness: 0.95, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 }), disc.length);
+    const im = new THREE.InstancedMesh(dg, new THREE.MeshStandardMaterial({ color: '#d4d6da', map: roadTex(false), roughness: 0.95, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 }), disc.length);
     disc.forEach(([x, z, r], i) => { dm.makeScale(r, 1, r); dm.setPosition(x, this.groundH(x, z) + 0.06, z); im.setMatrixAt(i, dm); });
     im.receiveShadow = true; this.scene.add(im); this.roadMats.push(im.material);
   }
@@ -584,11 +587,11 @@ export function wallMaterial(shop) {
   const m = new THREE.MeshStandardMaterial({ roughness: 0.92 });
   m.userData.uNight = { value: 0 }; m.customProgramCacheKey = () => 'wall2-' + shop;
   m.onBeforeCompile = (sh) => {
-    sh.uniforms.uNight = m.userData.uNight;
+    sh.uniforms.uNight = m.userData.uNight; sh.uniforms.uDetail = M.DETAIL;
     sh.vertexShader = 'varying vec3 vLoc; varying vec3 vNo; varying vec3 vSz; varying float vSeed;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
       vLoc = position; vNo = normal; vSeed = float(gl_InstanceID);
       vSz = vec3(length(instanceMatrix[0].xyz), length(instanceMatrix[1].xyz), length(instanceMatrix[2].xyz));`);
-    sh.fragmentShader = GLSL_NOISE + `varying vec3 vLoc; varying vec3 vNo; varying vec3 vSz; varying float vSeed; uniform float uNight;
+    sh.fragmentShader = GLSL_NOISE + `varying vec3 vLoc; varying vec3 vNo; varying vec3 vSz; varying float vSeed; uniform float uNight; uniform float uDetail;
       float hsh(vec3 p){ return fract(sin(dot(p, vec3(12.9898,78.233,37.719))) * 43758.5453); }
       ` + sh.fragmentShader
       .replace('#include <color_fragment>', `#include <color_fragment>
@@ -599,11 +602,13 @@ export function wallMaterial(shop) {
           float fl = floor(v / 3.2), fy = v - fl * 3.2;
           bool front = vNo.z > 0.5;
           float nw = max(1., floor(faceW / 2.9)); float cu = (u / faceW + 0.5) * nw; float cx = fract(cu), ci = floor(cu);
+          if (uDetail > 0.5) {
           float nz = fbm(vec2(u * 0.45, v * 0.45) + vSeed * 1.7); diffuseColor.rgb *= 0.84 + 0.26 * nz;                           // plaster tone variation
           float streak = smoothstep(0.52, 0.88, fbm(vec2(u * 3.2 + vSeed, v * 0.1))); diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.6, 0.58, 0.54), streak * 0.5 * smoothstep(0.1, 1.0, v / vSz.y));   // rain streaks
           float damp = (1.0 - smoothstep(0.0, 1.7, v)) * smoothstep(0.34, 0.8, fbm(vec2(u * 1.3, v * 1.7) + vSeed)); diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.27, 0.37, 0.2), damp * 0.62);   // moss and damp at the base
           float crack = smoothstep(0.008, 0.0, abs(fbm(vec2(u * 0.9, v * 0.9) + vSeed * 3.1) - 0.5)); diffuseColor.rgb *= 1.0 - 0.3 * crack;
           float peel = smoothstep(0.7, 0.78, fbm(vec2(u * 0.6, v * 0.6) - vSeed)); diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 1.12 + 0.03, peel * 0.5);
+          }
           if (v < 0.45) diffuseColor.rgb *= 0.62;                                 // plinth
           float band = step(2.42, fy) * step(fy, 2.62) * step(0.5, v); diffuseColor.rgb *= 1. - 0.32 * band;   // chajja shadow
           if (v > vSz.y - 0.35) diffuseColor.rgb *= 0.85;                          // parapet line

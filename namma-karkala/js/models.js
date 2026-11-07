@@ -38,6 +38,8 @@ export function merge(parts) {
   return out;
 }
 
+/** 1 = full surface detail (weathering, grass patches); the quality governor sets 0 on slow machines. */
+export const DETAIL = { value: 1 };
 export const GLSL_NOISE = `
   float h2(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
   float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.-2.*f); return mix(mix(h2(i), h2(i+vec2(1,0)), f.x), mix(h2(i+vec2(0,1)), h2(i+vec2(1,1)), f.x), f.y); }
@@ -48,8 +50,10 @@ function stoneMat(kind) {
   const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.93 });
   m.customProgramCacheKey = () => 'stone2-' + kind;
   m.onBeforeCompile = (sh) => {
+    sh.uniforms.uDetail = DETAIL;
     sh.vertexShader = 'varying vec3 vP; varying vec3 vN;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vP = position; vN = normal;');
-    sh.fragmentShader = GLSL_NOISE + 'varying vec3 vP; varying vec3 vN;\n' + sh.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
+    sh.fragmentShader = GLSL_NOISE + 'uniform float uDetail; varying vec3 vP; varying vec3 vN;\n' + sh.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
+      if (uDetail > 0.5) {
       vec3 an = abs(vN); vec2 q = an.y > 0.7 ? vP.xz : (an.x > an.z ? vP.zy : vP.xy);
       ${kind === 'block' ? `
       float rowH = 0.55, row = floor(q.y / rowH); float off = mod(row, 2.0) * 0.5; vec2 cell = vec2(q.x / 1.3 + off, q.y / rowH); vec2 id = floor(cell), f = fract(cell);
@@ -60,7 +64,8 @@ function stoneMat(kind) {
       float tone = fbm(vP.xy * 0.35 + vP.z * 0.25); diffuseColor.rgb *= mix(vec3(1.06, 0.99, 0.9), vec3(0.88, 0.92, 1.02), tone) * (0.82 + 0.36 * tone);
       diffuseColor.rgb *= 1. - 0.5 * smoothstep(0.012, 0.0, abs(fbm(vP.xz * 0.6 + vP.y * 0.4) - 0.5));      // joints in the rock`}
       float lichen = (1. - smoothstep(0., 3.2, vP.y)) * smoothstep(0.45, 0.78, fbm(q * 0.9 + 3.)); diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.25, 0.33, 0.17), lichen * 0.5);
-      float streak = smoothstep(0.55, 0.9, fbm(vec2(q.x * 3.0, q.y * 0.15))); diffuseColor.rgb *= 1. - 0.22 * streak;`);
+      float streak = smoothstep(0.55, 0.9, fbm(vec2(q.x * 3.0, q.y * 0.15))); diffuseColor.rgb *= 1. - 0.22 * streak;
+      }`);
   };
   return m;
 }

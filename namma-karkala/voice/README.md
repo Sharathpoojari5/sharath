@@ -42,3 +42,21 @@ the result to the branch (`voice/kn/*.mp3`, `voice/tcy/*.mp3`, `voice/manifest.j
 
 Sung lyrics are not generated here: the in-game singer sings them. The game plays a recording when the file exists in `manifest.json`, otherwise it
 falls back to the browser's own voice, then to text.
+
+
+## Best quality: natural voices with Google Cloud Text-to-Speech (recommended)
+
+`.github/workflows/voices-google.yml` makes the Kannada, Tulu (read by the Kannada voices) and Indian-English voice-over with Google's Kannada
+neural voices, a different voice, speed and pitch per character, and natural pauses at commas and full stops. It then makes the **sung lines**:
+the same voice is re-pitched onto each song's melody (WORLD vocoder), so the songs are sung with the real lyrics by a real-sounding voice.
+
+1. In Google Cloud Console create (or pick) a project, enable **Cloud Text-to-Speech API**, then APIs & Services, Credentials, **Create API key**.
+   Restrict the key to the Cloud Text-to-Speech API. The free tier is generous (the whole script is about 25,000 characters).
+2. On GitHub: repository Settings, Secrets and variables, Actions, **New repository secret**, name `GOOGLE_TTS_API_KEY`, paste the key.
+3. Actions, **Generate voices (Google)**, **Run workflow**. It writes `voice/<lang>/*.mp3`, `voice/sung/<lang>/*.mp3` and the manifests to the branch
+   (it takes roughly 30 to 60 minutes because of the singing step).
+4. `git pull`, redeploy. The game plays the recordings and the sung lines automatically; anything missing falls back to the synth singer / browser voice.
+
+Run locally instead: `GOOGLE_TTS_API_KEY=... python3 tools/make_voices_google.py` then
+`node tools/export_song_plans.mjs voice/script.json > tools/song_plans.json && python3 tools/make_sung.py --plans tools/song_plans.json --out voice/sung`
+(needs `pip install numpy soundfile scipy librosa pyworld` and ffmpeg).
