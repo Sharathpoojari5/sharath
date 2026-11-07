@@ -173,6 +173,7 @@ export class World {
     }
     gGeo.setAttribute('color', new THREE.BufferAttribute(gc, 3));
     const ground = new THREE.Mesh(gGeo, new THREE.MeshStandardMaterial({ vertexColors: true, map: noiseTex('#d9e6c3', '#b7c99a', 256, 6), roughness: 1 }));
+    new THREE.TextureLoader().load(new URL('../textures/grass_detail.jpg', import.meta.url).href, (t) => { t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; t.repeat.set(W / 7, H / 7); ground.material.map = t; ground.material.needsUpdate = true; });   // real grass photograph as the detail layer
     ground.material.onBeforeCompile = (sh) => {      // patchy lush / dry grass, fine blades and soil speckle instead of one flat green
       sh.uniforms.uDetail = M.DETAIL;
       sh.vertexShader = 'varying vec2 vGp;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vGp = position.xz;');
