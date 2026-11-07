@@ -119,7 +119,7 @@ const pick = (a, r = Math.random) => a[Math.floor(r() * a.length)];
 export function person(o = {}) {
   const skin = o.skin || pick(SKIN), g = new THREE.Group();
   const kind = o.kind || pick(['shirt', 'shirt', 'lungi', 'saree']);
-  const shirt = o.shirt || pick(SHIRT), hair = o.hair || '#141414', saree = o.saree || pick(SAREE);
+  const older = o.age != null ? o.age > 0.6 : Math.random() < 0.22, shirt = o.shirt || pick(SHIRT), hair = o.hair || (older ? pick(['#9ca3af', '#d1d5db', '#6b7280']) : '#141414'), saree = o.saree || pick(SAREE);
   const top = kind === 'saree' ? saree : shirt, TAU = Math.PI * 2;
   const parts = [
     // torso with rounded shoulders and a neck
@@ -139,6 +139,27 @@ export function person(o = {}) {
   else if (kind === 'saree') { parts.push(P(cyl(0.2, 0.36, 0.95, 16), saree, [0, 0.48, 0], [0, 0, 0], [1, 1, 0.85]), P(cyl(0.37, 0.37, 0.05, 16), '#facc15', [0, 0.04, 0], [0, 0, 0], [1, 1, 0.85]), P(box(0.17, 0.62, 0.06), '#facc15', [0.1, 1.24, 0.13], [0, 0, 0.5]), P(box(0.1, 0.5, 0.05), saree, [-0.14, 1.12, -0.17], [0, 0, 0.1])); }
   else parts.push(P(cyl(0.18, 0.18, 0.04, 12), '#1f1f1f', [0, 0.93, 0], [0, 0, 0], [1.12, 1, 0.76]), P(box(0.1, 0.05, 0.05), '#f8fafc', [0, 1.52, 0.1]));
   if (o.cap) parts.push(P(new THREE.SphereGeometry(0.142, 12, 6, 0, TAU, 0, Math.PI * 0.5), o.cap, [0, 1.75, 0.0], [-0.08, 0, 0], [1, 0.9, 1.05]), P(box(0.26, 0.012, 0.13), o.cap, [0, 1.76, 0.14]));
+  // --- individuality: age, build, hairstyle, facial hair, glasses, jewellery, small clothing details (all cheap merged geometry)
+  const R = Math.random, fem = kind === 'saree' || o.female;
+  const hcol = hair;
+  if (!fem) {
+    const style = o.style != null ? o.style : Math.floor(R() * 4);
+    if (style === 0) parts.push(P(box(0.2, 0.03, 0.04), hcol, [0, 1.8, 0.07], [0.3, 0, 0]));                                                                          // front quiff
+    if (style === 1) parts.push(P(sph(0.1, 8, 6), skin, [0, 1.78, -0.04], [0, 0, 0], [1.1, 0.35, 1.0]));                                                                // receding / balding crown
+    if (R() < 0.45) parts.push(P(box(0.1, 0.018, 0.02), older ? '#d1d5db' : '#0b0b0b', [0, 1.643, 0.122]), P(sph(0.012, 5, 4), older ? '#d1d5db' : '#0b0b0b', [-0.05, 1.64, 0.118]), P(sph(0.012, 5, 4), older ? '#d1d5db' : '#0b0b0b', [0.05, 1.64, 0.118]));   // moustache
+    if (R() < 0.18) parts.push(P(box(0.11, 0.012, 0.012), '#f59e0b', [0, 1.76, 0.12]), P(box(0.014, 0.034, 0.012), '#dc2626', [0, 1.757, 0.121]));                      // tilaka
+    if (R() < 0.16) parts.push(P(box(0.1, 0.02, 0.008), '#111', [-0.046, 1.705, 0.123]), P(box(0.1, 0.02, 0.008), '#111', [0.046, 1.705, 0.123]), P(box(0.025, 0.012, 0.008), '#111', [0, 1.71, 0.123]));      // spectacles
+    if (kind === 'shirt') { for (let i = 0; i < 4; i++) parts.push(P(sph(0.011, 4, 3), '#e5e7eb', [0, 1.4 - i * 0.14, 0.1])); parts.push(P(box(0.07, 0.07, 0.03), top, [-0.07, 1.5, 0.108], [0, 0, 0.2]), P(box(0.07, 0.07, 0.03), top, [0.07, 1.5, 0.108], [0, 0, -0.2]), P(box(0.05, 0.06, 0.02), '#3a3a3a', [0.1, 1.33, 0.108])); }   // collar, buttons, pocket
+    if (kind === 'lungi' || kind === 'shirt') parts.push(P(box(0.16, 0.03, 0.02), '#d4a017', [0, 0.93, 0.12]));                                                          // belt buckle
+  } else {
+    parts.push(P(sph(0.013, 5, 4), '#dc2626', [0, 1.745, 0.121]));                                                                                                      // bindi
+    parts.push(P(sph(0.1, 8, 6), hair, [0, 1.52, -0.12], [0, 0, 0], [0.9, 2.4, 0.6]), P(cyl(0.028, 0.02, 0.5, 6), hair, [0.02, 1.2, -0.15]));                          // thick plait down the back
+    for (let i = 0; i < 6; i++) parts.push(P(sph(0.017, 4, 3), '#f8fafc', [-0.08 + i * 0.03, 1.62 - i * 0.07, -0.16]));                                                  // jasmine strand
+    parts.push(P(sph(0.014, 5, 4), '#facc15', [-0.12, 1.66, 0.01]), P(sph(0.014, 5, 4), '#facc15', [0.12, 1.66, 0.01]));                                                // ear studs
+    parts.push(P(cyl(0.062, 0.062, 0.012, 10), '#facc15', [0, 1.55, 0.015], [Math.PI / 2, 0, 0], [1, 1, 1.2]));                                                         // gold necklace
+    parts.push(P(box(0.052, 0.012, 0.012), '#9f1239', [0, 1.625, 0.119]));
+  }
+  if (older) { parts.push(P(box(0.05, 0.008, 0.01), '#5b3a29', [-0.046, 1.678, 0.122]), P(box(0.05, 0.008, 0.01), '#5b3a29', [0.046, 1.678, 0.122])); }       // crow's feet
   const body = mesh(merge(parts)); g.add(body);
   const legCol = kind === 'shirt' ? (o.pants || pick(['#1f2937', '#334155', '#78350f', '#1e3a8a'])) : skin;
   const legGeo = merge([P(cyl(0.085, 0.07, 0.86, 8), legCol, [0, -0.43, 0]), P(box(0.125, 0.07, 0.27), kind === 'shirt' ? '#111827' : '#292524', [0, -0.855, 0.05]), P(sph(0.07, 6, 4), legCol, [0, -0.43, 0.01], [0, 0, 0], [1, 0.4, 1])]);
@@ -147,7 +168,10 @@ export function person(o = {}) {
   if (kind !== 'saree') { g.add(legL); g.add(legR); }
   // arms hang from the shoulder so they can swing when walking
   const sleeve = kind === 'saree' ? saree : shirt;
-  const armGeo = merge([P(sph(0.058, 8, 6), sleeve, [0, 0, 0]), P(cyl(0.052, 0.046, 0.3, 8), sleeve, [0, -0.15, 0]), P(cyl(0.042, 0.037, 0.27, 8), skin, [0, -0.43, 0]), P(sph(0.046, 8, 6), skin, [0, -0.59, 0.005], [0, 0, 0], [1, 1.15, 0.8])]);
+  const armParts = [P(sph(0.058, 8, 6), sleeve, [0, 0, 0]), P(cyl(0.052, 0.046, 0.3, 8), sleeve, [0, -0.15, 0]), P(sph(0.047, 7, 5), kind === 'shirt' ? sleeve : skin, [0, -0.3, 0]), P(cyl(0.042, 0.037, 0.27, 8), skin, [0, -0.43, 0]), P(sph(0.046, 8, 6), skin, [0, -0.59, 0.005], [0, 0, 0], [1, 1.15, 0.8]), P(box(0.014, 0.05, 0.025), skin, [0.035, -0.58, 0.03], [0, 0, 0.3])];
+  if (fem) armParts.push(P(cyl(0.045, 0.045, 0.012, 8), '#dc2626', [0, -0.5, 0]), P(cyl(0.045, 0.045, 0.012, 8), '#facc15', [0, -0.52, 0]), P(cyl(0.045, 0.045, 0.012, 8), '#16a34a', [0, -0.54, 0]));
+  else if (R() < 0.5) armParts.push(P(cyl(0.043, 0.043, 0.02, 8), '#374151', [0, -0.53, 0]), P(box(0.03, 0.005, 0.03), '#e5e7eb', [0, -0.53, 0.04]));
+  const armGeo = merge(armParts);
   const armL = mesh(armGeo), armR = mesh(armGeo); armL.position.set(-0.285, 1.47, 0); armR.position.set(0.285, 1.47, 0); armL.rotation.z = 0.06; armR.rotation.z = -0.06; g.add(armL); g.add(armR); g.armL = armL; g.armR = armR;
   g.legL = kind !== 'saree' ? legL : null; g.legR = kind !== 'saree' ? legR : null; g.body = body;
   return g;
