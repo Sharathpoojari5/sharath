@@ -10,6 +10,7 @@ import { LINES } from './story.js';
 import { Radio } from './radio.js';
 import { Culture } from './culture.js';
 import { Food } from './food.js';
+import { Extras } from './extras.js';
 import { Chatter } from './chatter.js';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -60,7 +61,7 @@ export class Game {
     this.marker = M.markerMesh('#facc15'); this.marker.visible = false; S.add(this.marker);
     this.startMarker = M.markerMesh('#f97316'); this.startMarker.visible = false; S.add(this.startMarker);
     this.cine = new Cinematic(this); this.radio = new Radio(this); this.npcs = {}; this.dlg = null; this.inputLock = false; Voice.init(this.audio);
-    this.setupParked(); this.setupMissions(); this.setupNpcs(); this.culture = new Culture(this); this.chatter = new Chatter(this); this.food = new Food(this);
+    this.setupParked(); this.setupMissions(); this.setupNpcs(); this.culture = new Culture(this); this.chatter = new Chatter(this); this.food = new Food(this); try { this.extras = new Extras(this); } catch (e) { console.warn('extras', e); this.extras = { update() {}, interact() { return false; }, clip() {} }; }
     this.bindInput(); this.hudInit();
     this.clock = new THREE.Clock(); const loop = () => { requestAnimationFrame(loop); this.frame(); }; loop();
     addEventListener('resize', () => { R.setSize(innerWidth, innerHeight); this.cam.aspect = innerWidth / innerHeight; this.cam.updateProjectionMatrix(); });
@@ -135,6 +136,7 @@ export class Game {
       if (k === 'r') this.radio.next();
       if (k === 'm') this.toggleMap();
       if (k === 'o') this.togglePhoto();
+      if (k === 'b') this.extras.clip();
       if (k === 'enter' && this.photo) this.savePhoto();
       if (k === 'j') this.toggleJob();
       if (k === 'c') this.camDist = this.camDist * 1.35 > 22 ? (this.car ? this.car.def.cam : 5.5) : this.camDist * 1.35;
@@ -200,6 +202,7 @@ export class Game {
   interact() {
     const p = this.player;
     if (this.food.interact()) return;
+    if (this.extras.interact()) return;
     if (this.car) { if (Math.abs(this.car.v) > 6) { this.hint('Slow down to get off', 1.5); return; } this.exitVehicle(); return; }
     this.enterNearest();
   }
@@ -752,7 +755,7 @@ export class Game {
     this.popT = (this.popT || 0) - dt; if (this.popT < 0) { this.popT = 0.4; this.populate(); }
     const cin = this.cine.active;
     if ((this.cullT = (this.cullT || 0) + 1) % 6 === 0) this.cullFar();
-    this.updateNpcs(dt); this.culture.update(dt); this.food.update(dt); this.chatter.update(dt);
+    this.updateNpcs(dt); this.culture.update(dt); this.food.update(dt); this.extras.update(dt); this.chatter.update(dt);
     // the player
     if (cin) { /* no player in the trailer */ } else if (this.car) {
       const c = this.car, steer = inp.x, thr = inp.y;
