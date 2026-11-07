@@ -100,6 +100,19 @@ export class Studio {
   vinyl(bus, t, v = 1) { const n = this.nz(t, 0.01, 'highpass', 5000), g = this.g(t, 0.0005, 0.12 * v * (0.3 + this.rnd()), 0.008); n.connect(g); this.send(g, bus); }
 
   /* ---------------------------------------------------------------- song sequencer */
+  /** Real-voice sung lines (voice/sung/<lang>/<song>__<id>_<span>.mp3, made by tools/make_sung.py): fetched when a song starts. */
+  async loadVocals(song) {
+    if (!this.lyricLang || typeof fetch === 'undefined' || !song.lyrics) return;
+    try {
+      if (!this.vocalList) this.vocalList = fetch('voice/sung/manifest.json').then(r => r.ok ? r.json() : {}).catch(() => ({}));
+      const list = await this.vocalList, lang = this.lyricLang(), have = new Set(list[lang] || []); this.vocalBuf = this.vocalBuf || new Map();
+      for (const [, id, span = 2] of song.lyrics) {
+        const name = `${song.id}__${id}_${span}.mp3`, k = `${lang}/${name}`; if (!have.has(name) || this.vocalBuf.has(k)) continue;
+        this.vocalBuf.set(k, null);
+        fetch(`voice/sung/${lang}/${name}`).then(r => r.arrayBuffer()).then(b => this.ctx.decodeAudioData(b)).then(buf => this.vocalBuf.set(k, buf)).catch(() => this.vocalBuf.delete(k));
+      }
+    } catch (e) { /* the synth singer covers any missing line */ }
+  }
   /** Switch to a song (crossfade). */
   play(song, fade = 1.4, startAt) {
     const c = this.ctx, t = startAt ?? c.currentTime;
@@ -107,7 +120,7 @@ export class Studio {
     const bus = c.createGain(); bus.gain.setValueAtTime(fade > 0 ? 0 : 1, t); if (fade > 0) bus.gain.linearRampToValueAtTime(1, t + fade); bus.connect(this.master);
     this.song = song; this.cur = { bus, song }; this.i = 0; this.next = t + 0.05; this.hold = {}; this.rng = mulberry(song.seed || 1);
     let acc = 0; this.secs = song.sections.map(s => { const o = { ...s, start: acc }; acc += s.bars; return o; }); this.totalBars = acc;
-    this.onSong && this.onSong(song);
+    this.onSong && this.onSong(song); this.loadVocals(song);
   }
   stop(fade = 1) { if (!this.cur) return; const t = this.ctx.currentTime, old = this.cur; old.bus.gain.cancelScheduledValues(t); old.bus.gain.setValueAtTime(old.bus.gain.value, t); old.bus.gain.linearRampToValueAtTime(0, t + fade); this.old.push([old, t + fade + 4]); this.cur = null; this.song = null; }
   tick() {
@@ -177,7 +190,10 @@ export class Studio {
     if (L.has('pluck')) mel(S.hooks[hookKey || 'A'], 'pluck', (S.leadOct || 2) * 2, 0.7, false);
     // sung lyrics: [bar, lineId, bars?, opts?] - the singer takes the words from `lyricText(id)`
     if (s === 0 && S.lyrics && this.lyricText && !this.noVocals) {
-      for (const [lb, id, span = 2, vo] of S.lyrics) if (lb === bar) { const text = this.lyricText(id); if (text) singLine(this, bus, t, text, span, dur, (d2) => this.degFreq(d2, S.voxOct || 2), { ...(S.vox || {}), ...(vo || {}), vel: 0.8 * (S.vox && S.vox.vel || 1) }); }
+      for (const [lb, id, span = 2, vo] of S.lyrics) if (lb === bar) {
+        const vb = this.vocalBuf && this.lyricLang && this.vocalBuf.get(`${this.lyricLang()}/${S.id}__${id}_${span}.mp3`);
+        if (vb) { const src = this.ctx.createBufferSource(), vg = this.ctx.createGain(); src.buffer = vb; vg.gain.value = 1.0; src.connect(vg); this.send(vg, bus, 0.18); src.start(t); continue; }
+        const text = this.lyricText(id); if (text) singLine(this, bus, t, text, span, dur, (d2) => this.degFreq(d2, S.voxOct || 2), { ...(S.vox || {}), ...(vo || {}), vel: 0.8 * (S.vox && S.vox.vel || 1) }); }
     }
     // lyric / HUD events
     if (s === 0 && this.onBar) this.onBar(bar, sec.name, i);

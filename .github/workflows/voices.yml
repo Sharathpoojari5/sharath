@@ -8,9 +8,6 @@ on:
       only_langs:
         description: "Languages (space separated): kn tcy"
         default: "kn tcy"
-  push:
-    branches: [claude/hopeful-dijkstra-4w69y6]
-    paths: [".github/workflows/voices.yml", "namma-karkala/tools/make_voices.py"]
 permissions:
   contents: write
 concurrency:

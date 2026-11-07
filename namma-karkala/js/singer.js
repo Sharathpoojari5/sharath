@@ -45,20 +45,27 @@ function note(st, bus, t, f, dur, vel, sy, o) {
 }
 
 /**
- * Sing `text` across `bars` bars starting at time t0 (step = seconds per 16th). `rng` makes a repeatable melody.
- * deg(d) -> frequency of scale degree d. endDeg = degree to finish on.
+ * Plan a sung line: one note per syllable ({t: start offset in seconds, dur, f: Hz, slide, syl}).
+ * Shared by the live synth singer below and by tools/export_song_plans.mjs, which feeds the same melody to the
+ * real-voice pipeline, so both sing the same tune.
  */
-export function singLine(st, bus, t0, text, bars, step, deg, o = {}) {
-  const sy = syllables(text); if (!sy.length) return;
+export function planLine(text, bars, step, deg, o = {}) {
+  const sy = syllables(text); if (!sy.length) return [];
   const total = bars * 16 * step * 0.93, w = sy.map((x, i) => (x.long ? 1.7 : 1) * (x.cons ? 1 : 0.9) * (i === sy.length - 1 ? 2.8 : 1) * (i === Math.floor(sy.length / 2) ? 1.25 : 1)), W = w.reduce((a, b) => a + b, 0);
   let seed = 7; for (const ch of text) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0; const r = () => { seed = (Math.imul(seed ^ seed >>> 15, 1 | seed) + 0x6D2B79F5) >>> 0; return seed / 4294967296; };
-  let d = o.startDeg ?? 2, t = t0, up = 1; const end = o.endDeg ?? 0, top = o.top ?? 6;
+  let d = o.startDeg ?? 2, t = 0; const end = o.endDeg ?? 0, top = o.top ?? 6, out = [];
   sy.forEach((x, i) => {
     const dur = total * w[i] / W, last = i === sy.length - 1;
     // contour: climb through the first half, come down in the second, finish on endDeg
     const half = i < sy.length / 2; const stepD = r() < 0.55 ? 0 : (r() < 0.5 ? 1 : 2) * (half ? (r() < 0.75 ? 1 : -1) : (r() < 0.75 ? -1 : 1));
     d = o.notes ? o.notes[Math.min(o.notes.length - 1, Math.round(i / Math.max(1, sy.length - 1) * (o.notes.length - 1)))] : last ? end : Math.max(0, Math.min(top, d + stepD));
-    note(st, bus, t, deg(d), Math.max(0.12, dur * 0.95), o.vel ?? 1, x, { ...o, slide: (i > 0 && r() < 0.35) ? 1.05 : 0 });
+    out.push({ t, dur: Math.max(0.12, dur * 0.95), f: deg(d), slide: (i > 0 && r() < 0.35) ? 1.05 : 0, syl: x });
     t += dur;
   });
+  return out;
+}
+
+/** Sing `text` across `bars` bars starting at time t0 (step = seconds per 16th) with the synth voice. */
+export function singLine(st, bus, t0, text, bars, step, deg, o = {}) {
+  for (const n of planLine(text, bars, step, deg, o)) note(st, bus, t0 + n.t, n.f, n.dur, o.vel ?? 1, n.syl, { ...o, slide: n.slide });
 }

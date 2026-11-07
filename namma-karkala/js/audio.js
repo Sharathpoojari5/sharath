@@ -12,7 +12,7 @@ export class Audio {
     // engine: two detuned oscillators through a low-pass
     this.musicGain = c.createGain(); this.musicGain.gain.value = 1.0; this.musicGain.connect(this.master);
     this.music = new Music(c, this.musicGain); this.musicOn = true;        // small helper: bells and birdsong
-    this.studio = new Studio(c, this.musicGain, 7); this.curSong = null; if (this.pendingVocals === false || this.vocalsOn === false) this.studio.noVocals = true; this.studio.lyricText = (id) => Voice.text(id);
+    this.studio = new Studio(c, this.musicGain, 7); this.curSong = null; if (this.pendingVocals === false || this.vocalsOn === false) this.studio.noVocals = true; this.studio.lyricText = (id) => Voice.text(id); this.studio.lyricLang = () => Voice.lang;
     this.voiceGain = c.createGain(); this.voiceGain.gain.value = 1.7; this.voiceGain.connect(this.master);
     this.recDest = c.createMediaStreamDestination(); this.master.connect(this.recDest);
     // ambience: crickets (night), distant traffic hum, wind
