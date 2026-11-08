@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://namma-karkala.pages.dev/sitemap.xml

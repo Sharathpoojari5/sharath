@@ -1,0 +1,45 @@
+# Natural Kannada / Tulu / Indian-English voice-over with Google Cloud Text-to-Speech, generated on GitHub's servers.
+# Needs ONE repository secret:  GOOGLE_TTS_API_KEY  (Settings > Secrets and variables > Actions > New repository secret).
+# Run it from the Actions tab (Run workflow). It commits voice/<lang>/*.mp3 and voice/manifest.json to the branch.
+name: Generate voices (Google)
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/hopeful-dijkstra-4w69y6]
+    paths: ["namma-karkala/tools/make_voices_google.py", "namma-karkala/tools/make_sung.py", "namma-karkala/tools/export_song_plans.mjs", "namma-karkala/voice/script.json", "namma-karkala/js/songs.js", "namma-karkala/js/singer.js", ".github/workflows/voices-google.yml"]
+permissions:
+  contents: write
+concurrency:
+  group: voices-google
+  cancel-in-progress: true
+jobs:
+  speak:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Install
+        timeout-minutes: 10
+        run: |
+          sudo apt-get update -y && sudo apt-get install -y ffmpeg
+          pip install numpy soundfile scipy librosa pyworld
+      - name: Generate (skipped with a notice when the secret is missing)
+        working-directory: namma-karkala/tools
+        env:
+          GOOGLE_TTS_API_KEY: ${{ secrets.GOOGLE_TTS_API_KEY }}
+        run: python make_voices_google.py --script ../voice/script.json --out ../voice --langs kn tcy en
+      - name: Sung lyric lines (the real voice re-pitched onto each song's melody)
+        working-directory: namma-karkala/tools
+        env:
+          GOOGLE_TTS_API_KEY: ${{ secrets.GOOGLE_TTS_API_KEY }}
+        run: |
+          node export_song_plans.mjs ../voice/script.json > song_plans.json
+          python make_sung.py --plans song_plans.json --out ../voice/sung --skip-existing
+          rm -f song_plans.json
+      - name: Commit voices to the branch
+        run: |
+          git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add namma-karkala/voice namma-karkala/voice/sung
+          git diff --cached --quiet && echo "nothing to commit" || (git commit -m "Add natural Kannada, Tulu and Indian-English voice-over and sung lyric lines (Google Cloud TTS)" && git pull --rebase origin ${{ github.ref_name }} && git push origin HEAD:${{ github.ref_name }})

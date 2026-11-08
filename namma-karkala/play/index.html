@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<base href="/">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Namma Karkala — open-world Karkala in your browser</title>
+<meta name="description" content="A free GTA-style open-world game of Karkala: ride Ajja's scooter, drive private buses and autos, climb Bahubali Betta. Runs in your laptop browser.">
+<meta name="theme-color" content="#140f0a">
+<link rel="icon" href="brand/favicon.svg" type="image/svg+xml">
+<style>
+  :root{--y:#facc15;--r:#dc2626;--ink:#fff7ed;--dim:#cbb89a;--bg:#140f0a}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Kannada",sans-serif}
+  canvas#view{position:fixed;inset:0;width:100%;height:100%;display:block;outline:none}
+  .hud{display:none}
+  body.playing .hud{display:block}
+  body.photo .hud{display:none!important}
+  /* top-left: minimap */
+  #miniwrap{position:fixed;left:18px;bottom:18px;width:200px}
+  #mini{width:200px;height:200px;border-radius:50%;border:3px solid #000a;box-shadow:0 6px 30px #0008;background:#1f3b22;display:block}
+  #area{margin-top:8px;font-weight:900;font-size:15px;letter-spacing:.06em;text-transform:uppercase;text-shadow:0 2px 6px #000;text-align:center}
+  #area.pop{animation:pop .6s}
+  @keyframes pop{0%{transform:scale(1.25);color:var(--y)}100%{transform:none}}
+  #hp{position:absolute;left:22px;right:22px;top:-12px;height:7px;background:#0009;border-radius:6px;overflow:hidden}
+  #hpbar{height:100%;width:100%;background:linear-gradient(90deg,#22c55e,#84cc16)}
+  /* top-right: money, time, wanted */
+  #tr{position:fixed;right:20px;top:16px;text-align:right;text-shadow:0 2px 8px #000}
+  #money{font-size:34px;font-weight:900;color:#86efac;letter-spacing:.02em;font-variant-numeric:tabular-nums}
+  #clock{font-size:16px;font-weight:800}
+  #wx{font-size:13px;color:var(--dim);font-weight:700}
+  #wanted{margin-top:8px}
+  #stars{font-size:24px;letter-spacing:2px}
+  #stars i{font-style:normal;color:#ffffff30}
+  #stars i.on{color:var(--y)}
+  #wanted.hot #stars i.on{animation:flash .5s infinite alternate}
+  @keyframes flash{to{color:#60a5fa}}
+  #wlabel{font-size:12px;font-weight:900;letter-spacing:.18em;color:var(--y)}
+  /* bottom centre */
+  #obj{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);max-width:min(720px,70vw);background:#000b;border-left:4px solid var(--y);padding:10px 16px;font-size:17px;line-height:1.35;border-radius:6px;display:none}
+  #obj b{color:var(--y)}
+  #say{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);max-width:min(760px,76vw);text-align:center;font-size:19px;font-weight:700;text-shadow:0 2px 6px #000,0 0 2px #000;opacity:0;transition:opacity .3s}
+  #hint{position:fixed;left:50%;top:62%;transform:translateX(-50%);font-weight:800;font-size:16px;background:#0009;padding:6px 14px;border-radius:20px;opacity:0;transition:opacity .25s}
+  #ctx{position:fixed;left:240px;bottom:28px;font-size:14px;font-weight:700;color:var(--dim);text-shadow:0 2px 6px #000}
+  #timer{position:fixed;left:50%;top:18px;transform:translateX(-50%);font-size:34px;font-weight:900;color:var(--y);text-shadow:0 2px 10px #000;display:none;font-variant-numeric:tabular-nums}
+  #radio{position:fixed;right:24px;bottom:96px;width:260px;background:#000c;border-left:4px solid var(--rc,#fbbf24);padding:8px 12px;border-radius:6px;opacity:0;transform:translateY(8px);transition:.3s;pointer-events:none;text-shadow:0 1px 4px #000}
+  #radio.show{opacity:1;transform:none}
+  #radio small{font-size:10px;letter-spacing:.14em;color:var(--dim);font-weight:800}
+  #rstn{font-weight:900;color:var(--rc,#fbbf24);font-size:15px} #rsong{font-size:12px;opacity:.9;margin-bottom:4px}
+  #rbars{display:flex;gap:2px;align-items:flex-end;height:26px} #rbars i{display:block;width:5px;height:4px;background:var(--rc,#fbbf24);border-radius:1px}
+  #rlyr{font-size:13px;font-style:italic;min-height:17px;margin-top:4px;color:#fff}
+  #speed{position:fixed;right:24px;bottom:22px;text-align:right;display:none;text-shadow:0 2px 8px #000}
+  #kmh{font-size:52px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
+  #speed small{font-size:13px;color:var(--dim);font-weight:800}
+  #vname{font-size:13px;font-weight:800;color:var(--y)}
+  #toast{position:fixed;right:20px;top:170px;background:#000c;border-right:4px solid var(--y);padding:10px 14px;border-radius:6px;max-width:320px;opacity:0;transform:translateX(30px)}
+  #toast.show{animation:toast 4s forwards}
+  #toast b{display:block;color:var(--y);letter-spacing:.12em;font-size:12px}
+  @keyframes toast{0%{opacity:0;transform:translateX(30px)}8%,85%{opacity:1;transform:none}100%{opacity:0}}
+  #big{position:fixed;left:0;right:0;top:30%;text-align:center;opacity:0;pointer-events:none}
+  #big div{font-size:clamp(34px,6vw,72px);font-weight:900;letter-spacing:.04em;text-shadow:0 4px 0 #000,0 0 30px #000}
+  #big span{display:block;font-size:20px;font-weight:700;text-shadow:0 2px 8px #000;margin-top:6px}
+  #big.show{animation:big 4.5s forwards}
+  @keyframes big{0%{opacity:0;transform:scale(1.3)}10%,80%{opacity:1;transform:none}100%{opacity:0}}
+  /* dialogue + cinematic */
+  #bars i{position:fixed;left:0;right:0;height:0;background:#000;z-index:7;transition:height .5s ease}
+  #bars i.t{top:0}#bars i.b{bottom:0}
+  body.talk #bars i,body.cine #bars i{height:10vh}
+  body.cine .hud,body.talk .hud{display:none!important}
+  #dlg{position:fixed;left:50%;bottom:calc(10vh + 22px);transform:translateX(-50%);width:min(860px,90vw);background:linear-gradient(180deg,#0e0a07dd,#17100adf);border:1px solid #ffffff22;border-left:5px solid var(--y);border-radius:12px;padding:14px 18px 14px 16px;z-index:9;display:none;box-shadow:0 10px 40px #000a;cursor:pointer}
+  #dlg.in{animation:dl .25s ease}
+  @keyframes dl{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
+  #dlg .row{display:flex;gap:14px;align-items:flex-start}
+  #dchip{flex:none;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:22px;color:#111;margin-top:2px}
+  #dwho{font-weight:900;letter-spacing:.1em;text-transform:uppercase;font-size:13px}
+  #dtxt{font-size:clamp(17px,2.1vw,23px);line-height:1.4;margin-top:3px;min-height:2.8em;font-family:"Noto Sans Kannada",system-ui,sans-serif}
+  #dsub{font-size:14px;color:#cbb89a;font-style:italic;margin-top:4px;display:none}
+  .lang{display:flex;gap:8px;justify-content:center;margin-top:12px;align-items:center;font-size:13px;color:var(--dim)}
+  .lang button{appearance:none;border:1px solid #4a3a28;background:#1e160d;color:var(--ink);border-radius:999px;padding:6px 14px;font:800 14px inherit;cursor:pointer}
+  .lang button.on{background:var(--y);color:#1c1406;border-color:var(--y)}
+  #dlg.narr #dchip{display:none}#dlg.narr #dtxt{font-style:italic;color:#fde68a}
+  #dcont{position:absolute;right:16px;bottom:8px;font-size:12px;color:var(--dim);animation:blink 1.2s infinite}
+  @keyframes blink{50%{opacity:.3}}
+  #credits{position:fixed;inset:0;z-index:12;display:none;background:linear-gradient(#000a,#000a);overflow:hidden;text-align:center}
+  #credits.roll{display:block}
+  #credits .in{position:absolute;left:0;right:0;top:100%;animation:roll 24s linear forwards}
+  @keyframes roll{to{top:-120%}}
+  #credits h1{font-size:clamp(40px,7vw,84px);margin:0 0 10px;background:linear-gradient(180deg,#fde047 50%,#ef4444 50%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  #credits p{font-size:clamp(16px,2vw,22px);margin:6px 0;color:#e7dcc8}#credits h3{margin:34px 0 8px;color:var(--y);letter-spacing:.2em;font-size:15px}
+  /* overlays */
+  .ov{position:fixed;inset:0;background:#0c0906e6;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:20;overflow-y:auto;padding:16px 0}
+  #pause{justify-content:flex-start}
+  #pause>*{flex-shrink:0}
+  #pause .logo{margin-top:auto}#pause .foot{margin-bottom:auto}
+  .ov.show{display:flex}
+  .btn{appearance:none;border:0;border-radius:10px;padding:14px 26px;font:900 18px inherit;letter-spacing:.06em;background:var(--y);color:#1c1406;cursor:pointer;min-width:220px}
+  .btn.alt{background:#2a2016;color:var(--ink)}
+  .btn:disabled{opacity:.5;cursor:wait}
+  #bigc{border-radius:12px;box-shadow:0 0 0 2px #000}
+  #mapnote{color:var(--dim);font-weight:700}
+  #photoUi{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);display:none;gap:12px;align-items:center;background:#000b;padding:10px 16px;border-radius:12px;z-index:5}
+  body.photo #photoUi{display:flex}
+  /* title + loading */
+  #title{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:radial-gradient(1200px 700px at 50% 30%,#3a2412aa,#140f0af2);transition:opacity .6s}
+  #title.gone{opacity:0;pointer-events:none}
+  .card{width:min(620px,92vw);text-align:center;padding:24px}
+  .logo{font-size:clamp(44px,9vw,86px);font-weight:900;line-height:.92;letter-spacing:-.01em}
+  .logo .k{display:block;font-size:.42em;letter-spacing:0;color:var(--y);margin-bottom:8px}
+  .logo .b{background:linear-gradient(180deg,#fde047 0 50%,#ef4444 50% 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 4px 0 #000)}
+  .tag{color:var(--dim);font-size:16px;margin:12px 0 22px}
+  #loading{margin:18px auto 0;width:min(420px,80vw)}
+  #loading.done .track,#loading.done #loadmsg{display:none}
+  .track{height:8px;background:#2a2016;border-radius:6px;overflow:hidden}
+  #bar{height:100%;width:2%;background:linear-gradient(90deg,var(--y),var(--r));transition:width .25s}
+  #loadmsg{font-size:13px;color:var(--dim);margin-top:8px}
+  #tip{font-size:15px;margin-top:18px;min-height:44px;color:#fde68a;font-style:italic}
+  .keys{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;text-align:left;font-size:14px;color:#e7dcc8;margin:18px auto 0;max-width:430px}
+  kbd{background:#2a2016;border:1px solid #4a3a28;border-bottom-width:3px;border-radius:6px;padding:1px 7px;font:800 12px system-ui;color:#fff}
+  .foot{font-size:12px;color:#9c8a70;margin-top:18px}
+  .foot a{color:#d6c3a2}
+  #phone{display:none;color:#fca5a5;font-weight:700;margin-top:10px}
+  @media (hover:none) and (pointer:coarse){#phone{display:block}}
+</style>
+<style>#menubtn{position:fixed;top:10px;left:50%;transform:translateX(-50%);pointer-events:auto;z-index:20;background:rgba(0,0,0,.55);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 16px;font:700 14px system-ui;cursor:pointer}#menubtn.rec{background:#b91c1c;border-color:#fecaca}#menubtn:hover{background:rgba(0,0,0,.8)}</style><link rel="stylesheet" href="css/game-ui.css">
+</head>
+<body>
+<canvas id="view" tabindex="0"></canvas>
+<div id="bars"><i class="t"></i><i class="b"></i></div>
+<div id="dlg"><div class="row"><div id="dchip">R</div><div style="flex:1"><div id="dwho"></div><div id="dtxt"></div><div id="dsub"></div></div></div><div id="dcont">Space / click ▸</div></div>
+<div id="credits"><div class="in"><h1>KARKALA</h1><p>Chapter 1 complete</p><h3>STORY &amp; DESIGN</h3><p>Sharath Poojari</p><h3>BUILT WITH</h3><p>three.js · Web Audio · OpenStreetMap</p><h3>PEOPLE</h3><p>Microsoft Rocketbox Avatar Library (MIT)</p><h3>THE MAP</h3><p>Map data © OpenStreetMap contributors</p><h3>NAMMA KARKALA</h3><p>Ajja's scooter, Pramod's bus, Ajji's mallige,</p><p>and one very patient cow.</p><h3>THANK YOU FOR PLAYING</h3><p>ಧನ್ಯವಾದಗಳು</p></div></div>
+
+<div class="hud">
+  <button id="menubtn" title="Menu / free the mouse (Esc)">☰ Menu</button>
+  <div id="miniwrap"><div id="hp"><div id="hpbar"></div></div><canvas id="mini" width="200" height="200"></canvas><div id="area">Karkala</div></div>
+  <div id="tr"><div id="money">₹500</div><div id="clock">4:30 PM</div><div id="wx">☀ Clear</div><div id="wanted"><div id="stars"></div><div id="wlabel"></div></div></div>
+  <div id="timer">0:00</div>
+  <div id="say"></div><div id="hint"></div><div id="obj"></div><div id="ctx"></div>
+  <div id="radio"><small>📻 RADIO · R = NEXT</small><div id="rstn"></div><div id="rsong"></div><div id="rbars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div id="rlyr"></div></div>
+  <div id="speed"><div id="kmh">0</div><small>KM/H</small><div id="vname"></div></div>
+  <div id="toast"></div><div id="big"></div>
+</div>
+
+<div class="ov" id="bigmap"><canvas id="bigc"></canvas><div id="mapnote"></div><div style="color:#9c8a70;font-size:13px">Map data © OpenStreetMap contributors · press M to close</div></div>
+<div class="ov" id="pause">
+  <div class="logo" style="font-size:44px"><span class="b">PAUSED</span></div>
+  <div id="progress" style="color:var(--dim);font-weight:700"></div>
+  <button class="btn" id="resume">Resume</button><button class="btn alt" id="mlock">Mouse: drag to look</button><button class="btn alt" id="mute">Sound: on</button><button class="btn alt" id="music">Music: on</button><button class="btn alt" id="voices">Voices: on</button><button class="btn alt" id="vocals">Song vocals: on</button><button class="btn alt" id="timemode">Time: Karkala live</button><button class="btn alt" id="gfx">Graphics: auto</button><button class="btn alt" id="lang">Voice: ಕನ್ನಡ</button><button class="btn alt" id="replay">Watch the trailer</button><button class="btn alt" id="reset">Start over</button>
+  <div class="keys">
+    <kbd>W A S D</kbd><span>walk / drive · <kbd>Shift</kbd> run</span><kbd>Mouse</kbd><span>look around: hold left button and drag (lock optional in this menu)</span>
+    <kbd>F</kbd><span>get on / off any vehicle</span><kbd>H</kbd><span>horn (compulsory)</span><kbd>Space</kbd><span>jump · handbrake</span>
+    <kbd>J</kbd><span>side job: deliveries, auto fares, bus rounds</span><kbd>M</kbd><span>big map</span><kbd>O</kbd><span>photo mode</span><kbd>B</kbd><span>record a 15 s clip</span><kbd>C</kbd><span>camera distance</span>
+  </div>
+  <div class="foot">Cheats: type a word while playing. Try <b>BARSA</b>, <b>IRULU</b>, <b>BUSBEKU</b>… there are more.</div>
+</div>
+<div id="photoUi"><b style="letter-spacing:.12em">PHOTO MODE</b><span style="color:var(--dim)">mouse to look · scroll to zoom</span><button class="btn" id="photoSave" style="min-width:0;padding:8px 14px;font-size:14px">Save photo (Enter)</button><span style="color:var(--dim)">O to exit</span></div>
+
+<div id="title">
+  <div id="tbg"></div>
+  <div class="card">
+    <div class="logo"><span class="k">ನಮ್ಮ</span><span class="b">KARKALA</span></div>
+    <div class="tag">Karkala, playable in your browser. Ride Ajja's scooter, drive the private bus, climb Bahubali Betta.</div>
+    <button class="btn" id="play" disabled>Play</button>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px"><button class="btn alt" id="trailer" disabled style="min-width:0;padding:10px 18px;font-size:15px">▶ Watch the trailer</button><button class="btn alt" id="trailerSave" disabled style="min-width:0;padding:10px 18px;font-size:15px">⬇ Save trailer as video</button></div>
+    <div id="loading"><div class="track"><div id="bar"></div></div><div id="loadmsg">Loading…</div></div>
+    <div id="skychip">Karkala now</div>
+    <div class="lang"><span>Voice &amp; text</span><button data-l="kn">ಕನ್ನಡ</button><button data-l="tcy">ತುಳು</button><button data-l="en">English</button></div>
+    <div id="tip"></div>
+    <div class="keys">
+      <kbd>W A S D</kbd><span>walk / drive · <kbd>Shift</kbd> run</span>
+      <kbd>Mouse</kbd><span>look around</span>
+      <kbd>F</kbd><span>get on / off any vehicle</span>
+      <kbd>H</kbd><span>horn · <kbd>R</kbd> radio · <kbd>J</kbd> side jobs · <kbd>M</kbd> map · <kbd>O</kbd> photo · <kbd>Esc</kbd> pause</span>
+    </div>
+    <div id="phone">Best on a laptop with a keyboard. Send yourself the link.</div>
+    <div class="foot"><a href="/">← Namma Karkala home</a> · A fan-made game. Every shop and character is fictional. Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> · <a href="js/THREE_LICENSE" target="_blank">three.js (MIT)</a> · People: <a href="models/people/LICENSE-Rocketbox.txt" target="_blank">Microsoft Rocketbox avatars and animations (MIT)</a></div>
+  </div>
+</div>
+
+<script type="module" src="js/main.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>
