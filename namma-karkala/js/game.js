@@ -578,6 +578,7 @@ export class Game {
     const rt = this.pmrem.fromScene(this.envScene, 0, 1, 1000); this.envScene.remove(sky); this.scene.add(sky); sky.position.copy(p);
     if (this.envRT) this.envRT.dispose(); this.envRT = rt;
     for (const [m, k] of [[M.MAT.shiny, 0.9], [M.MAT.gold, 1.5], [M.GLASS, 1.2], [this.world.waterMat, 0.35]]) { m.envMap = rt.texture; m.envMapIntensity = k; m.needsUpdate = !m.userData.envSet; m.userData.envSet = true; }
+    M.ENV.tex = rt.texture; for (const m of M.ENV.mats) { m.envMap = rt.texture; m.needsUpdate = !m.userData.envSet; m.userData.envSet = true; }
   }
   /* ====================================================================== story NPCs */
   setupNpcs() {
