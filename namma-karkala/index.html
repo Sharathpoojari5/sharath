@@ -16,16 +16,58 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Inter:wght@400;600;700;800&family=Noto+Sans+Kannada:wght@500;700&display=swap">
 <link rel="stylesheet" href="css/site.css">
+<link rel="stylesheet" href="css/intro.css">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"VideoGame","name":"Namma Karkala","description":"A free open-world browser game set in Karkala, Udupi district, Karnataka.","genre":["Open world","Driving","Adventure"],"gamePlatform":"Web browser","applicationCategory":"Game","operatingSystem":"Any","offers":{"@type":"Offer","price":"0","priceCurrency":"INR"},"inLanguage":["en","kn","tcy"],"url":"https://namma-karkala.pages.dev/"}</script>
 </head>
 <body>
+<div id="splash" aria-hidden="true">
+  <div class="scene"><svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <linearGradient id="sk1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#070a1c"/><stop offset="1" stop-color="#1b1445"/></linearGradient>
+      <linearGradient id="sk2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#27255f"/><stop offset=".45" stop-color="#b8466b"/><stop offset=".75" stop-color="#ff9a3c"/><stop offset="1" stop-color="#ffd27a"/></linearGradient>
+      <radialGradient id="glow"><stop offset="0" stop-color="#fff2b8" stop-opacity=".95"/><stop offset=".35" stop-color="#ffb44a" stop-opacity=".45"/><stop offset="1" stop-color="#ff7a30" stop-opacity="0"/></radialGradient>
+      <linearGradient id="fog" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd9a8" stop-opacity="0"/><stop offset="1" stop-color="#ffd9a8" stop-opacity=".55"/></linearGradient>
+    </defs>
+    <rect width="1600" height="900" fill="url(#sk1)"/>
+    <g class="dawn"><rect width="1600" height="900" fill="url(#sk2)"/></g>
+    <g class="starfield" fill="#fff">
+      <circle class="star" cx="140" cy="120" r="2"/><circle class="star" cx="330" cy="70" r="1.6"/><circle class="star" cx="520" cy="160" r="2.2"/><circle class="star" cx="760" cy="90" r="1.5"/><circle class="star" cx="980" cy="140" r="2"/>
+      <circle class="star" cx="1180" cy="60" r="1.8"/><circle class="star" cx="1390" cy="150" r="2.2"/><circle class="star" cx="1500" cy="90" r="1.6"/><circle class="star" cx="260" cy="250" r="1.4"/><circle class="star" cx="640" cy="260" r="1.8"/>
+      <circle class="star" cx="1070" cy="270" r="1.5"/><circle class="star" cx="1320" cy="300" r="2"/><circle class="star" cx="60" cy="330" r="1.6"/><circle class="star" cx="880" cy="40" r="1.4"/>
+    </g>
+    <g class="sun"><circle cx="800" cy="560" r="260" fill="url(#glow)"/><circle cx="800" cy="560" r="62" fill="#ffe08a"/></g>
+    <path class="bird" d="M0 210q14-16 28 0q14-16 28 0" fill="none" stroke="#2b1330" stroke-width="3" stroke-linecap="round"/>
+    <path class="bird" style="animation-delay:-2.4s;animation-duration:7.5s" d="M0 260q10-12 20 0q10-12 20 0" fill="none" stroke="#2b1330" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M0 640 L180 560 L340 610 L520 520 L700 600 L900 540 L1100 610 L1280 530 L1460 600 L1600 560 V900 H0Z" fill="#4a2a52" opacity=".75"/>
+    <path d="M0 700 L220 640 L420 690 L640 630 L860 690 L1080 640 L1300 700 L1600 650 V900 H0Z" fill="#2b1738"/>
+    <!-- Bahubali Betta with the monolith -->
+    <path d="M500 790 Q650 620 800 556 Q950 620 1100 790 Z" fill="#1d0f26"/>
+    <g fill="#12081a" transform="translate(0,66) scale(1)">
+      <rect x="772" y="486" width="56" height="14" rx="3"/>
+      <rect x="781" y="395" width="14" height="94"/><rect x="805" y="395" width="14" height="94"/>
+      <path d="M776 395 Q800 380 824 395 L832 335 Q800 322 768 335Z"/>
+      <path d="M768 338 L752 440 L760 442 L778 345Z"/><path d="M832 338 L848 440 L840 442 L822 345Z"/>
+      <circle cx="800" cy="312" r="16"/><rect x="794" y="322" width="12" height="14"/>
+    </g>
+    <g class="palm" style="transform-origin:150px 800px"><path d="M150 800 Q160 640 140 520" stroke="#0f0617" stroke-width="9" fill="none"/><g fill="#0f0617"><path d="M140 520 Q70 490 20 520 Q80 505 140 520Z"/><path d="M140 520 Q80 470 30 440 Q100 470 140 520Z"/><path d="M140 520 Q150 450 130 410 Q160 460 140 520Z"/><path d="M140 520 Q210 480 260 500 Q200 495 140 520Z"/><path d="M140 520 Q200 450 250 430 Q190 470 140 520Z"/></g></g>
+    <g class="palm" style="transform-origin:1440px 810px;animation-delay:-1.4s"><path d="M1440 810 Q1420 650 1450 520" stroke="#0f0617" stroke-width="10" fill="none"/><g fill="#0f0617"><path d="M1450 520 Q1380 490 1330 520 Q1390 505 1450 520Z"/><path d="M1450 520 Q1390 470 1340 440 Q1410 470 1450 520Z"/><path d="M1450 520 Q1460 450 1440 410 Q1470 460 1450 520Z"/><path d="M1450 520 Q1520 480 1570 500 Q1510 495 1450 520Z"/><path d="M1450 520 Q1510 450 1560 430 Q1500 470 1450 520Z"/></g></g>
+    <path d="M0 760 Q300 720 600 770 T1200 760 T1600 780 V900 H0Z" fill="#0b0512"/>
+    <g class="mist"><rect x="-120" y="640" width="1840" height="260" fill="url(#fog)"/></g>
+  </svg></div>
+  <div class="words"><div class="kn">ನಮ್ಮ ಕಾರ್ಕಳ</div><div class="en"><b>KARKALA</b></div><div class="tg">Pili · Yakshagana · Kambala · Goli baje</div></div>
+  <div class="curtain l"></div><div class="curtain r"></div>
+  <button class="skip" type="button">SKIP ▸</button>
+</div>
 <a class="skip" href="#main">Skip to content</a>
 <canvas id="fx" aria-hidden="true"></canvas>
 <nav class="top" aria-label="Main"><a href="/"><img src="brand/logo.svg" alt="Namma Karkala"></a><span class="sp"></span>
   <a class="l" href="#trailer">Trailer</a><a class="l" href="#shows">Tulunadu live</a><a class="l" href="#radio">Radio</a><a class="l" href="#tindi">Tindi</a><a class="l" href="how-to-play/">How to play</a><a class="btn primary" href="play/" style="padding:10px 16px;font-size:14px">Play free</a></nav>
 
 <header class="hero">
-  <img class="bg" src="media/hero.webp" alt="" fetchpriority="high">
+  <div class="slides" aria-hidden="true">
+    <img src="media/shots/dawn.webp" alt="" fetchpriority="high"><img src="media/shots/temple.webp" alt="" loading="lazy"><img src="media/shots/lake.webp" alt="" loading="lazy"><img src="media/shots/rain.webp" alt="" loading="lazy"><img src="media/shots/hill.webp" alt="" loading="lazy"><img src="media/shots/night.webp" alt="" loading="lazy">
+  </div>
+  <div class="dots" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div><span class="scrollcue" aria-hidden="true"></span>
   <div class="wrap in">
     <img class="logo" src="brand/logo.svg" alt="Namma Karkala">
     <h1>Karkala, now playable in your browser.</h1>
@@ -37,6 +79,19 @@
 </header>
 
 <main id="main">
+<section id="gallery"><div class="wrap">
+  <div class="eyebrow">In-game, today</div><h2>This is what it looks like</h2><p class="lead">Real people with walking animations, cars with clear-coat paint, lit shops, striped temple walls and a basadi with its manastambha. Every frame is captured from the game as it runs.</p>
+  <div class="strip">
+    <figure><img src="media/shots/temple-sm.webp" alt="Sri Venkataramana Temple street at morning" loading="lazy"><figcaption>Temple street, 8:12 AM<small>Tiered gopura, striped compound wall, dhwaja stambha</small></figcaption></figure>
+    <figure><img src="media/shots/rain-sm.webp" alt="Rain on the market road at night" loading="lazy"><figcaption>Market Road in the rain<small>Lit shops, street lights on the verge, a very wet scooter</small></figcaption></figure>
+    <figure><img src="media/shots/lake-sm.webp" alt="Aanekere lake with the island basadi" loading="lazy"><figcaption>Aanekere at sunrise<small>Please do not look for the elephant</small></figcaption></figure>
+    <figure><img src="media/shots/hill-sm.webp" alt="Bahubali Betta hill with the monolith" loading="lazy"><figcaption>Bahubali Betta<small>The monolith, the boulders and the whole of Karkala below</small></figcaption></figure>
+    <figure><img src="media/shots/market-sm.webp" alt="Market stalls and shops" loading="lazy"><figcaption>Market stalls<small>Posters, flex banners and a lot of fruit</small></figcaption></figure>
+    <figure><img src="media/shots/night-sm.webp" alt="The temple lit at night" loading="lazy"><figcaption>The temple at night<small>The same sky as the real Karkala, if you switch it on</small></figcaption></figure>
+  </div>
+</div></section>
+
+
 <section id="trailer"><div class="wrap">
   <div class="eyebrow">In-game footage</div><h2>The trailer</h2><p class="lead">Seventy-five seconds, filmed inside the game: sunrise at the bus stand, the temple street, rain on Aanekere, a police chase, a night over the lake and Bahubali at dawn.</p>
   <div class="video reveal"><video controls preload="none" poster="media/trailer-poster.webp" playsinline><source src="media/trailer.mp4" type="video/mp4"></video><div class="meta">Namma Karkala · Chapter 1 trailer · 1:15 · with sound</div></div>
@@ -132,6 +187,7 @@
   <nav aria-label="Footer"><a href="play/">Play</a><a href="how-to-play/">How to play</a><a href="credits/">Credits</a><a href="privacy/">Privacy</a></nav></div></div></footer>
 <div class="toast" id="toast" role="status"></div>
 <script src="js/radio-data.js" defer></script>
+<script src="js/intro.js"></script>
 <script src="js/site.js" defer></script>
 </body>
 </html>

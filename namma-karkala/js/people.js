@@ -10,6 +10,7 @@ const FEMALE = ['Female_Adult_02', 'Female_Adult_03', 'Female_Adult_05', 'Female
 const pick = (a) => a[Math.floor(Math.random() * a.length)], clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const SCALE = 0.0096;
 
+const STATE = new WeakMap();
 export const People = {
   ready: false, tpl: {}, clips: {}, live: [], N: 0,
   async load(onProgress) {
@@ -23,22 +24,20 @@ export const People = {
     const female = o.female != null ? o.female : (typeof o.real === 'string' ? o.real.startsWith('Female') : Math.random() < 0.42);
     const name = typeof o.real === 'string' && this.tpl[o.real] ? o.real : pick(female ? FEMALE : MALE), pre = name.startsWith('Female') ? 'f_' : 'm_';
     const root = SU.clone(this.tpl[name]); root.scale.setScalar(SCALE); root.traverse(c => { if (c.isSkinnedMesh) { c.castShadow = true; c.receiveShadow = false; c.frustumCulled = false; } });
-    const g = new THREE.Group(); g.add(root); g.userData.real = name;
+    const g = new THREE.Group(); g.add(root);
     const mixer = new THREE.AnimationMixer(root), act = {}, want = { idle: ['idle_neutral_01'], walk: ['walk_neutral_01'], run: ['run_neutral_01'], sit: ['sit_chair_idle_neutral_01'], talk: ['gestic_talk_' + (pre === 'f_' ? 'cool' : 'neutral_01')], wave: ['wave_01'] };
     for (const [k, v] of Object.entries(want)) { const c = this.clips[pre + v[0]]; if (!c) continue; const a = mixer.clipAction(c); a.play(); a.setEffectiveWeight(k === 'idle' ? 1 : 0); a.time = Math.random() * c.duration; act[k] = a; }
     if (pre === 'm_' && Math.random() < 0.4 && this.clips.m_walk_stroll_01) { const old = act.walk; old.stop(); act.walk = mixer.clipAction(this.clips.m_walk_stroll_01); act.walk.play(); act.walk.setEffectiveWeight(0); }
     const sh = () => ({ rotation: new THREE.Euler() }); g.legL = sh(); g.legR = sh(); g.armL = sh(); g.armR = sh(); g.tail = null;
-    Object.assign(g.userData, { mixer, act, w: { idle: 1 }, last: null, speed: 0, mode: 'idle', phase: Math.random() * 100, act_override: null });
-    g.userData.root = root; this.live.push(g); return g;
+    STATE.set(g, { mixer, act, w: { idle: 1 }, last: null, speed: 0, mode: 'idle', gone: 0, act_override: null }); this.live.push(g); return g;
   },
   bone(g, name) { let b = null; g.traverse(c => { if (!b && c.name === name) b = c; }); return b; },
   /** Force a pose for a while: 'wave' | 'talk' | null */
-  pose(g, mode) { g.userData.act_override = mode; },
+  pose(g, mode) { const s = STATE.get(g); if (s) s.act_override = mode; },
   update(dt, px, pz) {
     const live = this.live; dt = Math.min(dt, 0.1);
     for (let i = live.length - 1; i >= 0; i--) {
-      const g = live[i], u = g.userData;
-      if (!g.parent && !u.orphan) { u.orphan = (u.orphan || 0) + 1; }
+      const g = live[i], u = STATE.get(g); if (!u) { live.splice(i, 1); continue; }
       let p = g; let attached = false; while (p) { if (p.isScene) { attached = true; break; } p = p.parent; }
       if (!attached) { if (++u.gone > 120) live.splice(i, 1); continue; } u.gone = 0;
       if (!g.visible) continue;
@@ -49,7 +48,7 @@ export const People = {
       u.last = [wx, wz];
       const sit = g.legL.rotation.x < -0.9;
       let mode = sit ? 'sit' : u.act_override || (u.speed > 3.4 ? 'run' : u.speed > 0.4 ? 'walk' : 'idle');
-      if (g.userData.mode !== mode) { g.userData.mode = mode; }
+      u.mode = mode;
       const k = Math.min(1, dt * 7);
       for (const key in u.act) { const t = key === mode ? 1 : 0, cur = u.w[key] || 0, nv = cur + (t - cur) * k; u.w[key] = nv; u.act[key].setEffectiveWeight(nv < 0.01 ? 0 : nv); }
       if (u.act.walk) u.act.walk.timeScale = clamp(u.speed / 1.35, 0.55, 1.6); if (u.act.run) u.act.run.timeScale = clamp(u.speed / 4.4, 0.7, 1.4);
