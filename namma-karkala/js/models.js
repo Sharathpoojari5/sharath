@@ -355,7 +355,7 @@ export function vehicle(kind, o = {}) {
       paintList.push([cb.paint, col]); if (cb.roof) paintList.push([cb.roof, kind === 'taxi' ? '#f5c518' : col]);
       parts.push(...cb.trim); glow.push(...cb.glow); extraGlass = cb.glass;
       const zn = (z) => z / L + 0.5;
-      for (const sx of [-1, 1]) for (const z of [fz, -fz]) parts.push(P(cyl(wr * 1.12, wr * 1.12, 0.03, 20), '#07080a', [sx * (cb.hwAt(zn(z)) - 0.012), wr + 0.01, z], [0, 0, Math.PI / 2]));
+      for (const sx of [-1, 1]) for (const z of [fz, -fz]) parts.push(P(cyl(wr * 1.1, wr * 1.1, 0.03, 20), '#07080a', [sx * (cb.hwAt(zn(z)) - 0.012), wr * 1.1, z], [0, 0, Math.PI / 2]));
       if (kind === 'taxi') parts.push(P(box(W + 0.012, 0.09, L * 0.72), '#f5c518', [0, cb.belt(0.5) - 0.34, 0]), P(box(0.55, 0.14, 0.2), '#f5c518', [0, cb.roofY + 0.1, 0.1]), P(box(0.5, 0.08, 0.02), '#111', [0, cb.roofY + 0.1, 0.205]));
       if (kind === 'suv') for (const sx of [-1, 1]) parts.push(P(box(0.04, 0.03, L * 0.32), '#16181d', [sx * (W / 2 - 0.36), cb.roofY + 0.012, -0.4]));
       plateMesh(g, plate(yellowPlate), 0, cb.yb0 + 0.3, L / 2 + 0.012, 0, 0.5); plateMesh(g, plate(yellowPlate), 0, cb.yb0 + 0.3, -L / 2 - 0.012, Math.PI, 0.5);

@@ -22,6 +22,25 @@ function strip(world, pts, inner, outer, y, both = true, uScale = 1) {
   }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals(); return g;
 }
+/** Kerb / shoulder strip along one road that is cut away wherever another road's carriageway crosses it. */
+function stripCut(world, rd, ri, inner, outer, y, uScale = 1) {
+  const pos = [], uv = [], idx = [], mid = (inner + outer) / 2, STEP = 1.2;
+  const pts = rd.pts, S = [];
+  for (let i = 0; i < pts.length - 1; i++) { const [ax, az] = pts[i], [bx, bz] = pts[i + 1], L = Math.hypot(bx - ax, bz - az); if (L < 0.01) continue; const dx = (bx - ax) / L, dz = (bz - az) / L, n = Math.max(1, Math.round(L / STEP)); for (let k = 0; k < n; k++) S.push([ax + dx * L * k / n, az + dz * L * k / n, dx, dz]); }
+  const last = pts[pts.length - 1]; if (S.length) S.push([last[0], last[1], S[S.length - 1][2], S[S.length - 1][3]]);
+  for (const side of [-1, 1]) {
+    let run = [], v = 0; const flush = () => { if (run.length >= 2) { const base = pos.length / 3; for (const r of run) { pos.push(r.ix, r.iy, r.iz, r.ox, r.oy, r.oz); uv.push(r.v, 0, r.v, 1); } for (let q = 0; q < run.length - 1; q++) { const a = base + q * 2; if (side > 0) idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); else idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); } } run = []; };
+    for (let i = 0; i < S.length; i++) {
+      const [px, pz, dx, dz] = S[i], nx = -dz * side, nz = dx * side; if (i > 0) v += Math.hypot(px - S[i - 1][0], pz - S[i - 1][1]) * uScale;
+      const mx = px + nx * mid, mz = pz + nz * mid;
+      if (world.clearanceExcl(mx, mz, ri) < 0.35 || world.clearanceExcl(px + nx * inner, pz + nz * inner, ri) < 0.0) { flush(); continue; }
+      const ix = px + nx * inner, iz = pz + nz * inner, ox = px + nx * outer, oz = pz + nz * outer;
+      run.push({ ix, iy: world.groundH(ix, iz) + y, iz, ox, oy: world.groundH(ox, oz) + y, oz, v });
+    }
+    flush();
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals(); return g;
+}
 function walk(pts, step, fn) { let carry = step / 2; for (let i = 0; i < pts.length - 1; i++) { const [ax, az] = pts[i], [bx, bz] = pts[i + 1], L = Math.hypot(bx - ax, bz - az); if (L < 0.01) continue; const dx = (bx - ax) / L, dz = (bz - az) / L; let t = carry; for (; t < L; t += step) fn(ax + dx * t, az + dz * t, dx, dz); carry = t - L; } }
 function canvasTex(w, h, draw) { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; }
 
@@ -34,10 +53,11 @@ export function buildInfra(world) {
   const kerbTex = canvasTex(64, 8, (x) => { x.fillStyle = '#111'; x.fillRect(0, 0, 64, 8); x.fillStyle = '#facc15'; x.fillRect(0, 0, 32, 8); });
   kerbTex.wrapS = THREE.RepeatWrapping;
   const kerbMat = new THREE.MeshStandardMaterial({ map: kerbTex, roughness: 0.8 });
-  for (const rd of roads) {
-    const sh = new THREE.Mesh(strip(world, rd.pts, rd.w / 2 - 0.1, rd.w / 2 + (rd.w >= 9 ? 2.2 : 1.4), 0.018, true, 0.25), shoulderMat); sh.receiveShadow = true; S.add(sh);
-    if (rd.w >= 9) { const k = new THREE.Mesh(strip(world, rd.pts, rd.w / 2 + 0.05, rd.w / 2 + 0.45, 0.16, true, 0.5), kerbMat); k.receiveShadow = true; S.add(k); }
-  }
+  roads.forEach((rd) => {
+    const ri = world.map.roads.indexOf(rd);
+    const sh = new THREE.Mesh(stripCut(world, rd, ri, rd.w / 2 - 0.1, rd.w / 2 + (rd.w >= 9 ? 2.2 : 1.4), 0.018, 0.25), shoulderMat); sh.receiveShadow = true; S.add(sh);
+    if (rd.w >= 9) { const k = new THREE.Mesh(stripCut(world, rd, ri, rd.w / 2 + 0.05, rd.w / 2 + 0.45, 0.16, 0.5), kerbMat); k.receiveShadow = true; S.add(k); }
+  });
 
   // --- electric poles with wires
   const poleGeo = M.merge([M.P(M.box(0.24, 9, 0.24), '#b8b3a8', [0, 4.5, 0]), M.P(M.box(1.6, 0.12, 0.12), '#6b7280', [0, 8.6, 0]),

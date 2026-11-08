@@ -85,3 +85,6 @@
 @media (max-width:760px){#title{justify-content:center!important}#title .card{text-align:center!important}#title .logo{text-align:center}#title .lang{justify-content:center!important}}
 @media (prefers-reduced-motion:reduce){#tbg i.on,#title *,#play::after,#bar::after{animation:none!important}#title .logo,#title .tag,#title #play,#title .lang,#title .keys,#title #tip,#title .foot,#title #loading,#title #skychip{opacity:1;transform:none}}
 #title .card>div[style*="justify-content:center"]{justify-content:flex-start!important}
+#title{overflow-y:auto}
+@media (max-height:760px){#title .keys{display:none}#title .logo{font-size:clamp(54px,14vh,110px)!important}#title .tag{margin:8px 0 14px}#tip{margin-top:8px!important}#title .foot{margin-top:10px}}
+@media (max-height:520px){#title .tag,#tip,#title .foot,#skychip{display:none}}

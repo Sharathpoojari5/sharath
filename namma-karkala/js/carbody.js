@@ -75,7 +75,7 @@ export function buildCar(kind, d, mk) {
     for (const zn of [0.6, 0.4]) trim.push(mk.P(box(0.02, 0.025, 0.16), '#cbd5e1', [sx * (hwAt(zn) + 0.01), belt(zn) - 0.1, Z(zn)]));
     trim.push(mk.P(box(0.006, 0.01, L * 0.5), '#3a3f48', [sx * (hwAt(0.5) + 0.003), belt(0.5) - 0.24, 0]));                                  // shoulder crease
     trim.push(mk.P(box(0.05, 0.05, L * 0.46), '#1b1d22', [sx * (hwAt(0.5) - 0.07), yb0 + 0.03, 0]));                                              // sill
-    trim.push(mk.P(box(0.16, 0.1, 0.12), '#16181d', [sx * (hwAt(gC) + 0.1), belt(gC) + 0.1, Z(gC) - 0.1]), mk.P(box(0.12, 0.07, 0.04), '#16181d', [sx * (hwAt(gC) + 0.16), belt(gC) + 0.1, Z(gC) - 0.12]));   // wing mirror
+    trim.push(mk.P(box(0.16, 0.1, 0.12), '#16181d', [sx * (hwAt(gC) + 0.035), belt(gC) + 0.1, Z(gC) - 0.1]), mk.P(box(0.12, 0.07, 0.04), '#16181d', [sx * (hwAt(gC) + 0.07), belt(gC) + 0.1, Z(gC) - 0.12]));   // wing mirror
     const ax = hwAt(gC) * 0.92 * sx, bx = hwAt((rF + gC) / 2) * 0.72 * sx;
     trim.push(mk.P(box(0.03, 0.03, 0.03), '#111', [ax, belt(gC), Z(gC)]));
   }

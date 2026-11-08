@@ -227,7 +227,7 @@ export class Game {
       if (best.police) this.police = this.police.filter(v => v !== best);
     }
     best.driver = 'player'; best.parked = false; best.removeDriverModel(); this.car = best; this.camDist = best.def.cam;
-    p.mesh.visible = false; if (best.def.two) best.addDriverModel(true);
+    p.mesh.visible = false; if (best.def.two || best.def.open) best.addDriverModel(true);
     this.camYaw = best.h; this.radio.start(best.kind);
   }
 

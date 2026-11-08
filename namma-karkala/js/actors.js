@@ -1,6 +1,7 @@
 // Everything that moves: the player on foot, vehicles (player, traffic, police), pedestrians and cows.
 import * as THREE from './three.module.min.js';
 import * as M from './models.js';
+import { People } from './people.js';
 
 const TAU = Math.PI * 2;
 export const wrap = (a) => { while (a > Math.PI) a -= TAU; while (a < -Math.PI) a += TAU; return a; };
@@ -29,6 +30,7 @@ export class Vehicle {
     if (p.legL) { p.legL.rotation.x = -1.2; p.legR.rotation.x = -1.2; }
     if (p.armL) { p.armL.rotation.x = -1.15; p.armR.rotation.x = -1.15; }
     if (this.kind === 'cycle') p.position.y += 0.12;
+    if (p.legL && p.userData !== undefined) People.pose(p, 'sit');
     this.mesh.add(p); this.dm = p;
   }
   removeDriverModel() { if (this.dm) { this.mesh.remove(this.dm); this.dm = null; } }

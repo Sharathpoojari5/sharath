@@ -108,6 +108,16 @@ export class World {
     return m;
   }
 
+  /** Like roadClearance but ignoring every segment of road `ri` (used to cut kerbs where another road crosses). */
+  clearanceExcl(x, z, ri, pad = 0) {
+    const ci = Math.floor(x / this.SEG), cj = Math.floor(z / this.SEG); let m = 1e9;
+    for (let a = ci - 1; a <= ci + 1; a++) for (let b = cj - 1; b <= cj + 1; b++) {
+      const arr = this.segGrid.get(this.key(a, b)); if (!arr) continue;
+      for (const si of arr) { const s = this.segs[si]; if (s.ri === ri) continue; const q = closest(x, z, s.ax, s.az, s.bx, s.bz); m = Math.min(m, q.d - s.w / 2 - pad); }
+    }
+    return m;
+  }
+
   buildGraph() {
     const N = new Map();
     const node = (id, p) => { let n = N.get(id); if (!n) N.set(id, n = { id, x: p[0], z: p[1], adj: [] }); return n; };
@@ -226,10 +236,22 @@ export class World {
     this.roadMats.push(mk(groups.main, roadTex(true), 0.05).material);
     // junction patches cover the seams where roads meet
     const disc = [], dm = new THREE.Matrix4();
-    for (const n of this.nodes) if (n.adj.length >= 3 || n.adj.length === 1) disc.push([n.x, n.z, Math.max(...n.adj.map(e => e.w)) / 2]);
+    for (const n of this.nodes) if (n.adj.length >= 3 || n.adj.length === 1) disc.push([n.x, n.z, Math.max(...n.adj.map(e => e.w)) / 2 * (n.adj.length >= 3 ? 1.12 : 1)]);
+    // roads that cross without sharing a node get a bare patch at the crossing too
+    const segs = this.segs, seen = new Set();
+    for (let i = 0; i < segs.length; i++) {
+      const s = segs[i]; if (s.cls === 'track' || s.w < 5) continue;
+      const ci = Math.floor(Math.min(s.ax, s.bx) / this.SEG), cj = Math.floor(Math.min(s.az, s.bz) / this.SEG), ck = Math.floor(Math.max(s.ax, s.bx) / this.SEG), cl = Math.floor(Math.max(s.az, s.bz) / this.SEG);
+      for (let a = ci; a <= ck; a++) for (let b = cj; b <= cl; b++) { const arr = this.segGrid.get(this.key(a, b)); if (!arr) continue;
+        for (const j of arr) { if (j <= i) continue; const t = segs[j]; if (t.ri === s.ri || t.cls === 'track' || t.w < 5) continue;
+          const d1x = s.bx - s.ax, d1z = s.bz - s.az, d2x = t.bx - t.ax, d2z = t.bz - t.az, den = d1x * d2z - d1z * d2x; if (Math.abs(den) < 1e-6) continue;
+          const u = ((t.ax - s.ax) * d2z - (t.az - s.az) * d2x) / den, v = ((t.ax - s.ax) * d1z - (t.az - s.az) * d1x) / den; if (u < 0.03 || u > 0.97 || v < 0.03 || v > 0.97) continue;
+          const px = s.ax + d1x * u, pz = s.az + d1z * u, key = Math.round(px / 4) + ',' + Math.round(pz / 4); if (seen.has(key)) continue; seen.add(key);
+          if (this.nodes.some(n => Math.hypot(n.x - px, n.z - pz) < 6)) continue; disc.push([px, pz, Math.max(s.w, t.w) / 2 * 1.12]); } }
+    }
     const dg = new THREE.CircleGeometry(1, 16); dg.rotateX(-Math.PI / 2);
-    const im = new THREE.InstancedMesh(dg, new THREE.MeshStandardMaterial({ color: '#d4d6da', map: roadTex(false), roughness: 0.95, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 }), disc.length);
-    disc.forEach(([x, z, r], i) => { dm.makeScale(r, 1, r); dm.setPosition(x, this.groundH(x, z) + 0.06, z); im.setMatrixAt(i, dm); });
+    const im = new THREE.InstancedMesh(dg, new THREE.MeshStandardMaterial({ color: '#ffffff', map: roadTex(true, true), roughness: 0.95, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -6 }), disc.length);
+    disc.forEach(([x, z, r], i) => { dm.makeScale(r, 1, r); dm.setPosition(x, this.groundH(x, z) + 0.075, z); im.setMatrixAt(i, dm); });
     im.receiveShadow = true; this.scene.add(im); this.roadMats.push(im.material);
   }
 
@@ -346,7 +368,7 @@ export class World {
     this.stalls = [];
     if (mr) {
       const geo = M.stallGeo(), spots = [];
-      walk(mr.pts, 9, (x, z, dx, dz) => { for (const s of [-1, 1]) if (rand() < 0.75) spots.push([x - dz * s * (mr.w / 2 + 2.2), z + dx * s * (mr.w / 2 + 2.2), Math.atan2(dz * s, -dx * s) + Math.PI / 2]); });
+      walk(mr.pts, 9, (x, z, dx, dz) => { for (const s of [-1, 1]) if (rand() < 0.75 && this.roadClearance(x - dz * s * (mr.w / 2 + 2.2), z + dx * s * (mr.w / 2 + 2.2), 1.8) > 0) spots.push([x - dz * s * (mr.w / 2 + 2.2), z + dx * s * (mr.w / 2 + 2.2), Math.atan2(dz * s, -dx * s) + Math.PI / 2]); });
       const im = new THREE.InstancedMesh(geo, M.MAT.solid, spots.length), m4 = new THREE.Matrix4(), q = new THREE.Quaternion();
       spots.forEach(([x, z, r], i) => { q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), r); m4.compose(new THREE.Vector3(x, 0, z), q, new THREE.Vector3(1, 1, 1)); im.setMatrixAt(i, m4); this.addObs({ x, z, r: 1.3 }); });
       im.castShadow = true; this.scene.add(im); this.stalls = spots; this.marketRoad = mr;
@@ -753,9 +775,9 @@ function noiseTex(c1, c2, size, blobs) {
   for (let i = 0; i < size * blobs; i++) { x.fillStyle = Math.random() < 0.5 ? c2 : c1; x.globalAlpha = 0.25 + Math.random() * 0.4; const r = 1 + Math.random() * size / 40; x.beginPath(); x.arc(Math.random() * size, Math.random() * size, r, 0, 7); x.fill(); }
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
 }
-function roadTex(main) {
+function roadTex(main, plain = false) {
   const S = 256, c = document.createElement('canvas'); c.width = S; c.height = S * 2; const x = c.getContext('2d'), H = S * 2, k = S / 128;
-  const base = main ? [58, 62, 68] : [74, 78, 85];
+  const base = plain ? [66, 70, 77] : main ? [58, 62, 68] : [74, 78, 85];
   x.fillStyle = `rgb(${base})`; x.fillRect(0, 0, S, H);
   // large soft tone variation, tyre-polished lanes, aggregate speckle, patches, cracks, oil, pot-holes
   for (let i = 0; i < 90; i++) { const v = (Math.random() - 0.5) * 22; x.fillStyle = `rgba(${base[0] + v},${base[1] + v},${base[2] + v},0.35)`; x.beginPath(); x.ellipse(Math.random() * S, Math.random() * H, 20 + Math.random() * 60, 18 + Math.random() * 40, Math.random() * 3, 0, 7); x.fill(); }
@@ -765,7 +787,8 @@ function roadTex(main) {
   x.lineWidth = 0.9; x.strokeStyle = 'rgba(8,8,10,0.5)';
   for (let i = 0; i < 5; i++) { let px = Math.random() * S, py = Math.random() * H; x.beginPath(); x.moveTo(px, py); for (let j = 0; j < 8; j++) { px += (Math.random() - 0.5) * 22; py += 6 + Math.random() * 16; x.lineTo(px, py); } x.stroke(); }
   for (let i = 0; i < 2; i++) { const px = Math.random() * S, py = Math.random() * H, r = 3 + Math.random() * 5; const g = x.createRadialGradient(px, py, 0, px, py, r * 1.6); g.addColorStop(0, 'rgba(5,5,6,0.85)'); g.addColorStop(0.7, 'rgba(20,20,22,0.55)'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.beginPath(); x.ellipse(px, py, r * 1.6, r, 0.4, 0, 7); x.fill(); }   // pot-holes
-  if (main) { x.fillStyle = 'rgba(229,231,235,0.92)'; x.fillRect(4 * k, 0, 4 * k, H); x.fillRect(120 * k, 0, 4 * k, H); x.fillStyle = 'rgba(248,250,252,0.92)'; x.fillRect(62 * k, 0, 4 * k, 120 * k * 2 * 0.5); for (let i = 0; i < 60; i++) { x.fillStyle = 'rgba(58,62,68,0.5)'; x.fillRect(4 * k, Math.random() * H, 4 * k, 2 + Math.random() * 6); x.fillRect(62 * k, Math.random() * 240 * k * 0.5, 4 * k, 1 + Math.random() * 4); } }
+  if (plain) { /* junction patch: bare asphalt, no lane markings or dusty edges */ }
+  else if (main) { x.fillStyle = 'rgba(229,231,235,0.92)'; x.fillRect(4 * k, 0, 4 * k, H); x.fillRect(120 * k, 0, 4 * k, H); x.fillStyle = 'rgba(248,250,252,0.92)'; x.fillRect(62 * k, 0, 4 * k, 120 * k * 2 * 0.5); for (let i = 0; i < 60; i++) { x.fillStyle = 'rgba(58,62,68,0.5)'; x.fillRect(4 * k, Math.random() * H, 4 * k, 2 + Math.random() * 6); x.fillRect(62 * k, Math.random() * 240 * k * 0.5, 4 * k, 1 + Math.random() * 4); } }
   else { const g1 = x.createLinearGradient(0, 0, 14 * k, 0); g1.addColorStop(0, 'rgba(120,92,62,0.85)'); g1.addColorStop(1, 'rgba(120,92,62,0)'); x.fillStyle = g1; x.fillRect(0, 0, 14 * k, H); const g2 = x.createLinearGradient(S, 0, S - 14 * k, 0); g2.addColorStop(0, 'rgba(120,92,62,0.85)'); g2.addColorStop(1, 'rgba(120,92,62,0)'); x.fillStyle = g2; x.fillRect(S - 14 * k, 0, 14 * k, H); }
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
 }
