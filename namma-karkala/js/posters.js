@@ -204,7 +204,7 @@ export function buildPosters(world) {
     const g = new THREE.Group(), W = 7.2, H = W / (BW / BH);
     g.position.set(h.x, 0, h.z); g.rotation.y = Math.atan2(h.dz * h.s, -h.dx * h.s);              // face normal points at the road
     const m = new THREE.MeshStandardMaterial({ map: B.tex.clone(), roughness: 0.5, side: THREE.DoubleSide }); m.map.needsUpdate = true; m.map.repeat.set(1, 1 / B.rows); m.map.offset.set(0, (B.rows - 1 - h.row) / B.rows);
-    const face = new THREE.Mesh(new THREE.PlaneGeometry(W, H), m); face.position.set(0, 5.4, 0.02); g.add(face);
+    m.side = THREE.FrontSide; const face = new THREE.Mesh(new THREE.PlaneGeometry(W, H), m); face.position.set(0, 5.4, 0.13); g.add(face); const face2 = new THREE.Mesh(new THREE.PlaneGeometry(W, H), m); face2.rotation.y = Math.PI; face2.position.set(0, 5.4, -0.33); g.add(face2);
     const panel = new THREE.Mesh(new THREE.BoxGeometry(W + 0.3, H + 0.3, 0.2), steel); panel.position.set(0, 5.4, -0.1); g.add(panel);
     for (const sx of [-1, 1]) { const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 6.6, 8), steel); pole.position.set(sx * (W / 2 - 0.5), 3.3, -0.2); g.add(pole); }
     world.scene.add(g); world.addObs({ x: h.x, z: h.z, r: 1.0 });

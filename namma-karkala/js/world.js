@@ -236,7 +236,7 @@ export class World {
     this.roadMats.push(mk(groups.main, roadTex(true), 0.05).material);
     // junction patches cover the seams where roads meet
     const disc = [], dm = new THREE.Matrix4();
-    for (const n of this.nodes) if (n.adj.length >= 3 || n.adj.length === 1) disc.push([n.x, n.z, Math.max(...n.adj.map(e => e.w)) / 2 * (n.adj.length >= 3 ? 1.12 : 1)]);
+    for (const n of this.nodes) if (n.adj.length >= 3) disc.push([n.x, n.z, Math.max(...n.adj.map(e => e.w)) / 2 * 1.12]);
     // roads that cross without sharing a node get a bare patch at the crossing too
     const segs = this.segs, seen = new Set();
     for (let i = 0; i < segs.length; i++) {
@@ -376,12 +376,32 @@ export class World {
   }
 
   tower(x, z, sign, w, d, floors, wall, signBg = '#1d4ed8') {
-    const rot = this.faceRoad(x, z), h = floors * 3.4 + 0.6;
-    const parts = [M.P(M.box(w, h, d), wall, [0, h / 2, 0]), M.P(M.box(w + 0.6, 0.5, d + 0.6), '#94a3b8', [0, h + 0.25, 0])];
-    for (let f = 0; f < floors; f++) for (let i = 0; i < Math.floor(w / 3); i++) parts.push(M.P(M.box(1.4, 1.4, 0.1), '#334155', [-w / 2 + 1.6 + i * 3, f * 3.4 + 2.0, d / 2 + 0.05]));
-    parts.push(M.P(M.box(Math.min(5, w * 0.4), 2.6, 0.1), '#1f2937', [0, 1.3, d / 2 + 0.06]));
+    const rot = this.faceRoad(x, z), fh = 3.4, h = floors * fh + 0.6, P = M.P, box = M.box, cyl = M.cyl;
+    const trim = '#e7e3d8', glass = '#27364a', dark = '#1f2937';
+    const parts = [P(box(w, h, d), wall, [0, h / 2, 0]), P(box(w + 0.5, 0.45, d + 0.5), '#8f98a5', [0, 0.22, 0])];            // body + plinth
+    for (let f = 1; f <= floors; f++) parts.push(P(box(w + 0.35, 0.28, d + 0.35), trim, [0, f * fh - 0.1, 0]));                    // floor bands
+    parts.push(P(box(w + 0.7, 0.4, d + 0.7), '#8f98a5', [0, h + 0.2, 0]));
+    for (const [sx, sz, ww, dd] of [[0, d / 2 + 0.3, w + 0.7, 0.25], [0, -d / 2 - 0.3, w + 0.7, 0.25], [w / 2 + 0.3, 0, 0.25, d + 0.7], [-w / 2 - 0.3, 0, 0.25, d + 0.7]]) parts.push(P(box(ww, 0.9, dd), wall, [sx, h + 0.85, sz]));   // parapet
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) parts.push(P(box(0.7, h, 0.7), trim, [sx * (w / 2), h / 2, sz * (d / 2)]));                    // corner pilasters
+    const win = (cx, cy, cz, ry) => {                                                                                              // framed window with sill and sunshade
+      const c = Math.cos(ry), s = Math.sin(ry), n = (u, v, wd, ht, dp, col) => parts.push(P(box(wd, ht, dp), col, [cx + u * c + v * s, cy, cz - u * s + v * c], [0, ry, 0]));
+      n(0, 0.04, 1.7, 1.6, 0.12, trim); n(0, 0.1, 1.4, 1.3, 0.1, glass); n(0, 0.2, 0.05, 1.3, 0.05, trim); n(0, 0.28, 1.9, 0.1, 0.45, trim);
+    };
+    for (let f = 0; f < floors; f++) {
+      const y = f * fh + (f === 0 ? 2.1 : 2.0), nx = Math.max(1, Math.floor((w - 2) / 3.2)), nz = Math.max(1, Math.floor((d - 2) / 3.2));
+      for (let i = 0; i < nx; i++) { const u = -w / 2 + 1.6 + (i + 0.5) * (w - 3.2) / nx; if (f === 0 && Math.abs(u) < Math.min(2.8, w * 0.25)) continue; win(u, y, d / 2, 0); win(u, y, -d / 2, Math.PI); }
+      for (let i = 0; i < nz; i++) { const v = -d / 2 + 1.6 + (i + 0.5) * (d - 3.2) / nz; win(w / 2, y, v, Math.PI / 2); win(-w / 2, y, v, -Math.PI / 2); }
+    }
+    // entrance portico: steps, columns, canopy and a dark double door
+    const pw = Math.min(6, w * 0.45);
+    parts.push(P(box(pw + 1, 0.2, 2.6), '#9aa2ad', [0, 0.1, d / 2 + 1.3]), P(box(pw + 0.4, 0.2, 1.6), '#b3bac4', [0, 0.3, d / 2 + 0.9]), P(box(pw + 1.4, 0.35, 2.8), trim, [0, 3.35, d / 2 + 1.35]),
+      P(box(Math.min(5, w * 0.4), 2.7, 0.16), dark, [0, 1.45, d / 2 + 0.08]), P(box(0.08, 2.7, 0.2), '#9ca3af', [0, 1.45, d / 2 + 0.1]));
+    for (const sx of [-1, 1]) parts.push(P(cyl(0.2, 0.24, 3.2, 10), trim, [sx * (pw / 2), 1.8, d / 2 + 2.3]), P(box(0.7, 0.2, 0.7), trim, [sx * (pw / 2), 0.35, d / 2 + 2.3]));
+    // roof furniture: stair head, water tanks, dish
+    parts.push(P(box(3.2, 2.4, 3.2), wall, [-w * 0.25, h + 1.6, -d * 0.2]), P(box(3.4, 0.25, 3.4), trim, [-w * 0.25, h + 2.9, -d * 0.2]));
+    for (let i = 0; i < 2; i++) parts.push(P(cyl(0.7, 0.7, 1.3, 12), '#1f2937', [w * 0.25 + i * 1.7, h + 1.25, -d * 0.2]));
     const g = new THREE.Group(); const m = new THREE.Mesh(M.merge(parts), M.MAT.solid); m.castShadow = true; m.receiveShadow = true; g.add(m);
-    const s = M.signMesh(sign, Math.min(w * 0.9, 14), 1.8, { bg: signBg, fg: '#fff', w: 1024, h: 140 }); s.position.set(0, Math.min(h - 0.6, 4.6), d / 2 + 0.12); g.add(s);
+    const s = M.signMesh(sign, Math.min(w * 0.9, 14), 1.8, { bg: signBg, fg: '#fff', w: 1024, h: 140 }); s.position.set(0, Math.min(h - 0.6, 4.6) + 0.7, d / 2 + 0.2); g.add(s);
     this.landmark(g, x, z, rot, [[0, 0, w / 2, d / 2]]);
   }
 
