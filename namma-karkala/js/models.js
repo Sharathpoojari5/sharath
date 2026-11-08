@@ -3,6 +3,7 @@
 import * as THREE from './three.module.min.js';
 import { People } from './people.js';
 import { buildCar } from './carbody.js';
+import { build as buildV2 } from './vehicles2.js';
 
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _e = new THREE.Euler(), _c = new THREE.Color();
 
@@ -263,6 +264,8 @@ export function paintMat(c) {
   if (ENV.tex) p.envMap = ENV.tex; PAINTS.set(c, p); ENV.mats.add(p); return p;
 }
 const LOFT = new Set(['hatch', 'sedan', 'taxi', 'car', 'suv']);
+const V2 = new Set(['scooter', 'scooty', 'moped', 'bike', 'sportbike', 'auto', 'omni', 'jeep', 'ambulance', 'pickup', 'minitruck', 'tempo', 'lorry', 'tanker', 'tractor', 'bus', 'ksrtc', 'schoolbus']);
+MAT.vehicle = new THREE.MeshPhysicalMaterial({ vertexColors: true, metalness: 0.28, roughness: 0.4, clearcoat: 0.7, clearcoatRoughness: 0.12, envMapIntensity: 1.0 }); ENV.mats.add(MAT.vehicle);
 const RIM = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.5, metalness: 0.4 });
 
 /** A box whose top face is narrower / shifted: cabins, bonnets, windscreens. */
@@ -302,6 +305,9 @@ export function vehicle(kind, o = {}) {
       P(box(0.05, 0.05, 0.7), c, [0, 0.36, -0.3]), P(box(0.22, 0.06, 0.28), '#111', [0, 0.95, -0.3]), P(box(0.56, 0.04, 0.04), '#444', [0, 1.02, 0.58]), P(box(0.06, 0.06, 0.06), '#9ca3af', [0, 0.36, 0]),
       P(box(0.35, 0.03, 0.3), '#9ca3af', [0, 0.72, -0.72]));
     yellowPlate = null;
+  } else if (V2.has(kind)) {
+    buildV2(kind, { d, o, parts, glass, glow, flash, wheels, wheel, plateMesh, plate, yellowPlate, signMesh, pick, P, box, cyl, sph, g, wheelGeo, RIM, BUS_COLS, BUS_NAMES, CAR_COLS,
+      paint: (geo, col, pos = [0, 0, 0]) => { const g2 = geo.clone(); g2.translate(pos[0], pos[1], pos[2]); paintList.push([g2, col]); } });
   } else if (['scooter', 'scooty', 'moped', 'bike', 'sportbike'].includes(kind)) {
     const sc = kind === 'scooter' || kind === 'scooty' || kind === 'moped', c = o.color || (kind === 'sportbike' ? pick(['#dc2626', '#1d4ed8', '#f8fafc', '#facc15', '#111827']) : kind === 'bike' ? pick(['#111827', '#7f1d1d', '#1e3a8a', '#4b5563']) : pick(['#b91c1c', '#1d4ed8', '#f8fafc', '#4d7c0f', '#6b7280', '#facc15', '#0e7490', '#111827']));
     wheel(0, L / 2 - 0.3, wr, 0.12); wheel(0, -L / 2 + 0.3, wr, 0.12);
@@ -452,7 +458,7 @@ export function vehicle(kind, o = {}) {
     g.userData.busName = name;
     plateMesh(g, plate(true), 0, 0.55, L / 2 + 0.13, 0, 0.55); plateMesh(g, plate(true), 0, 0.55, -L / 2 - 0.13, Math.PI, 0.55);
   }
-  const body = new THREE.Mesh(merge(parts), !LOFT.has(kind) && ['car', 'hatch', 'sedan', 'taxi', 'jeep', 'suv', 'omni', 'ambulance', 'pickup', 'minitruck', 'scooter', 'scooty', 'moped', 'bike', 'sportbike'].includes(kind) ? MAT.shiny : MAT.solid); body.castShadow = true; g.add(body);
+  const body = new THREE.Mesh(merge(parts), V2.has(kind) ? MAT.vehicle : LOFT.has(kind) ? MAT.solid : kind === 'cycle' ? MAT.solid : MAT.shiny); body.castShadow = true; g.add(body);
   for (const [geo, col] of paintList) { const pm = new THREE.Mesh(geo, paintMat(col)); pm.castShadow = true; g.add(pm); }
   if (extraGlass) g.add(new THREE.Mesh(extraGlass, GLASS));
   if (glass.length) { const gm = new THREE.Mesh(merge(glass), GLASS); g.add(gm); }
