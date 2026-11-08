@@ -4,6 +4,7 @@ import * as THREE from './three.module.min.js';
 import { People } from './people.js';
 import { buildCar } from './carbody.js';
 import { build as buildV2 } from './vehicles2.js';
+import { templeParts, basadiParts, manastambha as manastambhaParts, guardianElephant as elephantParts } from './landmarks2.js';
 
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _e = new THREE.Euler(), _c = new THREE.Color();
 
@@ -616,32 +617,18 @@ export function statue() {
   const g = new THREE.Group(); g.add(m); return g;
 }
 
-/** Chaturmukha (four-faced) basadi: granite hall with pillared porches on all four sides. */
+/** Chaturmukha (four-faced) basadi with manastambha and guardian elephants. */
 export function basadi(scale = 1) {
-  const gr = '#a39b8b', dk = '#857d6e', p = [P(box(24, 1.2, 24), '#8f887a', [0, 0.6, 0]), P(box(15, 6.5, 15), gr, [0, 4.4, 0]), P(box(17, 0.8, 17), dk, [0, 8.0, 0]), P(box(12, 1.6, 12), gr, [0, 9.2, 0]), P(box(8, 1.2, 8), dk, [0, 10.6, 0]), P(box(3, 2.2, 3), gr, [0, 12.3, 0])];
-  for (const [dx, dz, rot] of [[0, 1, 0], [0, -1, 0], [1, 0, 1], [-1, 0, 1]]) {
-    for (let i = -2; i <= 2; i++) { const ax = rot ? dx * 10 : i * 2.6, az = rot ? i * 2.6 : dz * 10; p.push(P(box(0.9, 6.0, 0.9), '#b5ad9c', [ax, 4.2, az])); }
-    p.push(P(box(rot ? 4.5 : 15, 0.7, rot ? 15 : 4.5), dk, [dx * 9.5, 7.4, dz * 9.5]));
-    p.push(P(box(rot ? 0.4 : 3.2, 4.5, rot ? 3.2 : 0.4), '#2b2620', [dx * 7.55, 3.6, dz * 7.55]));
-  }
-  const g = new THREE.Group(); g.add(mesh(merge(p), MAT.stone)); g.scale.setScalar(scale); return g;
+  const mk = { P, box, cyl, sph, cone, taper }, g = new THREE.Group();
+  g.add(mesh(merge(basadiParts(mk)), MAT.stone));
+  const extra = [...manastambhaParts(mk).map(p => ({ ...p, pos: [p.pos[0], p.pos[1], p.pos[2] + 19] }))];
+  for (const sx of [-1, 1]) for (const pe of elephantParts(mk)) extra.push({ ...pe, pos: [pe.pos[0] + sx * 5.6, pe.pos[1], pe.pos[2] + 15.8] });
+  g.add(mesh(merge(extra), MAT.stone)); g.scale.setScalar(scale); return g;
 }
 
-/** South-Indian temple: compound wall, mandapa with tiled roof, small gopura and a flag post. */
+/** South-Indian (Tulunadu) temple: striped compound wall, tiered gopura, tiled sanctum and mandapa, flag post, lamp tower. */
 export function temple() {
-  const p = [P(box(30, 2.2, 0.6), '#f1e6cf', [0, 1.1, 15]), P(box(30, 2.2, 0.6), '#f1e6cf', [0, 1.1, -15]), P(box(0.6, 2.2, 30), '#f1e6cf', [15, 1.1, 0]), P(box(0.6, 2.2, 30), '#f1e6cf', [-15, 1.1, 0]),
-    P(box(30.2, 0.25, 0.8), '#b45309', [0, 2.3, 15]), P(box(30.2, 0.25, 0.8), '#b45309', [0, 2.3, -15]), P(box(0.8, 0.25, 30.2), '#b45309', [15, 2.3, 0]), P(box(0.8, 0.25, 30.2), '#b45309', [-15, 2.3, 0]),
-    P(box(12, 4.5, 14), '#f3ead8', [0, 2.25, -4]), P(box(14, 0.4, 16), '#9a3412', [0, 4.7, -4]),
-    P(cone(9.2, 3.6, 4), '#b4471b', [0, 6.6, -4], [0, Math.PI / 4, 0], [1, 1, 1.15]),
-    P(box(5, 3.5, 5), '#e9dcc1', [0, 8.0, -7]), P(box(4, 2.5, 4), '#d8b98a', [0, 10.8, -7]), P(box(3, 2.0, 3), '#e9dcc1', [0, 13.0, -7]), P(sph(1.3, 8, 6), '#d97706', [0, 14.6, -7]),
-    P(box(7.4, 5.5, 3.2), '#f5ecd9', [0, 2.75, 15]), P(box(7.8, 0.35, 3.6), '#b45309', [0, 5.65, 15]),
-    P(box(6.2, 1.6, 2.8), '#fca5a5', [0, 6.6, 15]), P(box(5.2, 1.5, 2.5), '#fde68a', [0, 8.15, 15]), P(box(4.2, 1.4, 2.2), '#93c5fd', [0, 9.6, 15]), P(box(3.2, 1.3, 1.9), '#86efac', [0, 10.95, 15]),
-    P(box(3.6, 0.9, 1.4), '#f97316', [0, 12.0, 15]), P(sph(0.35, 8, 6), '#eab308', [-1.1, 12.8, 15]), P(sph(0.35, 8, 6), '#eab308', [0, 12.8, 15]), P(sph(0.35, 8, 6), '#eab308', [1.1, 12.8, 15]),
-    P(box(0.25, 1.2, 0.25), '#dc2626', [-1.6, 6.6, 16.45]), P(box(0.25, 1.2, 0.25), '#16a34a', [1.6, 6.6, 16.45]), P(box(0.25, 1.1, 0.25), '#2563eb', [-1.2, 8.15, 16.3]), P(box(0.25, 1.1, 0.25), '#db2777', [1.2, 8.15, 16.3]),
-    P(box(2.6, 4.0, 0.2), '#3b2412', [0, 2.0, 16.65]), P(box(0.5, 0.5, 0.4), '#facc15', [-1.6, 4.6, 16.7]), P(box(0.5, 0.5, 0.4), '#facc15', [1.6, 4.6, 16.7]),
-    P(box(1.4, 1.2, 1.4), '#9ca3af', [0, 0.6, 8]), P(cyl(0.18, 0.25, 11, 8), '#d4a017', [0, 6.5, 8]), P(box(0.9, 0.3, 0.9), '#d4a017', [0, 12.1, 8]),
-  ];
-  const g = new THREE.Group(); g.add(mesh(merge(p))); return g;
+  const g = new THREE.Group(); g.add(mesh(merge(templeParts({ P, box, cyl, sph, cone, taper })))); return g;
 }
 
 /** Bus stand: long platform, sheet roof on pillars, a ticket booth. */

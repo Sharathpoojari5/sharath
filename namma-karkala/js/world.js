@@ -558,6 +558,7 @@ export class World {
     if (this.lamps) { for (const m of this.lamps.pools) m.visible = n > 0.35; this.lamps.poolMat.opacity = 0.4 * n; }
     if (this.wallMats) for (const m of this.wallMats) m.userData.uNight.value = n;
     if (this.shopMats) { this.shopMats[0].emissive.setRGB(0.25 * n, 0.22 * n, 0.15 * n); this.shopMats[1].emissive.setRGB(0.45 * n, 0.45 * n, 0.45 * n); }
+    if (this.shopInterior) this.shopInterior.emissiveIntensity = 0.1 + 0.95 * n;
   }
   update(dt) { if (this.waterNormal) { this.waterNormal.offset.x += dt * 0.004; this.waterNormal.offset.y += dt * 0.0027; } }
   setWet(w) { for (const m of this.roadMats || []) m.roughness = 0.92 - 0.6 * w; this.groundMat.color.setScalar(1 - 0.25 * w); }

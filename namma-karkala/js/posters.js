@@ -136,17 +136,17 @@ function weather(x, W, H, k = 1) {
   if (Math.random() < 0.5) { x.globalCompositeOperation = 'destination-out'; x.beginPath(); const c = Math.random() < 0.5 ? 0 : W, d = Math.random() < 0.5 ? 0 : H, s = 14 + Math.random() * 30; x.moveTo(c, d); x.lineTo(c + (c ? -s : s), d); x.lineTo(c, d + (d ? -s * 1.4 : s * 1.4)); x.closePath(); x.fill(); }      // torn corner
   x.restore();
 }
-function atlas(list, cw, ch, cols, wk) {
+export function atlas(list, cw, ch, cols, wk) {
   const rows = Math.ceil(list.length / cols), c = document.createElement('canvas'); c.width = cw * cols; c.height = ch * rows; const x = c.getContext('2d');
   list.forEach((f, i) => { const cx = (i % cols) * cw, cy = Math.floor(i / cols) * ch; x.save(); x.translate(cx, cy); x.beginPath(); x.rect(0, 0, cw, ch); x.clip(); f(x); weather(x, cw, ch, wk); x.restore(); });
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; t.generateMipmaps = true; return { tex: t, cols, rows, n: list.length };
 }
-function atlasMat(a, rough) {
+export function atlasMat(a, rough) {
   const m = new THREE.MeshStandardMaterial({ map: a.tex, alphaTest: 0.5, roughness: rough, side: THREE.DoubleSide });
-  m.onBeforeCompile = (sh) => { sh.vertexShader = 'attribute float aRow;\n' + sh.vertexShader.replace('#include <uv_vertex>', `#include <uv_vertex>\n { float col = mod(aRow, ${a.cols}.0), row = floor(aRow / ${a.cols}.0); vMapUv = (vMapUv + vec2(col, ${a.rows - 1}.0 - row)) / vec2(${a.cols}.0, ${a.rows}.0); }`); };
+  m.onBeforeCompile = (sh) => { sh.vertexShader = 'attribute float aRow;\n' + sh.vertexShader.replace('#include <uv_vertex>', `#include <uv_vertex>\n { float col = mod(aRow, ${a.cols}.0), row = floor(aRow / ${a.cols}.0); vMapUv = (vMapUv + vec2(col, ${a.rows - 1}.0 - row)) / vec2(${a.cols}.0, ${a.rows}.0); }\n #ifdef USE_EMISSIVEMAP\n vEmissiveMapUv = vMapUv;\n #endif`); };
   m.customProgramCacheKey = () => `atlas-${a.cols}x${a.rows}-${a.n}`; return m;
 }
-function tiledAttr(world, geo, mat, items) {
+export function tiledAttr(world, geo, mat, items) {
   const T = 180, groups = new Map(); for (const it of items) { const k = Math.floor(it.x / T) * 1000 + Math.floor(it.z / T); (groups.get(k) || groups.set(k, []).get(k)).push(it); }
   for (const list of groups.values()) {
     const g2 = geo.clone(); g2.setAttribute('aRow', new THREE.InstancedBufferAttribute(Float32Array.from(list.map(i => i.row)), 1));
